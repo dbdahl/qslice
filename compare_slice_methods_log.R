@@ -1,6 +1,6 @@
 rm(list=ls())
 
-library(ninja)
+library(cucumber)
 source("functions_log.R")
 
 # Log of density of the target distribution (select one)
@@ -80,16 +80,17 @@ pseudoInvCDF <- function(u) qbeta(u, shape1=0.5, shape2=0.5)
 
 
 
-## Samples with stepping-out procedure
-counter <- 0
+## Samples with stepping-out and shrinkage procedure
+counter0 <- 0
 draws0 <- numeric(50000)
 draws0[1] <- 0.5
 time0 <- system.time({
     for ( i in seq_along(draws0)[-1] ) {
-        draws0[i] <- slice_sampler(draws0[i-1], lf, w=5, max=Inf, log=TRUE)
+        out <- slice_sampler(draws0[i-1], lf, w=5, max=Inf, log=TRUE)
+        draws0[i] <- out$x
+        counter0 <- counter0 + out$nEvaluations
     }
 })
-counter0 <- counter
 
 
 ## Samples with proposed method
@@ -263,8 +264,8 @@ B10 / time10['user.self'] # transform
 B2 / time2['user.self'] # latent
 B3 / time3['user.self'] # t-elliptical
 
-counter0 
-counter1 
+counter0
+counter1
 counter2
-counter3 
+counter3
 
