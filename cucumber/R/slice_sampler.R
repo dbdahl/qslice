@@ -42,9 +42,10 @@ slice_sampler <- function(x, target, w, max=0, log=FALSE) {
 }
 
 #' @export
-slice_sampler_ <- function(x, target, w, max=0, log=FALSE) {
+slice_sampler_stepping_out <- function(x, target, w, max=0, log=FALSE) {
   u <- function() runif(1, 0, 1)
   # Step 1
+  nEvaluations <- 1
   fx <- target(x)
   y <- if ( isTRUE(log) ) {
     log(u() * exp(fx))
@@ -55,20 +56,28 @@ slice_sampler_ <- function(x, target, w, max=0, log=FALSE) {
   L <- x - u() * w
   R <- L + w
   if ( ! is.finite(max) ) {
+    nEvaluations <- nEvaluations + 1
     while ( y < target(L) ) {
+      nEvaluations <- nEvaluations + 1
       L <- L - w
     }
+    nEvaluations <- nEvaluations + 1
     while ( y < target(R) ) {
+      nEvaluations <- nEvaluations + 1
       R <- R + w
     }
   } else if ( max > 0 ) {
     J <- floor( u() * max )
     K <- max - 1 - J
+    nEvaluations <- nEvaluations + 1
     while ( J > 0 && y < target(L) ) {
+      nEvaluations <- nEvaluations + 1
       L <- L - w
       J <- J - 1
     }
+    nEvaluations <- nEvaluations + 1
     while ( K > 0 && y < target(R) ) {
+      nEvaluations <- nEvaluations + 1
       R <- R + w
       K <- K - 1
     }
@@ -76,8 +85,9 @@ slice_sampler_ <- function(x, target, w, max=0, log=FALSE) {
   # Step 3 ("Shrinkage" procedure)
   repeat {
     x1 <- L + u() * ( R - L )
+    nEvaluations <- nEvaluations + 1
     fx1 <- target(x1)
-    if ( y < fx1 ) return(x1)
+    if ( y < fx1 ) return(list(x=x1, nEvaluations=nEvaluations))
     if ( x1 < x ) L <- x1 else R <- x1
   }
 }
@@ -105,35 +115,24 @@ slice_sampler_transform <- function(x, log_density, pseudo_log_pdf, pseudo_inv_c
 #' Algorithm of Li and Walker (2020)
 #'
 #' @export
-slice_sampler_latent <- function(x, f, lambda) {
-
-  # Step 1
-  if ( is.list(x) ) {
-    fx <- x$fx
-    s <- x$s
-    x <- x$x
-  } else {
-    stop("Supplied x must be a list with previous value, previous latent s, and density eval at previous value.")
-  }
-
-  y <- stunif() * fx
-
-  # Step 2 sample latent variates
-  ell <- runif(1, min = x - 0.5*s, max = x + 0.5*s)
-
-  s_trunc <- 2.0*abs(ell - x)
-  qtile_trunc <- 1.0 - exp(-lambda*s_trunc)
-  s1 <- -log(1.0 - runif(1, min=qtile_trunc, max=1.0)) / lambda # draw from truncated exponential
-
-  L <- ell - 0.5*s1
-  R <- ell + 0.5*s1
-
-  # Step 3 ("Shrinkage" procedure)
+slice_sampler_latent <- function(x, s, lf, rate) {
+  nEvaluations <- 1
+  lfx <- lf(x)
+  ly <- log(stunif()) + lfx
+  half_s <- s/2
+  l <- runif(1, x - half_s, x + half_s)
+  # Eq. 7... a truncated exponential using the inverse CDF method.
+  s <- -log(runif(1))/rate + 2*abs(l-x)
+  half_s <- s/2
+  L <- l - half_s
+  R <- l + half_s
+  # Step 2 ("Shrinkage" procedure)
   repeat {
     x1 <- L + stunif() * ( R - L )
-    fx1 <- f(x1)
-    if ( y < fx1 ) {
-      result <- list(x=x1, s=s1, fx=fx1)
+    nEvaluations <- nEvaluations + 1
+    lfx1 <- lf(x1)
+    if ( ly < lfx1 ) {
+      result <- list(x=x1, s=s, nEvaluations=nEvaluations)
       return(result)
     }
     if ( x1 < x ) L <- x1 else R <- x1

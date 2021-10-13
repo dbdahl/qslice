@@ -6,36 +6,68 @@ source("functions_log.R")
 # Log of density of the target distribution (select one)
 
 lf <- function(x) {
-    counter <<- counter + 1
     log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=6,sd=2))
 }
 
 lf <- function(x) {
-    counter <<- counter + 1
     log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=20,sd=1))
 }
 
 lf <- function(x) {
-    counter <<- counter + 1
     dgamma(x, shape=2.5, log=TRUE)
 }
 
 lf <- function(x) {
-    counter <<- counter + 1
     ifelse( x < 0, -Inf, dt(x, df=1.0, log=TRUE) + log(2.0))
 }
 
 lf <- function(x) {
-    counter <<- counter + 1
     dt(x, df=1.0, log=TRUE)
 }
 
 lf <- function(x) {
-    counter <<- counter + 1
     dbeta(x, shape1=0.2, shape2=0.8, log=TRUE)
 }
 
 f <- function(x) exp(lf(x))
+
+## Samples with stepping-out procedure (Neal 2003)
+counter <- 0
+draws <- numeric(50000)
+draws[1] <- 0.5
+time <- system.time({
+    for ( i in seq.int(2,length(draws)) ) {
+        out <- slice_sampler_stepping_out(draws[i-1], lf, w=10, max=Inf, log=TRUE)
+        draws[i] <- out$x
+        counter <- counter + out$nEvaluations
+    }
+})
+counter
+plot(density(draws))
+coda::effectiveSize(draws) / time['user.self']
+
+## Samples with latent procedure (Li and Walker 2020)
+counter <- 0
+draws <- latents <- numeric(50000)
+draws[1] <- 0.5
+latents[1] <- 0.3
+time <- system.time({
+    for ( i in seq.int(2,length(draws)) ) {
+        out <- slice_sampler_latent(draws[i-1], latents[i-1], lf, rate=0.03)
+        draws[i] <- out$x
+        latents[i] <- out$s
+        counter <- counter + out$nEvaluations
+    }
+})
+counter
+plot(density(draws))
+coda::effectiveSize(draws) / time['user.self']
+
+
+
+######
+###### The code below is not currently tested / functional
+######
 
 
 # Setup for elliptical slice sampler
@@ -78,19 +110,6 @@ pseudoLogPDF <- function(x) dbeta(x, shape1=0.5, shape2=0.5, log=TRUE)
 pseudoInvCDF <- function(u) qbeta(u, shape1=0.5, shape2=0.5)
 
 
-
-
-## Samples with stepping-out and shrinkage procedure
-counter0 <- 0
-draws0 <- numeric(50000)
-draws0[1] <- 0.5
-time0 <- system.time({
-    for ( i in seq_along(draws0)[-1] ) {
-        out <- slice_sampler(draws0[i-1], lf, w=5, max=Inf, log=TRUE)
-        draws0[i] <- out$x
-        counter0 <- counter0 + out$nEvaluations
-    }
-})
 
 
 ## Samples with proposed method

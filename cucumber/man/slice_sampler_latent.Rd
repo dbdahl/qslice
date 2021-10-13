@@ -4,7 +4,7 @@
 \alias{slice_sampler_latent}
 \title{Algorithm of Li and Walker (2020)}
 \usage{
-slice_sampler_latent(x, f, lambda)
+slice_sampler_latent(x, s, lf, rate)
 }
 \description{
 Algorithm of Li and Walker (2020)
