@@ -17,14 +17,14 @@ single_elliptical_slice_sample <- function(x = 0, mu = 2, sigma = 5, fx) {
   nEvaluations <- 1
   v <- rnorm(1,mu,sigma)
   u <- runif(1,0,1)
-  log_y <- log(lx(x)) + log(u)
+  log_y <- log(fx(x)) + log(u)
   theta <- runif(1,0,2*pi)
   theta_min <- theta - 2*pi
   theta_max <- theta
   # Sample x1
   x1 <- (x - mu)*cos(theta) + (v - mu)*sin(theta) + mu
   # Checking to see if x1 is in the distribution. If not then shrinkage procedure
-  while (log(lx(x1)) < log_y) {
+  while (log(fx(x1)) < log_y) {
     if (theta < 0){
       theta_min <- theta
     } else {
