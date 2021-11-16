@@ -6,27 +6,27 @@ source("functions_log.R")
 # Log of density of the target distribution (select one)
 
 lf <- function(x) {
-    log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=6,sd=2))
+  log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=6,sd=2))
 }
 
 lf <- function(x) {
-    log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=20,sd=1))
+  log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=20,sd=1))
 }
 
 lf <- function(x) {
-    dgamma(x, shape=2.5, log=TRUE)
+  dgamma(x, shape=2.5, log=TRUE)
 }
 
 lf <- function(x) {
-    ifelse( x < 0, -Inf, dt(x, df=1.0, log=TRUE) + log(2.0))
+  ifelse( x < 0, -Inf, dt(x, df=1.0, log=TRUE) + log(2.0))
 }
 
 lf <- function(x) {
-    dt(x, df=1.0, log=TRUE)
+  dt(x, df=1.0, log=TRUE)
 }
 
 lf <- function(x) {
-    dbeta(x, shape1=0.2, shape2=0.8, log=TRUE)
+  dbeta(x, shape1=0.2, shape2=0.8, log=TRUE)
 }
 
 f <- function(x) exp(lf(x))
@@ -36,15 +36,15 @@ counter <- 0
 draws <- numeric(50000)
 draws[1] <- 0.5
 time <- system.time({
-    for ( i in seq.int(2,length(draws)) ) {
-        out <- slice_sampler_stepping_out(draws[i-1], lf, w=10, max=Inf, log=TRUE)
-        draws[i] <- out$x
-        counter <- counter + out$nEvaluations
-    }
+  for ( i in seq.int(2,length(draws)) ) {
+    out <- slice_sampler_stepping_out(draws[i-1], lf, w=10, max=Inf, log=TRUE)
+    draws[i] <- out$x
+    counter <- counter + out$nEvaluations
+  }
 })
-counter
+counter_step_out <- counter
 plot(density(draws))
-coda::effectiveSize(draws) / time['user.self']
+time_step_out <- coda::effectiveSize(draws) / time['user.self']
 
 ## Samples with latent procedure (Li and Walker 2020)
 counter <- 0
@@ -52,16 +52,85 @@ draws <- latents <- numeric(50000)
 draws[1] <- 0.5
 latents[1] <- 0.3
 time <- system.time({
-    for ( i in seq.int(2,length(draws)) ) {
-        out <- slice_sampler_latent(draws[i-1], latents[i-1], lf, rate=0.03)
-        draws[i] <- out$x
-        latents[i] <- out$s
-        counter <- counter + out$nEvaluations
-    }
+  for ( i in seq.int(2,length(draws)) ) {
+    out <- slice_sampler_latent(draws[i-1], latents[i-1], lf, rate=0.03)
+    draws[i] <- out$x
+    latents[i] <- out$s
+    counter <- counter + out$nEvaluations
+  }
 })
-counter
+draws_latent <- draws
+counter_latent <- counter
 plot(density(draws))
-coda::effectiveSize(draws) / time['user.self']
+time_latent <- coda::effectiveSize(draws) / time['user.self']
+
+
+## Samples with elliptical slice sampler (Murray 2010)
+counter <- 0
+draws <- numeric(50000)
+time <- system.time({
+  for ( i in seq.int(2,length(draws)) ) {
+    out <- slice_sampler_elliptical(x = draws[i-1], mu = 2, sigma = 5, target = lf)
+    draws[i] <- out$x
+    counter <- counter + out$nEvaluations
+  }
+})
+draws_elliptical <- draws
+counter_elliptical <- counter
+plot(density(draws))
+time_elliptical <- coda::effectiveSize(draws) / time['user.self']
+
+
+
+## Samples with generalized elliptical slice sampler (Nishihara 2014)
+counter <- 0
+draws <- numeric(50000)
+time <- system.time({
+  for ( i in seq.int(2,length(draws)) ) {
+    out <- slice_ellipse_generalized(x = draws[i-1], mu = 2, sigma = 5, target = lf)
+    draws[i] <- out$x
+    counter <- counter + out$nEvaluations
+  }
+})
+draws_generalized_elliptical <- draws
+counter_generalized_elliptical <- counter
+plot(density(draws))
+time_generalized_elliptical <- coda::effectiveSize(draws) / time['user.self']
+
+## Samples with slice_sampler_transform
+## Pseudo prior (select one)
+pseudoLogPDF <- function(x) dnorm(x, mean=4.0, sd=15.0, log=TRUE)
+pseudoInvCDF <- function(u) qnorm(u, mean=4.0, sd=15.0)
+
+pseudoLogPDF <- function(x) dt((x-ellip_ctr)/ellip_sc, df=ellip_degf, log=TRUE) - log(ellip_sc)
+pseudoInvCDF <- function(u) ellip_sc * qt(u, df=ellip_degf) + ellip_ctr
+
+pseudoLogPDF <- function(x) dgamma(x, shape=2.5, log=TRUE)
+pseudoInvCDF <- function(u) qgamma(u, shape=2.5)
+
+pseudoLogPDF <- function(x) dexp(x, log=TRUE)
+pseudoInvCDF <- function(u) qexp(u)
+
+pseudoLogPDF <- function(x) if ( x < 0 ) -Inf else dt(x, df=1.0, log=TRUE) + log(2.0)
+pseudoInvCDF <- function(u) qt((u + 1.0)/2.0, df=1) # half Cauchy
+
+pseudoLogPDF <- function(x) dbeta(x, shape1=0.5, shape2=0.5, log=TRUE)
+pseudoInvCDF <- function(u) qbeta(u, shape1=0.5, shape2=0.5)
+
+
+counter <- 0
+draws <- numeric(50000)
+time <- system.time({
+  for ( i in seq.int(2,length(draws)) ) {
+    out <- slice_sampler_transform(x = draws[i-1], pseduo_log_pdf = pseduoLogPDF, pseduo_inv_cdf = pseduoInvCDF, log_density = lf) #x, log_density, pseudo_log_pdf, pseudo_inv_cdf
+    draws[i] <- out$x
+    counter <- counter + out$nEvaluations
+  }
+})
+draws_transform <- draws
+counter_transform <- counter
+plot(density(draws))
+time_generalized_elliptical <- coda::effectiveSize(draws) / time['user.self']
 
 
 ######
@@ -82,8 +151,8 @@ ellip_logJacobian <- function(z) z
 
 ellip_invTform <- function(z) 1.0 / (1.0 + exp(-z)) # logit transformation
 ellip_logJacobian <- function(z) {
-    enz <- exp(-z)
-    -z - 2.0*log(1.0 + enz)
+  enz <- exp(-z)
+  -z - 2.0*log(1.0 + enz)
 }
 
 ellip_logtarget <- function(z) lf( ellip_invTform(z) ) + ellip_logJacobian(z)
@@ -114,19 +183,19 @@ pseudoInvCDF <- function(u) qbeta(u, shape1=0.5, shape2=0.5)
 ## Samples with proposed method
 counter <- 0
 lf_compos <- function(u) {
-    x <- pseudoInvCDF(u)
-    lf(x) - pseudoLogPDF(x)
+  x <- pseudoInvCDF(u)
+  lf(x) - pseudoLogPDF(x)
 }
 draws1 <- numeric(50000)
 time1 <- system.time({
-    u <- 0.5
-    lfx <- lf_compos(u)
-    if ( lfx == -Inf ) stop("Oops, the starting value is not in support.")
-    current <- list(x=u, lfx=lfx)
-    for ( i in seq_along(draws1) ) {
-        current <- slice_sampler_shrinkage(current, lf_compos)
-        draws1[i] <- pseudoInvCDF(current$x)
-    }
+  u <- 0.5
+  lfx <- lf_compos(u)
+  if ( lfx == -Inf ) stop("Oops, the starting value is not in support.")
+  current <- list(x=u, lfx=lfx)
+  for ( i in seq_along(draws1) ) {
+    current <- slice_sampler_shrinkage(current, lf_compos)
+    draws1[i] <- pseudoInvCDF(current$x)
+  }
 })
 counter1 <- counter
 
@@ -134,9 +203,9 @@ counter <- 0
 draws10 <- numeric(50000)
 draws10[1] <- 0.5
 time10 <- system.time({
-    for ( i in seq_along(draws1)[-1] ) {
-        draws10[i] <- slice_sampler_transform(draws10[i-1], lf, pseudoLogPDF, pseudoInvCDF)
-    }
+  for ( i in seq_along(draws1)[-1] ) {
+    draws10[i] <- slice_sampler_transform(draws10[i-1], lf, pseudoLogPDF, pseudoInvCDF)
+  }
 })
 counter10 <- counter
 
@@ -145,16 +214,16 @@ counter10 <- counter
 counter <- 0
 draws2 <- numeric(50000)
 time2 <- system.time({
-    x <- 0.1
-    s <- 1.0
-    lambda <- 0.1
-    lfx <- lf(x)
-    if ( lfx == -Inf ) stop("Oops, the starting value is not in support.")
-    current <- list(x=x, s=s, lfx=lfx)
-    for ( i in seq_along(draws1) ) {
-        current <- slice_latent(current, lf, lambda)
-        draws2[i] <- current$x
-    }
+  x <- 0.1
+  s <- 1.0
+  lambda <- 0.1
+  lfx <- lf(x)
+  if ( lfx == -Inf ) stop("Oops, the starting value is not in support.")
+  current <- list(x=x, s=s, lfx=lfx)
+  for ( i in seq_along(draws1) ) {
+    current <- slice_latent(current, lf, lambda)
+    draws2[i] <- current$x
+  }
 })
 counter2 <- counter
 
@@ -162,14 +231,14 @@ counter2 <- counter
 ## Samples with elliptical slice sampler
 draws3 <- numeric(50000)
 time3 <- system.time({
-    z <- 0.1
-    lfz <- ellip_logtarget(z)
-    if ( lfz == -Inf ) stop("Oops, the starting value is not in support.")
-    current <- list(x=z, lfx=lfz)
-    for ( i in seq_along(draws3) ) {
-        current <- slice_ellipse_generalized(current, ellip_logtarget, ellip_ctr, ellip_sc, ellip_degf)
-        draws3[i] <- ellip_invTform(current$x)
-    }
+  z <- 0.1
+  lfz <- ellip_logtarget(z)
+  if ( lfz == -Inf ) stop("Oops, the starting value is not in support.")
+  current <- list(x=z, lfx=lfz)
+  for ( i in seq_along(draws3) ) {
+    current <- slice_ellipse_generalized(current, ellip_logtarget, ellip_ctr, ellip_sc, ellip_degf)
+    draws3[i] <- ellip_invTform(current$x)
+  }
 })
 counter3 <- counter
 

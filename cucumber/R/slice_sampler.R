@@ -41,7 +41,13 @@ slice_sampler <- function(x, target, w, max=0, log=FALSE) {
   .Call(.slice_sampler, x, target, w, max, log)
 }
 
+#' Slice Sampler using the Stepping Out and Shrinkage Procedures
+#'
+#' This function implements a univariate slice sampler of Neal (2003) using the
+#' "stepping out" procedure, followed by the "shrinkage" procedure.
+#' @inheritParams cucumber::slice_sampler
 #' @export
+#' @inherit slice_sampler return examples
 slice_sampler_stepping_out <- function(x, target, w, max=0, log=FALSE) {
   u <- function() runif(1, 0, 1)
   # Step 1
@@ -94,6 +100,8 @@ slice_sampler_stepping_out <- function(x, target, w, max=0, log=FALSE) {
 
 #' Transform Slice Sampler
 #'
+#' @inheritParams cucumber::slice_sampler
+#'
 #' @export
 slice_sampler_transform <- function(x, log_density, pseudo_log_pdf, pseudo_inv_cdf) {
   u <- function() runif(1, 0, 1)
@@ -112,13 +120,39 @@ slice_sampler_transform <- function(x, log_density, pseudo_log_pdf, pseudo_inv_c
   }
 }
 
+#' Latent Slice Sampler
+#'
 #' Algorithm of Li and Walker (2020)
 #'
+#' @inheritParams cucumber::slice_sampler
+#' @param s A random variable that determines how far the algorithm samples from on each side
+#' @param lf A function taking numeric scalar and returning a numeric scalar.
+#' @param rate The rate parameter for a truncated exponential.
+#'
+#' @return A list contains three elements: "x" is the new state and "nEvaluations"
+#'   is the number of evaluations of the target function used to obtain the new
+#'   state and "s" is the random variable used to determine the range to sample from.
+#'
 #' @export
+#' @examples
+#' f <- function(x) dbeta(x, 3, 4, log=TRUE)
+#' draws <- numeric(1000)
+#' nEvaluations <- 0L
+#' system.time({
+#' for ( i in seq_along(draws)[-1] ) {
+#'     out <- slice_sampler(x = draws[i-1], s = 2, lf = f, rate = .5)
+#'     draws[i] <- out$x
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#' }
+#' })
+#' nEvaluations/length(draws)
+#' plot(density(draws), xlim=c(0,1))
+#' curve(exp(f(x)), 0, 1, col="blue", add=TRUE)
+#'
 slice_sampler_latent <- function(x, s, lf, rate) {
   nEvaluations <- 1
   lfx <- lf(x)
-  ly <- log(stunif()) + lfx
+  ly <- log(runif(1)) + lfx
   half_s <- s/2
   l <- runif(1, x - half_s, x + half_s)
   # Eq. 7... a truncated exponential using the inverse CDF method.
@@ -128,7 +162,7 @@ slice_sampler_latent <- function(x, s, lf, rate) {
   R <- l + half_s
   # Step 2 ("Shrinkage" procedure)
   repeat {
-    x1 <- L + stunif() * ( R - L )
+    x1 <- L + runif(1) * ( R - L )
     nEvaluations <- nEvaluations + 1
     lfx1 <- lf(x1)
     if ( ly < lfx1 ) {
@@ -137,4 +171,97 @@ slice_sampler_latent <- function(x, s, lf, rate) {
     }
     if ( x1 < x ) L <- x1 else R <- x1
   }
+}
+
+#' Univariate Elliptical Slice Sampler
+#'
+#' Univariate Elliptical Slice Sampler of Murray (2010)
+#'
+#' @inheritParams cucumber::slice_sampler
+#' @param mu A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse
+#' @param sigma A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse
+#'
+#' @return A list contains two elements: "x" is the new state and "nEvaluations"
+#'   is the number of evaluations of the target function used to obtain the new
+#'   state.
+#'
+#' @export
+#' @examples
+#' f <- function(x) dbeta(x, 3, 4, log=TRUE)
+#' draws <- numeric(1000)
+#' nEvaluations <- 0L
+#' system.time({
+#' for ( i in seq_along(draws)[-1] ) {
+#'     out <- slice_sampler(x = draws[i-1], mu = 5, sigma = 2, target = f)
+#'     draws[i] <- out$x
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#' }
+#' })
+#' nEvaluations/length(draws)
+#' plot(density(draws), xlim=c(0,1))
+#' curve(exp(f(x)), 0, 1, col="blue", add=TRUE)
+#'
+slice_sampler_elliptical <- function(x = 0, mu = 2, sigma = 5, target) {
+  nEvaluations <- 1
+  nu <- rnorm(1,mu,sigma)
+  u <- runif(1,0,1)
+  log_y <- log(target(x)) + log(u)
+  theta <- runif(1,0,2*pi)
+  theta_min <- theta - 2*pi
+  theta_max <- theta
+  # Sample x1
+  x1 <- (x - mu)*cos(theta) + (nu - mu)*sin(theta) + mu
+  # Checking to see if x1 is in the distribution. If not then shrinkage procedure for theta
+  while (log(target(x1)) < log_y) {
+    if (theta < 0){
+      theta_min <- theta
+    } else {
+      theta_max <- theta
+    }
+    theta <- runif(1,theta_min, theta_max)
+    nEvaluations <- nEvaluations + 1
+    x1 <- (x - mu)*cos(theta) + (v - mu)*sin(theta) + mu
+  }
+  results <- list(x = x1, nEvaluations = nEvaluations)
+  results
+}
+
+
+
+#' General Elliptical Slice Sampler
+#'
+#' General Elliptical Slice Sampler of Nishihara (2014)
+#'
+#' @inheritParams cucumber::slice_sampler
+#' @inheritParams cucumber::slice_sampler_elliptical
+#' @param degf Number of degrees of freedom
+#' @return A list contains two elements: "x" is the new state and "nEvaluations"
+#'   is the number of evaluations of the target function used to obtain the new
+#'   state.
+#'
+#' @export
+#' @examples
+#' f <- function(x) dbeta(x, 3, 4, log=TRUE)
+#' draws <- numeric(1000)
+#' nEvaluations <- 0L
+#' system.time({
+#' for ( i in seq_along(draws)[-1] ) {
+#'     out <- slice_sampler(x = draws[i-1], mu = 5, sigma = 2, target = f)
+#'     draws[i] <- out$x
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#' }
+#' })
+#' nEvaluations/length(draws)
+#' plot(density(draws), xlim=c(0,1))
+#' curve(exp(f(x)), 0, 1, col="blue", add=TRUE)
+#'
+#'
+slice_ellipse_generalized <- function(x, lf, mu, sigma, degf) {
+  ## here, f is the target density
+  nEvaluations <- 1
+  a <- (degf + 1.0) / 2.0
+  b <- 0.5*(degf + ((x - mu)/sigma)^2)
+  s <- 1.0 / rgamma(1, shape=a, rate=b) # rate of gamma <=> shape of inv-gamma
+  lff <- function(xx) lf(xx) - ( dt((xx-mu)/sigma, df=degf, log=TRUE) - log(sigma) )
+  slice_sampler_elliptical(x=x, target=lff, mu=mu, sigma=sqrt(s)*sigma)
 }
