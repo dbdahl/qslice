@@ -2,10 +2,47 @@
 % Please edit documentation in R/slice_sampler.R
 \name{slice_sampler_latent}
 \alias{slice_sampler_latent}
-\title{Algorithm of Li and Walker (2020)}
+\title{Latent Slice Sampler}
 \usage{
-slice_sampler_latent(x, s, lf, rate)
+slice_sampler_latent(x, s, target, rate, log = TRUE)
+}
+\arguments{
+\item{x}{The current state (as a numeric scalar).}
+
+\item{s}{A random variable that determines how far the algorithm samples from
+on each side}
+
+\item{target}{A function taking numeric scalar and returning a numeric
+scalar.}
+
+\item{rate}{The rate parameter for a truncated exponential.}
+
+\item{log}{If \code{FALSE}, the \code{target} function is the density
+function of the target distribution.  If \code{TRUE}, the function
+evaluates the log of the density.}
+}
+\value{
+A list contains two elements: "x" is the new state and "nEvaluations"
+is the number of evaluations of the target function used to obtain the new
+state.
 }
 \description{
-Algorithm of Li and Walker (2020)
+This function implements the latent slice sampler of Li and Walker (2020).
+...More details...
+}
+\examples{
+lf <- function(x) dbeta(x, 3, 4, log=TRUE)
+draws <- numeric(1000)
+nEvaluations <- 0L
+system.time({
+    for ( i in seq.int(2,length(draws)) ) {
+        out <- slice_sampler_latent(draws[i-1], 0.5, target=lf, rate=1)
+        draws[i] <- out$x
+        nEvaluations <- nEvaluations + out$nEvaluations
+    }
+})
+nEvaluations/length(draws)
+plot(density(draws), xlim=c(0,1))
+curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+
 }
