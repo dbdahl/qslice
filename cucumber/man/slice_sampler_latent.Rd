@@ -18,8 +18,8 @@ scalar.}
 \item{rate}{The rate parameter for a truncated exponential.}
 
 \item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the function
-evaluates the log of the density.}
+function of the target distribution.  If \code{TRUE}, the \code{target}
+function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"
@@ -34,14 +34,18 @@ This function implements the latent slice sampler of Li and Walker (2020).
 lf <- function(x) dbeta(x, 3, 4, log=TRUE)
 draws <- numeric(1000)
 nEvaluations <- 0L
-system.time({
+seconds <- system.time({
+    s <- 0.5
     for ( i in seq.int(2,length(draws)) ) {
-        out <- slice_sampler_latent(draws[i-1], 0.5, target=lf, rate=1)
+        out <- slice_sampler_latent(draws[i-1], s, target=lf, rate=0.3)
         draws[i] <- out$x
+        s <- out$s
         nEvaluations <- nEvaluations + out$nEvaluations
     }
-})
+})['elapsed']
 nEvaluations/length(draws)
+nEvaluations/ess(draws)
+ess(draws)/seconds
 plot(density(draws), xlim=c(0,1))
 curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
 
