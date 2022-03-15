@@ -1,50 +1,215 @@
 rm(list=ls())
 
+library(magrittr)
+library(tidyverse)
 library(cucumber)
 source("functions_log.R")
 
 # Log of density of the target distribution (select one)
 
+# this function converts the log density
+# back to the original density
+fexp <- function(x) exp(lf(x))
+
+# curve 1 is bimodal with one mode being much larger
 lf <- function(x) {
   log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=6,sd=2))
 }
+# plot of the log of the density function below
+curve(fexp(x), xlim = c(-4,15), ylim = c(0,.17))
 
+# curve 2 is unimodal
 lf <- function(x) {
   log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=20,sd=1))
 }
+# plot of the log of the density function below
+curve(fexp(x), xlim = c(-3,3), ylim = c(0,.17))
 
+# curve 3 in unimodal skewed right
 lf <- function(x) {
   dgamma(x, shape=2.5, log=TRUE)
 }
+# plot of the log of the density function below
+curve(fexp(x), xlim = c(0,10), ylim = c(0,.31))
 
+# curve 4 is right skewed with support for x strictly positive
 lf <- function(x) {
   ifelse( x < 0, -Inf, dt(x, df=1.0, log=TRUE) + log(2.0))
 }
+# plot of the log of the density function below
+curve(fexp(x), xlim = c(0,10), ylim = c(0,.7))
 
+# t distribution with a steep peak
 lf <- function(x) {
   dt(x, df=1.0, log=TRUE)
 }
+# plot of the log of the density function below
+curve(fexp(x), xlim = c(-10,10), ylim = c(0,.32))
 
+# u shaped distribution
 lf <- function(x) {
   dbeta(x, shape1=0.2, shape2=0.8, log=TRUE)
 }
+# plot of the log of the density function below
+curve(fexp(x), xlim = c(0,1), ylim = c(0,5))
 
-f <- function(x) exp(lf(x))
+#######################
+## Stepping Out Eval ##
+#######################
 
-## Samples with stepping-out procedure (Neal 2003)
-counter <- 0
-draws <- numeric(50000)
-draws[1] <- 0.5
-time <- system.time({
-  for ( i in seq.int(2,length(draws)) ) {
-    out <- slice_sampler_stepping_out(draws[i-1], lf, w=10, max=Inf, log=TRUE)
-    draws[i] <- out$x
-    counter <- counter + out$nEvaluations
-  }
-})
-counter_step_out <- counter
-plot(density(draws))
-time_step_out <- coda::effectiveSize(draws) / time['user.self']
+# function to evaluate stepping out procedure
+stepping_out_time_eval <- function(samples = 50000,
+                                   x_0 = 0.5,
+                                   lf_func,
+                                   w_value = 2,
+                                   max_value = Inf,
+                                   log_value = TRUE) {
+  counter <- 0
+  draws <- numeric(samples)
+  draws[1] <- x_0
+  time <- system.time({
+    for ( i in seq.int(2,length(draws)) ) {
+      out <- slice_sampler_stepping_out(x = draws[i-1], target=lf_func, w=w_value, max=max_value, log=log_value)
+      draws[i] <- out$x
+      counter <- counter + out$nEvaluations
+    }
+  })
+  # counter
+  # plot(density(draws))
+  ESS <- coda::effectiveSize(draws)
+  time_step_out <- time['user.self']
+  return(data.frame(nEval = counter, EffSamp = ESS, Time = time_step_out))
+}
+
+# setting values to evaluate the stepping out procedure
+samples <- 50000
+x <- c(0.01, 0.2, 0.5, 0.8, 0.99)
+w <- c(0.01, 1, 2, 10, 100)
+
+# creating a data frame with all possible combinations
+trials_stepping_out <- expand.grid(samples, x, w) %>%
+  dplyr::rename('samples' = 'Var1',
+         'x' = 'Var2',
+         'w' = 'Var3')
+
+# creating a data frame for the metrics
+stepping_out_metrics <- as.data.frame(matrix(nrow = nrow(trials_stepping_out),
+                               ncol = 6)) %>%
+  rename('nEval' = 'V1',
+         'ESS' = 'V2',
+         'time' = 'V3',
+         'w' = 'V4',
+         'x' = 'V5',
+         'samples' = 'V6')
+
+# evaluating each w and starting point
+for( i in 1:nrow(trials_stepping_out)) {
+  # creating a temp variable
+  temp <- stepping_out_time_eval(samples = trials_stepping_out[i,'samples'],
+                                 x_0 = trials_stepping_out[i,'x'],
+                                 lf_func = lf,
+                                 w_value = trials_stepping_out[i,'w'],
+                                 max_value = Inf,
+                                 log_value = TRUE
+                                 )
+  # saving temp values into an evaluation data frames
+  stepping_out_metrics[i,'nEval'] <- temp$nEval
+  stepping_out_metrics[i,'ESS'] <- temp$EffSamp
+  stepping_out_metrics[i,'time'] <- temp$Time
+  stepping_out_metrics[i,'w'] <- trials_stepping_out[i,'w']
+  stepping_out_metrics[i,'x'] <- trials_stepping_out[i,'x']
+  stepping_out_metrics[i,'samples'] <- trials_stepping_out[i,'samples']
+}
+
+# creating a new metric effective samples per computing second
+stepping_out_metrics %>%
+  mutate(samp_sec = ESS/time) %>%
+  arrange(desc(samp_sec))
+
+#################
+## Latent Eval ##
+#################
+
+# creating a function to evaluate the latent slice sampler
+latent_time_eval <- function(samples = 50000,
+                             x_0,
+                             s_0,
+                             lf_func,
+                             rate_value,
+                             log_value = TRUE) {
+  counter <- 0
+  draws <- latents <- numeric(samples)
+  draws[1] <- x_0
+  latents[1] <- s_0
+  time <- system.time({
+    for ( i in seq.int(2,length(draws)) ) {
+      out <- slice_sampler_latent(draws[i-1], latents[i-1], target = lf_func, rate=rate_value)
+      draws[i] <- out$x
+      latents[i] <- out$s
+      counter <- counter + out$nEvaluations
+    }
+  })
+  # draws_latent <- draws
+  # counter_latent <- counter
+  # time_latent <- coda::effectiveSize(draws) / time['user.self']
+
+  # counter
+  # plot(density(draws))
+  ESS <- coda::effectiveSize(draws)
+  time_latent <- time['user.self']
+  return(data.frame(nEval = counter, EffSamp = ESS, Time = time_latent))
+}
+
+# possible latent slice samplers
+samples <- 10000
+x <- c(0.01, 0.2, 0.5, 0.8, 0.99)
+s <- c(0.01, 1, 2, 10, 100)
+rate <- c(0.5, 1, 1.5, 2, 2,5, 3)
+
+# creating a data frame with all possible combinations
+trials_latent <- expand.grid(samples, x, s, rate) %>%
+  dplyr::rename('samples' = 'Var1',
+                'x' = 'Var2',
+                's' = 'Var3',
+                'rate' = 'Var4')
+
+
+# creating a data frame for the metrics
+latent_metrics <- as.data.frame(matrix(nrow = nrow(trials_latent),
+                                             ncol = 7)) %>%
+  rename('nEval' = 'V1',
+         'ESS' = 'V2',
+         'time' = 'V3',
+         's' = 'V4',
+         'rate' = 'V5',
+         'x' = 'V6',
+         'samples' = 'V7')
+
+# evaluating each w and starting point
+for( i in 1:nrow(trials_latent)) {
+  # creating a temp variable
+  temp <- latent_time_eval(samples = trials_latent[i,'samples'],
+                                 x_0 = trials_latent[i,'x'],
+                                 s_0 = trials_latent[i,'s'],
+                                 rate_value = trials_latent[i,'rate'],
+                                 lf_func = lf,
+                                 log_value = TRUE
+  )
+  # saving temp values into an evaluation data frames
+  latent_metrics[i,'nEval'] <- temp$nEval
+  latent_metrics[i,'ESS'] <- temp$EffSamp
+  latent_metrics[i,'time'] <- temp$Time
+  latent_metrics[i,'s'] <- trials_latent[i,'s']
+  latent_metrics[i,'x'] <- trials_latent[i,'x']
+  latent_metrics[i,'samples'] <- trials_latent[i,'samples']
+  latent_metrics[i,'rate'] <- trials_latent[i,'rate']
+}
+
+# creating a new metric effective samples per computing second
+stepping_out_metrics %>%
+  mutate(samp_sec = ESS/time) %>%
+  arrange(desc(samp_sec))
+
 
 ## Samples with latent procedure (Li and Walker 2020)
 counter <- 0
