@@ -53,6 +53,27 @@ lf <- function(x) {
 # plot of the log of the density function below
 curve(fexp(x), xlim = c(0,1), ylim = c(0,5))
 
+# normal prior normal likelihood function
+lf <- function(x) {
+  dnorm(x, mean = 1, sd = 1) * dnorm(x, mean = 5, sd = 9)
+}
+# plot of the density !! can use for elliptical slice sampler !!
+curve(lf, xlim = c(-5,10))
+
+# normal prior with gamma likelihood function
+lf <- function(x) {
+  dnorm(x, mean = 4, sd = 2) * dgamma(x, shape = 2, rate = 4)
+}
+# plot of the density curve !! can use for elliptical slice sampler !!
+curve(lf, xlim = c(-5,10))
+
+# normal prior with beta likelihood function
+lf <- function(x) {
+  dnorm(x, mean = 4, sd = 2) * (dbeta(x, shape1 = .10, shape2 = .05))
+}
+# plot of the density curve !! can use for elliptical slice sampler !!
+curve(lf, xlim = c(-2,5), ylim = c(0,.035))
+
 #######################
 ## Stepping Out Eval ##
 #######################
@@ -81,8 +102,9 @@ stepping_out_time_eval <- function(samples = 50000,
   return(data.frame(nEval = counter, EffSamp = ESS, Time = time_step_out))
 }
 
+
 # setting values to evaluate the stepping out procedure
-samples <- 50000
+samples <- 500
 x <- c(0.01, 0.2, 0.5, 0.8, 0.99)
 w <- c(0.01, 1, 2, 10, 100)
 
@@ -92,39 +114,20 @@ trials_stepping_out <- expand.grid(samples, x, w) %>%
          'x' = 'Var2',
          'w' = 'Var3')
 
-# creating a data frame for the metrics
-stepping_out_metrics <- as.data.frame(matrix(nrow = nrow(trials_stepping_out),
-                               ncol = 6)) %>%
-  rename('nEval' = 'V1',
-         'ESS' = 'V2',
-         'time' = 'V3',
-         'w' = 'V4',
-         'x' = 'V5',
-         'samples' = 'V6')
+stepping_out_metrics <- trials_stepping_out %>%
+  rowwise() %>%
+  mutate(metrics = stepping_out_time_eval(samples = samples,
+                                         x_0 = x,
+                                         lf_func = lf,
+                                         w_value = w,
+                                         max_value = Inf,
+                                         log_value = TRUE)) %>%
+  mutate(nEval = metrics$nEval,
+         ESS = metrics$EffSamp,
+         time = metrics$Time) %>%
+  select(-metrics) %>%
+  relocate(samples, .after = time)
 
-# evaluating each w and starting point
-for( i in 1:nrow(trials_stepping_out)) {
-  # creating a temp variable
-  temp <- stepping_out_time_eval(samples = trials_stepping_out[i,'samples'],
-                                 x_0 = trials_stepping_out[i,'x'],
-                                 lf_func = lf,
-                                 w_value = trials_stepping_out[i,'w'],
-                                 max_value = Inf,
-                                 log_value = TRUE
-                                 )
-  # saving temp values into an evaluation data frames
-  stepping_out_metrics[i,'nEval'] <- temp$nEval
-  stepping_out_metrics[i,'ESS'] <- temp$EffSamp
-  stepping_out_metrics[i,'time'] <- temp$Time
-  stepping_out_metrics[i,'w'] <- trials_stepping_out[i,'w']
-  stepping_out_metrics[i,'x'] <- trials_stepping_out[i,'x']
-  stepping_out_metrics[i,'samples'] <- trials_stepping_out[i,'samples']
-}
-
-# creating a new metric effective samples per computing second
-stepping_out_metrics %>%
-  mutate(samp_sec = ESS/time) %>%
-  arrange(desc(samp_sec))
 
 #################
 ## Latent Eval ##
@@ -161,7 +164,7 @@ latent_time_eval <- function(samples = 50000,
 }
 
 # possible latent slice samplers
-samples <- 10000
+samples <- 500
 x <- c(0.01, 0.2, 0.5, 0.8, 0.99)
 s <- c(0.01, 1, 2, 10, 100)
 rate <- c(0.5, 1, 1.5, 2, 2,5, 3)
@@ -175,92 +178,106 @@ trials_latent <- expand.grid(samples, x, s, rate) %>%
 
 
 # creating a data frame for the metrics
-latent_metrics <- as.data.frame(matrix(nrow = nrow(trials_latent),
-                                             ncol = 7)) %>%
-  rename('nEval' = 'V1',
-         'ESS' = 'V2',
-         'time' = 'V3',
-         's' = 'V4',
-         'rate' = 'V5',
-         'x' = 'V6',
-         'samples' = 'V7')
-
-# evaluating each w and starting point
-for( i in 1:nrow(trials_latent)) {
-  # creating a temp variable
-  temp <- latent_time_eval(samples = trials_latent[i,'samples'],
-                                 x_0 = trials_latent[i,'x'],
-                                 s_0 = trials_latent[i,'s'],
-                                 rate_value = trials_latent[i,'rate'],
-                                 lf_func = lf,
-                                 log_value = TRUE
-  )
-  # saving temp values into an evaluation data frames
-  latent_metrics[i,'nEval'] <- temp$nEval
-  latent_metrics[i,'ESS'] <- temp$EffSamp
-  latent_metrics[i,'time'] <- temp$Time
-  latent_metrics[i,'s'] <- trials_latent[i,'s']
-  latent_metrics[i,'x'] <- trials_latent[i,'x']
-  latent_metrics[i,'samples'] <- trials_latent[i,'samples']
-  latent_metrics[i,'rate'] <- trials_latent[i,'rate']
-}
-
-# creating a new metric effective samples per computing second
-stepping_out_metrics %>%
-  mutate(samp_sec = ESS/time) %>%
-  arrange(desc(samp_sec))
+latent_metrics <- trials_latent %>%
+  dplyr::rowwise() %>%
+  mutate(metrics = latent_time_eval(samples = samples,
+                                    x_0 = x,
+                                    s_0 = s,
+                                    lf_func = lf,
+                                    rate_value = rate,
+                                    log_value = TRUE))  %>%
+  mutate(nEval = metrics$nEval,
+         ESS = metrics$EffSamp,
+         time = metrics$Time) %>%
+  select(-metrics) %>%
+  relocate(samples, .after = time)
 
 
-## Samples with latent procedure (Li and Walker 2020)
-counter <- 0
-draws <- latents <- numeric(50000)
-draws[1] <- 0.5
-latents[1] <- 0.3
-time <- system.time({
-  for ( i in seq.int(2,length(draws)) ) {
-    out <- slice_sampler_latent(draws[i-1], latents[i-1], lf, rate=0.03)
-    draws[i] <- out$x
-    latents[i] <- out$s
-    counter <- counter + out$nEvaluations
-  }
-})
-draws_latent <- draws
-counter_latent <- counter
-plot(density(draws))
-time_latent <- coda::effectiveSize(draws) / time['user.self']
-
+#####################
+## Elliptical Eval ##
+#####################
 
 ## Samples with elliptical slice sampler (Murray 2010)
-counter <- 0
-draws <- numeric(50000)
-time <- system.time({
-  for ( i in seq.int(2,length(draws)) ) {
-    out <- slice_sampler_elliptical(x = draws[i-1], mu = 2, sigma = 5, target = lf)
-    draws[i] <- out$x
-    counter <- counter + out$nEvaluations
-  }
-})
-draws_elliptical <- draws
-counter_elliptical <- counter
-plot(density(draws))
-time_elliptical <- coda::effectiveSize(draws) / time['user.self']
+elliptical_time_eval <- function(samples = 50000,
+                             lf_func,
+                             x_0 = 2,
+                             mu_value = 2,
+                             sigma_value = 5,
+                             log_value = TRUE) {
+  counter <- 0
+  draws <- numeric(samples)
+  draws[1] <- x_0
+  time <- system.time({
+    for ( i in seq.int(2,length(draws)) ) {
+      out <- slice_sampler_elliptical(x = draws[i-1], mu = mu_value, sigma = sigma_value, target = lf_func, log = log_value)
+      draws[i] <- out$x
+      counter <- counter + out$nEvaluations
+    }
+  })
+
+  ESS <- coda::effectiveSize(draws)
+  time_elliptical <- time['user.self']
+  return(data.frame(nEval = counter, EffSamp = ESS, Time = time_elliptical))
+}
+
+# possible input values
+samples <- 500
+x <- c(0,.5,1,2,4,5)
+
+# creating a data frame with all possible combinations
+trials_elliptical <- expand.grid(samples, x) %>%
+  dplyr::rename('samples' = 'Var1',
+                'x' = 'Var2')
+
+# creating a data frame for the metrics
+elliptical_metrics <- trials_elliptical %>%
+  dplyr::rowwise() %>%
+  mutate(metrics = elliptical_time_eval(samples = samples,
+                                    x_0 = x,
+                                    lf_func = lf,
+                                    mu_value = 2,
+                                    sigma_value = 5,
+                                    log_value = TRUE))  %>%
+  mutate(nEval = metrics$nEval,
+         ESS = metrics$EffSamp,
+         time = metrics$Time) %>%
+  select(-metrics) %>%
+  relocate(samples, .after = time)
 
 
+##########
+## GESS ##
+##########
 
 ## Samples with generalized elliptical slice sampler (Nishihara 2014)
-counter <- 0
-draws <- numeric(50000)
-time <- system.time({
-  for ( i in seq.int(2,length(draws)) ) {
-    out <- slice_ellipse_generalized(x = draws[i-1], mu = 2, sigma = 5, target = lf)
-    draws[i] <- out$x
-    counter <- counter + out$nEvaluations
-  }
-})
-draws_generalized_elliptical <- draws
-counter_generalized_elliptical <- counter
-plot(density(draws))
-time_generalized_elliptical <- coda::effectiveSize(draws) / time['user.self']
+gess_time_eval <- function(samples = 50000,
+                           lf_func,
+                           x_0 = 2,
+                           mu_value = 2,
+                           sigma_value = 5,
+                           df_value = 4,
+                           log_value = TRUE){
+  counter <- 0
+  draws <- numeric(samples)
+  draws[1] <- x_0
+  time <- system.time({
+    for ( i in seq.int(2,length(draws)) ) {
+      out <- slice_ellipse_generalized(x = draws[i-1], mu = mu_value, sigma = sigma_value, target = lf_func)
+      draws[i] <- out$x
+      counter <- counter + out$nEvaluations
+    }
+  })
+
+  ESS <- coda::effectiveSize(draws)
+  time_elliptical <- time['user.self']
+  return(data.frame(nEval = counter, EffSamp = ESS, Time = time_elliptical))
+}
+
+
+#####################
+## Transform Eval ##
+####################
+
 
 ## Samples with slice_sampler_transform
 ## Pseudo prior (select one)
