@@ -55,24 +55,24 @@ curve(fexp(x), xlim = c(0,1), ylim = c(0,5))
 
 # normal prior normal likelihood function
 lf <- function(x) {
-  dnorm(x, mean = 1, sd = 1) * dnorm(x, mean = 5, sd = 9)
+  dnorm(x, mean = 1, sd = 1, log = TRUE) * dnorm(x, mean = 5, sd = 9, log = TRUE)
 }
 # plot of the density !! can use for elliptical slice sampler !!
-curve(lf, xlim = c(-5,10))
+curve(fexp(x), xlim = c(-5,10))
 
 # normal prior with gamma likelihood function
 lf <- function(x) {
-  dnorm(x, mean = 4, sd = 2) * dgamma(x, shape = 2, rate = 4)
+  dnorm(x, mean = 4, sd = 2, log = TRUE) * dgamma(x, shape = 2, rate = 4, log = TRUE)
 }
 # plot of the density curve !! can use for elliptical slice sampler !!
-curve(lf, xlim = c(-5,10))
+curve(fexp(x), xlim = c(-5,10))
 
 # normal prior with beta likelihood function
 lf <- function(x) {
-  dnorm(x, mean = 4, sd = 2) * (dbeta(x, shape1 = .10, shape2 = .05))
+  dnorm(x, mean = 4, sd = 2, log = TRUE) * (dbeta(x, shape1 = .10, shape2 = .05, log = TRUE))
 }
 # plot of the density curve !! can use for elliptical slice sampler !!
-curve(lf, xlim = c(-2,5), ylim = c(0,.035))
+curve(fexp(x), xlim = c(-25,25), ylim = c(0,.035))
 
 #######################
 ## Stepping Out Eval ##
