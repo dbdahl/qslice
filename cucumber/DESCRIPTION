@@ -1,6 +1,6 @@
 Package: cucumber
 Title: Implementations of Various Slice Samplers
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: c(person(given="David B.",family="Dahl",role=c("aut","cre"),email="dahl@stat.byu.edu",comment=c(ORCID="0000-0002-8173-1547")),             person(given="Matthew",family="Heiner",role=c("aut"),email="heiner@stat.byu.edu",comment=c(ORCID="0000-0002-7944-5517")))
 Description: Various verions of the slice samplers are provided for the sake of
     comparison.
