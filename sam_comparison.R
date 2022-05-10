@@ -22,7 +22,7 @@ rate <- c(2)#c(0.5, 1, 1.5, 2, 2.5, 3)
 ## gess slice sampling metrics to input ##
 mu <- c(3)#c(1,2,3,4.5,6,7)
 sigma <- c(3)#c(2,3,4,5,6,8)
-df <- c(3)#c(1,4,16,16^2, 16^4)
+df <- c(3)#c(1,4,16,16^2,16^4)
 
 ##
 ## elliptical slice sampling metrics to input ##
