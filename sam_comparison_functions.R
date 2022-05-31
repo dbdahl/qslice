@@ -89,6 +89,7 @@ stepping_out_time_eval <- function(samples = 200,
   counter <- 0
   draws <- numeric(samples)
   draws[1] <- x_0
+  pb <- txtProgressBar(min = 0, max = samples, style = 3)
   time <- system.time({
     for ( i in seq.int(2,length(draws)) ) {
       out <- slice_sampler_stepping_out(x = draws[i-1], target=lf_func, w=w_value, max=max_value, log=log_value)
@@ -101,6 +102,7 @@ stepping_out_time_eval <- function(samples = 200,
       # }
       draws[i] <- out$x
       counter <- counter + out$nEvaluations
+      setTxtProgressBar(pb, i)
     }
   })
 
@@ -131,6 +133,7 @@ latent_time_eval <- function(samples = 50000,
   draws <- latents <- numeric(samples)
   draws[1] <- x_0
   latents[1] <- s_0
+  pb <- txtProgressBar(min = 0, max = samples, style = 3)
   time <- system.time({
     for ( i in seq.int(2,length(draws)) ) {
       out <- cucumber::slice_sampler_latent(draws[i-1], latents[i-1], target = lf_func, rate=rate_value)
@@ -144,6 +147,7 @@ latent_time_eval <- function(samples = 50000,
       draws[i] <- out$x
       latents[i] <- out$s
       counter <- counter + out$nEvaluations
+      setTxtProgressBar(pb, i)
     }
   })
   # draws_latent <- draws
@@ -173,11 +177,16 @@ elliptical_time_eval <- function(samples = 50000,
                              sigma_value = 5,
                              log_value = TRUE) {
   counter <- 0
-  draws <- numeric(samples)
-  draws[1] <- x_0
+  draws <- matrix(nrow = samples, ncol = 2)
+  draws[1,] <- x_0
+  pb <- txtProgressBar(min = 0, max = samples, style = 3)
   time <- system.time({
-    for ( i in seq.int(2,length(draws)) ) {
-      out <- cucumber::slice_sampler_elliptical(x = draws[i-1], mu = mu_value, sigma = sigma_value, target = lf_func, log = log_value)
+    for ( i in seq.int(2,nrow(draws)) ) {
+      out <- cucumber::slice_sampler_elliptical(x = matrix(draws[i-1,], ncol = 2),
+                                                mu = mu_value,
+                                                sigma = sigma_value,
+                                                target = lf_func,
+                                                log = log_value)
       # checking to see if x is in the support and if not redrawing
       # while(out$x >= upr_support | out$x <= -Inf) {
       #   print("outside of support")
@@ -185,8 +194,9 @@ elliptical_time_eval <- function(samples = 50000,
       #   print(i)
       #   out <- cucumber::slice_sampler_generalized_elliptical(x = draws[i-1], mu = mu_value, sigma = sigma_value, target = lf_func, df = df_value, log_value)
       # }
-      draws[i] <- out$x
+      draws[i,] <- out$x
       counter <- counter + out$nEvaluations
+      setTxtProgressBar(pb, i)
     }
   })
 
@@ -215,11 +225,12 @@ gess_time_eval <- function(samples = 50000,
   counter <- 0
   draws <- numeric(samples)
   draws[1] <- x_0
+  pb <- txtProgressBar(min = 0, max = samples, style = 3)
   time <- system.time({
     for ( i in seq.int(2,length(draws)) ) {
       out <- cucumber::slice_sampler_generalized_elliptical(x = draws[i-1], mu = mu_value, sigma = sigma_value, target = lf_func, df = df_value, log_value)
       # checking to see if x is in the support if not redraw
-      while(out$x >= upr_support | out$x <= -Inf) {
+      while(out$x >= upr_support | out$x <= lwr_support) {
           print("outside of support")
           print(out$x)
           print(i)
@@ -227,6 +238,7 @@ gess_time_eval <- function(samples = 50000,
         }
       draws[i] <- out$x
       counter <- counter + out$nEvaluations
+      setTxtProgressBar(pb, i)
     }
   })
 
