@@ -6,6 +6,15 @@ library(cucumber)
 # source("functions_log.R")
 source("sam_comparison_functions.R")
 
+options(xtable.format.args = list(big.mark = ","),
+        xtable.size = "\\tiny",
+        xtable.append = F,
+        xtable.table.placement = 'h',
+        xtable.caption.placement = 'bottom',
+        # xtable.hline.after = seq(from = -1, to = nrow(tab), by = 1),
+        xtable.sanitize.text.function = function(x){x})
+
+
 fexp <- function(x) exp(lf(x))
 samples <- 1000000
 
@@ -83,16 +92,17 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out metrics table
-tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                       'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve1_metrics_tbl_stepping_out.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve1_metrics_tbl_stepping_out.tex',
+                     # ,
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -101,16 +111,15 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve1_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_start_stepping_out.tex')
+
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
   group_by(w) %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve1_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_w_stepping_out.tex')
 
 
 # evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
@@ -149,16 +158,16 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out metrics table
-tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws))%>% rename('n' = 'samples',
+                                                                                'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve1_metrics_tbl_latent.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve1_metrics_tbl_latent.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -167,8 +176,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve1_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -176,8 +184,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve1_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -185,8 +192,7 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve1_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_rate_latent.tex')
 
 
 # evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
@@ -228,16 +234,18 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out metrics table
-tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
+                                                                               "$\\sigma$" = 'sigma',
+                                                                               'n' = 'samples',
+                                                                               'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve1_metrics_tbl_gess.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve1_metrics_tbl_gess.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -246,26 +254,25 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve1_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve1_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve1_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -273,8 +280,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve1_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve1_df_gess.tex')
 
 
 
@@ -309,7 +315,7 @@ pdf(file = "images_slice_sampler_comp/curve2.pdf")
 curve(fexp(x), xlim = c(-3,25), ylim = c(0,.32))
 dev.off()
 
-x <- c(0, 10, 20)
+x <- c(0, 20)
 
 xlim_range <- c(-3,25)
 ylim_range <- c(0,0.32 + 0.10)
@@ -340,17 +346,17 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws))%>% rename('n' = 'samples',
+                                                                                      'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve2_metrics_tbl_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
-      size = "\\tiny")
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve2_metrics_tbl_stepping_out.tex',
+                     size = "\\tiny")
 
 
 # evaluation of each starting point
@@ -359,8 +365,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve2_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -368,8 +373,7 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve2_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_w_stepping_out.tex')
 
 # evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve2_stepping_out.pdf")
@@ -407,16 +411,16 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                 'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve2_metrics_tbl_latent.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve2_metrics_tbl_latent.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -425,8 +429,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve2_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -434,8 +437,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve2_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -443,8 +445,7 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve2_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_rate_latent.tex')
 
 
 # evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
@@ -485,16 +486,18 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
+                                                                               "$\\sigma$" = 'sigma',
+                                                                               'n' = 'samples',
+                                                                               'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve2_metrics_tbl_gess.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve2_metrics_tbl_gess.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -503,26 +506,26 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve2_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_start_gess.tex',
+      )
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve2_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve2_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -530,8 +533,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve2_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve2_df_gess.tex')
 
 
 # evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
@@ -549,7 +551,7 @@ dev.off()
 
 # curve 3 in unimodal skewed right
 lf <- function(x) {
-  dgamma(x, shape=2.5, log=TRUE)
+  dgamma(x, shape=2.5, rate = 1, log=TRUE)
 }
 # plot of the log of the density function below
 pdf(file = "images_slice_sampler_comp/curve3.pdf")
@@ -588,17 +590,17 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pgamma(x, shape = 2.5))$p.value) %>%
+         ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 
 # printing out the metrics table
-tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                       'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve3_metrics_tbl_stepping_out.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve3_metrics_tbl_stepping_out.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -607,8 +609,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve3_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -616,10 +617,8 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve3_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_w_stepping_out.tex')
 
-evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve3_stepping_out.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(stepping_out_metrics$thinDraws, function(x) {
@@ -656,16 +655,16 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pgamma(x, shape = 2.5))$p.value) %>%
+         ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                 'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve3_metrics_tbl_latent.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve3_metrics_tbl_latent.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -674,8 +673,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve3_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -683,8 +681,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve3_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -692,8 +689,7 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve3_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_rate_latent.tex')
 
 
 
@@ -736,17 +732,24 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pgamma(x, shape = 2.5))$p.value) %>%
-  select(-metrics) %>%
+         ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value) %>%
+  dplyr::select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
-  relocate(samples, .after = time)
+  relocate(samples, .after = time) %>%
+  rename(
+    'n' = 'samples',
+    'nThin' = 'samplesThin'
+  )
 
 # printing out the metrics table
-tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(gess_metrics %>% dplyr::select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
+                                                                                      "$\\sigma$" = 'sigma',
+                                                                                      'n' = 'samples',
+                                                                                      'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve3_metrics_tbl_gess.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve3_metrics_tbl_gess.tex',
                      size = "\\tiny")
+
 
 # evaluation of each starting point
 start_points_gess <- gess_metrics %>%
@@ -754,26 +757,25 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve3_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve3_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve3_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -781,8 +783,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve3_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve3_df_gess.tex')
 
 
 
@@ -794,9 +795,6 @@ lapply(gess_metrics$thinDraws, function(x) {
 })
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2, add = TRUE)
 dev.off()
-
-
-beepr::beep()
 
 # 4
 ######################### Curve 4 ############################
@@ -851,17 +849,18 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
-  select(-metrics) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+  dplyr::select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(stepping_out_metrics %>% dplyr::select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                       'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve4_metrics_tbl_stepping_out.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve4_metrics_tbl_stepping_out.tex',
                      size = "\\tiny")
+
 
 
 # evaluation of each starting point
@@ -870,8 +869,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve4_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -879,8 +877,7 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve4_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_w_stepping_out.tex')
 
 
 pdf(file = 'images_slice_sampler_comp/curve4_stepping_out.pdf')
@@ -918,16 +915,16 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                 'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve4_metrics_tbl_latent.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve4_metrics_tbl_latent.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -936,8 +933,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve4_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -945,8 +941,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve4_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -954,8 +949,7 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve4_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_rate_latent.tex')
 
 
 
@@ -998,16 +992,18 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf(x))$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
+                                                                               "$\\sigma$" = 'sigma',
+                                                                               'n' = 'samples',
+                                                                               'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve4_metrics_tbl_gess.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve4_metrics_tbl_gess.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1016,26 +1012,25 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve4_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve4_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve4_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -1043,8 +1038,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve4_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve4_df_gess.tex')
 
 
 
@@ -1106,16 +1100,16 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pt(x, df = 3.0))$p.value) %>%
+         ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                       'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_stepping_out.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_stepping_out.tex'
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1124,8 +1118,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve5_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -1133,8 +1126,7 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve5_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_w_stepping_out.tex')
 
 # evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 
@@ -1174,16 +1166,16 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pt(x, df = 3.0))$p.value) %>%
+         ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                 'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_latent.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_latent.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1192,8 +1184,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve5_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -1201,17 +1192,14 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve5_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
-
+print(tab, file = 'images_slice_sampler_comp/curve5_s_latent.tex')
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
   group_by(rate) %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve5_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_rate_latent.tex')
 
 
 # evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
@@ -1253,16 +1241,18 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pt(x, df = 3.0))$p.value) %>%
+         ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
+                                                                               "$\\sigma$" = 'sigma',
+                                                                               'n' = 'samples',
+                                                                               'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_gess.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_gess.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1271,26 +1261,25 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve5_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve5_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve5_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -1298,8 +1287,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve5_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve5_df_gess.tex')
 
 
 # evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
@@ -1311,7 +1299,6 @@ lapply(gess_metrics$thinDraws, function(x) {
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2, add = TRUE)
 dev.off()
 
-beepr::beep()
 
 # 6
 ################### Curve 6 ####################
@@ -1359,16 +1346,16 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pbeta(x, shape1 = 0.2, shape2 = 0.8))$p.value) %>%
+         ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                       'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve6_metrics_tbl_stepping_out.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve6_metrics_tbl_stepping_out.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1377,8 +1364,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve6_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -1386,10 +1372,8 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve6_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_w_stepping_out.tex')
 
-# evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve6_stepping_out.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(stepping_out_metrics$thinDraws, function(x) {
@@ -1425,16 +1409,16 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pbeta(x, shape1 = 0.2, shape2 = 0.8))$p.value) %>%
+         ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                 'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve6_metrics_tbl_latent.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve6_metrics_tbl_latent.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1443,8 +1427,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve6_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -1452,8 +1435,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve6_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -1461,8 +1443,7 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve6_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_rate_latent.tex')
 
 
 
@@ -1506,16 +1487,18 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pbeta(x, shape1 = 0.2, shape2 = 0.8))$p.value) %>%
+         ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
+                                                                               "$\\sigma$" = 'sigma',
+                                                                               'n' = 'samples',
+                                                                               'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve6_metrics_tbl_gess.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve6_metrics_tbl_gess.tex',
                      size = "\\tiny")
 
 
@@ -1525,26 +1508,25 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve6_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve6_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve6_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -1552,12 +1534,9 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve6_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve6_df_gess.tex')
 
 
-
-# evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve6_gess.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(gess_metrics$thinDraws, function(x) {
@@ -1614,16 +1593,16 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pnorm(x, mean = 20, sd = 5))$p.value) %>%
+         ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                       'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_stepping_out.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_stepping_out.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1632,8 +1611,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve7_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -1641,10 +1619,8 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve7_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_w_stepping_out.tex')
 
-# evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve7_stepping_out.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(stepping_out_metrics$thinDraws, function(x) {
@@ -1680,16 +1656,16 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws,lag.max = 5000)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pnorm(x, mean = 20, sd = 5))$p.value) %>%
+         ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
+                                                                                 'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_latent.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_latent.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1698,8 +1674,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve7_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -1707,8 +1682,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve7_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -1716,8 +1690,7 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve7_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_rate_latent.tex')
 
 
 
@@ -1759,16 +1732,18 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pnorm(x, mean = 20, sd = 5))$p.value) %>%
+         ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
 # printing out the metrics table
-tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)),
+tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
+                                                                               "$\\sigma$" = 'sigma',
+                                                                               'n' = 'samples',
+                                                                               'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_gess.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_gess.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1777,26 +1752,25 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve7_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve7_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve7_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -1804,8 +1778,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve7_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve7_df_gess.tex')
 
 
 pdf(file = "images_slice_sampler_comp/curve7_gess.pdf")
@@ -1820,16 +1793,84 @@ dev.off()
 ### elliptical
 ###
 
+lf <- function(x) {
+  emdbook::dmvnorm(x,
+                   mu = t(matrix(c(10,
+                                 5), nrow = 2, ncol = 1, byrow = TRUE)),
+                   Sigma = matrix(c(25,0,
+                                    0,25), nrow = 2, ncol = 2, byrow = TRUE),
+                   log = TRUE)
+}
+
+
+cdf <- function(x) {
+  probs <- vector(length = length(x))
+  for(i in 1:length(x)){
+    probs[i] <- integrate(fexp, lower = -Inf, upper = x[i])$value
+  }
+  return(probs)
+}
+
+
+slice_sampler_elliptical <- function(x, target, mu=2, sigma=5, log=TRUE) {
+  if ( ! isTRUE(log) ) stop("'log=FALSE' is not implemented.")
+  nEvaluations <- 0
+  f <- function(x) { nEvaluations <<- nEvaluations + 1; target(x) }
+  # Step 1
+  y <- log(runif(1)) + f(x)
+  nu <- MASS::mvrnorm(n = 1, mu = mu, Sigma = sigma)#rnorm(1,mu,sigma)
+  theta <- runif(1,0,2*pi)
+  theta_min <- theta - 2*pi
+  theta_max <- theta
+  repeat {
+    x1 <- (x - mu)*cos(theta) + (nu - mu)*sin(theta) + mu
+    if ( y < f(x1) ) return(list(x=x1, nEvaluations=nEvaluations))
+    if (theta < 0) theta_min <- theta
+    else theta_max <- theta
+    theta <- runif(1, theta_min, theta_max)
+  }
+}
+
 # these are the values for the normal prior distribution. Only used for the elliptical slice sampler
-mu_prior <- 10
-sigma_prior <- sqrt(16)
+mu_prior <- matrix(c(5,
+                     0), nrow = 2, ncol = 1, byrow = TRUE)
+sigma_prior <- matrix(c(4,0,
+                        0,4), nrow = 2, ncol = 2, byrow = TRUE)
+x_start_vector <- matrix(c(2,
+                           0), nrow = 2, ncol = 1, byrow = TRUE)
+
+samp1 <- slice_sampler_elliptical(x = t(x_start_vector),
+                         target = lf,
+                         mu = t(mu_prior),
+                         sigma = sigma_prior,
+                         log = TRUE)
+
+samp2 <- slice_sampler_elliptical(x = samp1$x,
+                                  target = lf,
+                                  mu = t(mu_prior),
+                                  sigma = sigma_prior,
+                                  log = TRUE)
+
+samp_mat <- matrix(nrow = 100, ncol = 2)
+samp_mat[1,] <- samp1$x
+
 
 # creating a data frame with all possible combinations
-trials_elliptical <- expand.grid(samples, x, mu_prior, sigma_prior) %>%
+trials_elliptical <- expand.grid(samples, x_start_vector, mu_prior, sigma_prior) %>%
   dplyr::rename('samples' = 'Var1',
                 'x' = 'Var2',
                 'mu' = 'Var3',
                 'sigma' = 'Var4')
+
+elliptical_samples <- elliptical_time_eval(samples = samples,
+                                           lf_func = lf,
+                                           x_0 = x_start_vector,
+                                           mu_value = t(mu_prior),
+                                           sigma_value = sigma_prior,
+                                           log_value = TRUE) %>%
+  rowwise() %>%
+  mutate(thinDraws = list(LaplacesDemon::Thin(Draws, 5)))
+
 
 # creating a data frame for the metrics
 elliptical_metrics <- trials_elliptical %>%
@@ -1847,7 +1888,7 @@ elliptical_metrics <- trials_elliptical %>%
          thin = min(which(acf(draws)$acf <0.01)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, pnorm(x, mean = 20, sd = 5))$p.value) %>%
+         ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
@@ -1855,8 +1896,7 @@ elliptical_metrics <- trials_elliptical %>%
 # printing out the metrics table
 tab <- xtable::xtable(elliptical_metrics %>% select(-c(draws, thinDraws)),
                       digits = c(0,0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_elliptical.tex', append = F, table.placement = 'h',
-                     caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1),
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve7_metrics_tbl_elliptical.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1864,8 +1904,10 @@ start_points_elliptical <- elliptical_metrics %>%
   group_by(x) %>%
   summarise(avgSampPSec = mean(SampPSec))
 
+tab <- xtable::xtable(start_points_elliptical)
+print(tab, file = 'images_slice_sampler_comp/curve7_start_elliptical.tex')
 
-# evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
+
 pdf(file = "images_slice_sampler_comp/curve7_elliptical.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(elliptical_metrics$thinDraws, function(x) {
@@ -1935,8 +1977,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve8_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -1944,10 +1985,8 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve8_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_w_stepping_out.tex')
 
-# evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve8_stepping_out.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(stepping_out_metrics$thinDraws, function(x) {
@@ -1992,8 +2031,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve8_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -2001,8 +2039,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve8_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -2010,8 +2047,7 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve8_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_rate_latent.tex')
 
 
 
@@ -2062,26 +2098,25 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve8_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
   group_by(mu) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\mu$" = 'mu')
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve8_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
   group_by(sigma) %>%
-  summarise(avgSampPSec = mean(SampPSec))
+  summarise(avgSampPSec = mean(SampPSec)) %>%
+  rename("$\\sigma$" = 'sigma')
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve8_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -2089,8 +2124,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve8_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve8_df_gess.tex')
 
 
 pdf(file = "images_slice_sampler_comp/curve8_gess.pdf")
@@ -2204,8 +2238,7 @@ start_points_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve9_start_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_start_stepping_out.tex')
 
 # evaluation at each value of w
 w_values_stepping_out <- stepping_out_metrics %>%
@@ -2213,10 +2246,8 @@ w_values_stepping_out <- stepping_out_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(w_values_stepping_out)
-print(tab, file = 'images_slice_sampler_comp/curve9_w_stepping_out.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_w_stepping_out.tex')
 
-# evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve9_stepping_out.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(stepping_out_metrics$thinDraws, function(x) {
@@ -2261,8 +2292,7 @@ start_points_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_latent)
-print(tab, file = 'images_slice_sampler_comp/curve9_start_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_start_latent.tex')
 
 # evaluation at each value of s
 s_values_latent <- latent_metrics %>%
@@ -2270,8 +2300,7 @@ s_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(s_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve9_s_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_s_latent.tex')
 
 # evaluation at each rate value
 rate_values_latent <- latent_metrics %>%
@@ -2279,11 +2308,9 @@ rate_values_latent <- latent_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(rate_values_latent)
-print(tab, file = 'images_slice_sampler_comp/curve9_rate_latent.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_rate_latent.tex')
 
 
-# evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
 pdf(file = "images_slice_sampler_comp/curve9_latent.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(latent_metrics$thinDraws, function(x) {
@@ -2330,8 +2357,7 @@ start_points_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(start_points_gess)
-print(tab, file = 'images_slice_sampler_comp/curve9_start_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_start_gess.tex')
 
 # evaluation at each value of mu
 mu_values_gess <- gess_metrics %>%
@@ -2339,8 +2365,7 @@ mu_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(mu_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve9_mu_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_mu_gess.tex')
 
 # evaluation at each sigma value
 sigma_values_gess <- gess_metrics %>%
@@ -2348,8 +2373,7 @@ sigma_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(sigma_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve9_sigma_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_sigma_gess.tex')
 
 # evaluation at each df value
 df_values_gess <- gess_metrics %>%
@@ -2357,8 +2381,7 @@ df_values_gess <- gess_metrics %>%
   summarise(avgSampPSec = mean(SampPSec))
 
 tab <- xtable::xtable(df_values_gess)
-print(tab, file = 'images_slice_sampler_comp/curve9_df_gess.tex', append = F, table.placement = 'h',
-      caption.placement = 'bottom', hline.after = seq(from = -1, to = nrow(tab), by = 1))
+print(tab, file = 'images_slice_sampler_comp/curve9_df_gess.tex')
 
 
 pdf(file = "images_slice_sampler_comp/curve9_gess.pdf")
