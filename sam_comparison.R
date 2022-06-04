@@ -6,13 +6,18 @@ library(cucumber)
 # source("functions_log.R")
 source("sam_comparison_functions.R")
 
-options(xtable.format.args = list(big.mark = ","),
-        xtable.size = "\\tiny",
-        xtable.append = F,
-        xtable.table.placement = 'h',
-        xtable.caption.placement = 'bottom',
-        # xtable.hline.after = seq(from = -1, to = nrow(tab), by = 1),
-        xtable.sanitize.text.function = function(x){x})
+auto.cor.lim <- 0.05
+
+options(xtable.format.args = list(big.mark = ","), # separates large numbers using a ,
+        # xtable.size = "\\tiny", # makes the font tiny to fit into the overleaf presentation
+        xtable.append = FALSE, # replaces the table
+        xtable.table.placement = 'h', # table placment h is for "here"
+        xtable.caption.placement = 'bottom', # places the caption at the bottom
+        xtable.include.rownames = FALSE, # makes it so there are now row names
+        # xtable.hline.after = seq(from = -1, to = nrow(tab), by = 1), # adds a line after every row
+        xtable.sanitize.text.function = function(x){x}, # makes it so latex shows in the column names
+        adjustcolor.alpha.f = 0.02 #adjustcolor('black', alpha.f = 0.95) # changes the opacity of the lines comparing target to samples
+        )
 
 
 fexp <- function(x) exp(lf(x))
@@ -89,7 +94,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -126,7 +131,7 @@ print(tab, file = 'images_slice_sampler_comp/curve1_w_stepping_out.tex')
 pdf(file = "images_slice_sampler_comp/curve1_stepping_out.pdf")
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2)
 lapply(stepping_out_metrics$thinDraws, function(x) {
-  lines(density(x), col = adjustcolor('black', alpha.f = 0.95))
+  lines(density(x), col = adjustcolor('black'))
 })
 curve(fexp(x),col = 'red', xlim = c(xlim_range[1],xlim_range[2]), ylim = c(ylim_range[1],ylim_range[2]), lwd = 2, add = TRUE)
 dev.off()
@@ -155,7 +160,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -231,7 +236,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -343,7 +348,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -408,7 +413,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -483,7 +488,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 1000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -587,7 +592,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value) %>%
@@ -652,7 +657,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 1000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value) %>%
@@ -729,17 +734,13 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 1000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value) %>%
   dplyr::select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
-  relocate(samples, .after = time) %>%
-  rename(
-    'n' = 'samples',
-    'nThin' = 'samplesThin'
-  )
+  relocate(samples, .after = time)
 
 # printing out the metrics table
 tab <- xtable::xtable(gess_metrics %>% dplyr::select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
@@ -846,7 +847,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -912,7 +913,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -989,7 +990,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, cdf)$p.value) %>%
@@ -1097,7 +1098,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value) %>%
@@ -1109,7 +1110,7 @@ stepping_out_metrics <- trials_stepping_out %>%
 tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
                                                                                        'nThin' = 'samplesThin'),
                       digits = c(0,0,0,0,0,2,0,0,0,2,0))
-xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_stepping_out.tex'
+xtable::print.xtable(tab, file = 'images_slice_sampler_comp/curve5_metrics_tbl_stepping_out.tex',
                      size = "\\tiny")
 
 # evaluation of each starting point
@@ -1163,7 +1164,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value) %>%
@@ -1238,7 +1239,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value) %>%
@@ -1343,7 +1344,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 1000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 1000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value) %>%
@@ -1406,7 +1407,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value) %>%
@@ -1484,7 +1485,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws, lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value) %>%
@@ -1590,7 +1591,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
@@ -1653,7 +1654,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws,lag.max = 5000)$acf <0.01)),
+         thin = min(which(acf(draws,lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
@@ -1729,7 +1730,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
@@ -1851,16 +1852,6 @@ samp2 <- slice_sampler_elliptical(x = samp1$x,
                                   sigma = sigma_prior,
                                   log = TRUE)
 
-samp_mat <- matrix(nrow = 100, ncol = 2)
-samp_mat[1,] <- samp1$x
-
-
-# creating a data frame with all possible combinations
-trials_elliptical <- expand.grid(samples, x_start_vector, mu_prior, sigma_prior) %>%
-  dplyr::rename('samples' = 'Var1',
-                'x' = 'Var2',
-                'mu' = 'Var3',
-                'sigma' = 'Var4')
 
 elliptical_samples <- elliptical_time_eval(samples = samples,
                                            lf_func = lf,
@@ -1870,6 +1861,15 @@ elliptical_samples <- elliptical_time_eval(samples = samples,
                                            log_value = TRUE) %>%
   rowwise() %>%
   mutate(thinDraws = list(LaplacesDemon::Thin(Draws, 5)))
+
+
+# creating a data frame with all possible combinations
+trials_elliptical <- expand.grid(samples, x_start_vector, mu_prior, sigma_prior) %>%
+  dplyr::rename('samples' = 'Var1',
+                'x' = 'Var2',
+                'mu' = 'Var3',
+                'sigma' = 'Var4')
+
 
 
 # creating a data frame for the metrics
@@ -1885,7 +1885,7 @@ elliptical_metrics <- trials_elliptical %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
          ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value) %>%
@@ -1965,7 +1965,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
@@ -2019,7 +2019,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
@@ -2086,7 +2086,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
@@ -2159,7 +2159,7 @@ elliptical_metrics <- trials_elliptical %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
@@ -2226,7 +2226,7 @@ stepping_out_metrics <- trials_stepping_out %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
@@ -2280,7 +2280,7 @@ latent_metrics <- trials_latent %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
@@ -2345,7 +2345,7 @@ gess_metrics <- trials_gess %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
@@ -2416,7 +2416,7 @@ elliptical_metrics <- trials_elliptical %>%
          ESS = metrics$EffSamp,
          time = metrics$Time,
          draws = metrics$Draws,
-         thin = min(which(acf(draws)$acf <0.01)),
+         thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin))) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
