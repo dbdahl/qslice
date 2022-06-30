@@ -28,13 +28,14 @@ x <- c(1)
 
 parameter_values <- c(1,5,10,15,20,25,30,35,40)
 
-samples <- rep(100000,100)#c(1000000,10000,1000,100)
+samples <- 1000000#rep(100000,100)#c(1000000,10000,1000,100)
 
 # setting values to evaluate the stepping out procedure
-lf_functions <- c(paste0("dt(x, df=", parameter_values, ", log = TRUE)"),
-                  "dnorm(x, mean=0,sd=1, log = TRUE)",
-                  "dnorm(x, mean=2,sd=1, log = TRUE)",
-                  "dgamma(x, shape = 6, rate = 3, log = TRUE)")
+lf_functions <- c("dt(x, df = 20, log = TRUE)")
+  # c(paste0("dt(x, df=", parameter_values, ", log = TRUE)"),
+  #                 "dnorm(x, mean=0,sd=1, log = TRUE)",
+  #                 "dnorm(x, mean=2,sd=1, log = TRUE)",
+  #                 "dgamma(x, shape = 6, rate = 3, log = TRUE)")
 ####
 ## stepping out metrics to input ##
 w <- c(2)#c(0.01, 1, 2, 4, 10)
@@ -85,6 +86,19 @@ stepping_out_metrics <- trials_stepping_out %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
+
+dist <- c("pt")
+parm <- c(1,5,10,20,25,30,35)
+power_func_df <- expand.grid(draws = list(stepping_out_metrics$thinDraws),
+                             dist = dist,
+                             parm = parm)
+
+
+ks.test(stepping_out_metrics$thinDraws[[1]],
+        dt, parm[1])
+
+
+
 pdf(file = 'images_slice_sampler_comp/power_histogram.pdf')
 stepping_out_metrics %>%
   ggplot(aes(x = pVals, color = as.factor(lf))) +
@@ -124,7 +138,7 @@ rand_df %>%
     legend.position = 'none'
   )
 
-#####non-finished#####
+#####not-finished#####
 
 power <- list()
 
@@ -341,3 +355,9 @@ curve(dgamma(x, shape = 2), add = TRUE, col = 'green')
 curve(dgamma(x, shape = 1), add = TRUE, col = 'brown')
 curve(dgamma(x, shape = 0.1), add = TRUE, col = 'pink')
 dev.off()
+
+
+
+
+
+

@@ -6,6 +6,30 @@ library(cucumber)
 # source("functions_log.R")
 source("sam_comparison_functions.R")
 
+extract_pvals <- function(list_hldr, dist_df) {
+  counter <- 1
+  pvalue_list <- list(length = nrow(dist_df))
+  temp_df <- data.frame(matrix(nrow = nrow(dist_df) * 20, ncol = ncol(dist_df)))
+  for(j in 1:nrow(dist_df)) {
+    pvalue <- vector(length = 20)
+    for(i in 1:20) {
+      pvalue[[i]] <- list_hldr[[j]][[i]]$p.value
+      temp_df[counter,] <- dist_df[j,]
+      counter <- counter + 1
+    }
+    pvalue_list[[j]] <- pvalue
+  }
+  cbind(temp_df, pVal = unlist(pvalue_list)) %>%
+    unite('Distribution', X1:X3) %>%
+    ggplot(aes(x = pVal, color = Distribution)) +
+    geom_histogram() +
+    facet_wrap(~Distribution) +
+    theme(
+      legend.position = 'none'
+    )
+}
+
+
 auto.cor.lim <- 0.05
 
 options(xtable.format.args = list(big.mark = ","), # separates large numbers using a ,
@@ -21,7 +45,7 @@ options(xtable.format.args = list(big.mark = ","), # separates large numbers usi
 
 
 fexp <- function(x) exp(lf(x))
-samples <- 1000000
+samples <- rep(1000000,20)
 
 ####
 ## stepping out metrics to input ##
@@ -53,10 +77,11 @@ lf <- function(x) {
   log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=6,sd=2))
 }
 
-cdf <- function(x) {
+cdf <- function(x, mean2 = 6, sd2 = 2) {
   probs <- vector(length = length(x))
   for(i in 1:length(x)){
-    probs[i] <- integrate(fexp, lower = -Inf, upper = x[i])$value
+    probs[i] <- integrate(function(x) {exp(log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=mean2,sd=sd2)))},
+                          lower = -Inf, upper = x[i])$value
   }
   return(probs)
 }
@@ -69,7 +94,7 @@ dev.off()
 xlim_range <- c(-4,15)
 ylim_range <- c(0,0.17 + 0.10)
 
-x <- c(5,0)#c(0.00001, 2, 5, 7, 10, 15)
+x <- c(1)#c(0.00001, 2, 5, 7, 10, 15)
 ##
 ## Stepping out
 ##
@@ -97,10 +122,28 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, mean2 = 6, sd2 = 2)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      mean2 = c(6,6,6,7,5,6),
+                      sd2 = c(4,1,3,2,2,2))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(stepping_out_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           mean2 = dist_df[i,'mean2'],
+                           sd2 = dist_df[i,'sd2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve1_stepping_out_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out metrics table
 tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -163,10 +206,28 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, mean2 = 6, sd2 = 2)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      mean2 = c(6,6,6,7,5,6),
+                      sd2 = c(4,1,3,2,2,2))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(latent_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           mean2 = dist_df[i,'mean2'],
+                           sd2 = dist_df[i,'sd2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve1_latent_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out metrics table
 tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws))%>% rename('n' = 'samples',
@@ -239,10 +300,28 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, mean2 = 6, sd2 = 2)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      mean2 = c(6,6,6,7,5,6),
+                      sd2 = c(4,1,3,2,2,2))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(gess_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           mean2 = dist_df[i,'mean2'],
+                           sd2 = dist_df[i,'sd2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve1_gess_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out metrics table
 tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
@@ -308,10 +387,11 @@ lf <- function(x) {
   log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=20,sd=1))
 }
 
-cdf <- function(x) {
+cdf <- function(x, mean2 = 20, sd2 = 1) {
   probs <- vector(length = length(x))
   for(i in 1:length(x)){
-    probs[i] <- integrate(fexp, lower = -Inf, upper = x[i])$value
+    probs[i] <- integrate(function(x) {exp(log(0.2*dnorm(x,sd=0.5) + 0.8*dnorm(x,mean=mean2,sd=sd2)))},
+                          lower = -Inf, upper = x[i])$value
   }
   return(probs)
 }
@@ -351,10 +431,28 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, mean2 = 20, sd2 = 1)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      mean2 = c(20,20,20,19,21,20),
+                      sd2 = c(4,2,3,1,1,1))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(stepping_out_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           mean2 = dist_df[i,'mean2'],
+                           sd2 = dist_df[i,'sd2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve2_stepping_out_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws))%>% rename('n' = 'samples',
@@ -416,10 +514,28 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, mean2 = 20, sd2 = 1)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      mean2 = c(20,20,20,19,21,20),
+                      sd2 = c(4,2,3,1,1,1))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(latent_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           mean2 = dist_df[i,'mean2'],
+                           sd2 = dist_df[i,'sd2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve2_latent_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -491,10 +607,28 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws, lag.max = 1000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, mean2 = 20, sd2 = 1)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      mean2 = c(20,20,20,19,21,20),
+                      sd2 = c(4,2,3,1,1,1))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(gess_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           mean2 = dist_df[i,'mean2'],
+                           sd2 = dist_df[i,'sd2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve2_gess_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
@@ -600,6 +734,23 @@ stepping_out_metrics <- trials_stepping_out %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pgamma",6),
+                      shape = c(1,2,2.5,5,3,2.5),
+                      rate = c(1,1,5,1,1,1))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(stepping_out_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           shape = dist_df[i,'shape'],
+                           rate = dist_df[i,'rate'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve3_stepping_out_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -664,6 +815,24 @@ latent_metrics <- trials_latent %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pgamma",6),
+                      shape = c(1,2,2.5,5,3,2.5),
+                      rate = c(1,1,5,1,1,1))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(latent_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           shape = dist_df[i,'shape'],
+                           rate = dist_df[i,'rate'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve3_latent_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -742,6 +911,24 @@ gess_metrics <- trials_gess %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pgamma",6),
+                      shape = c(1,2,2.5,5,3,2.5),
+                      rate = c(1,1,5,1,1,1))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(gess_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           shape = dist_df[i,'shape'],
+                           rate = dist_df[i,'rate'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve3_gess_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
+
 # printing out the metrics table
 tab <- xtable::xtable(gess_metrics %>% dplyr::select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
                                                                                       "$\\sigma$" = 'sigma',
@@ -806,10 +993,11 @@ lf <- function(x) {
   ifelse( x < 0, -Inf, dt(x, df=3.0, log=TRUE) + log(2.0))
 }
 
-cdf <- function(x) {
+cdf <- function(x, df1 = 3.0) {
   probs <- vector(length = length(x))
   for(i in 1:length(x)){
-    probs[i] <- integrate(fexp, lower = 0, upper = x[i])$value
+    probs[i] <- integrate(function(x) {exp(ifelse( x < 0, -Inf, dt(x, df=df1, log=TRUE) + log(2.0)))},
+                          lower = 0, upper = x[i])$value
   }
   return(probs)
 }
@@ -850,10 +1038,27 @@ stepping_out_metrics <- trials_stepping_out %>%
          thin = min(which(acf(draws)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, df1 = 3.0)$p.value) %>%
   dplyr::select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      df = c(1,2,4,5,6,3),
+                      filler = c(0,0,0,0,0,0))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(stepping_out_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           df1 = dist_df[i,'df'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve4_stepping_out_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(stepping_out_metrics %>% dplyr::select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -916,10 +1121,27 @@ latent_metrics <- trials_latent %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, df1 = 3.0)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      df = c(1,2,4,5,6,3),
+                      filler = c(0,0,0,0,0,0))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(latent_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           df1 = dist_df[i,'df'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve4_latent_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -993,10 +1215,27 @@ gess_metrics <- trials_gess %>%
          thin = min(which(acf(draws, lag.max = 5000)$acf < auto.cor.lim)),
          thinDraws = list(LaplacesDemon::Thin(draws, thin)),
          samplesThin = length(thinDraws),
-         ksTest = ks.test(thinDraws, cdf)$p.value) %>%
+         ksTest = ks.test(thinDraws, cdf, df1 = 3.0)$p.value) %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("cdf",6),
+                      df = c(1,2,4,5,6,3),
+                      filler = c(0,0,0,0,0,0))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(gess_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = cdf,
+                           df1 = dist_df[i,'df'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve4_gess_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
@@ -1106,6 +1345,23 @@ stepping_out_metrics <- trials_stepping_out %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pt",6),
+                      df = c(1,2,4,5,6,3),
+                      na = c(0,0,0,0,0,0))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(stepping_out_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           df = dist_df[i,'df'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve5_stepping_out_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
+
 # printing out the metrics table
 tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
                                                                                        'nThin' = 'samplesThin'),
@@ -1171,6 +1427,23 @@ latent_metrics <- trials_latent %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pt",6),
+                      df = c(1,2,4,5,6,3),
+                      na = c(0,0,0,0,0,0))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(latent_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           df = dist_df[i,'df'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve5_latent_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -1246,6 +1519,24 @@ gess_metrics <- trials_gess %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pt",6),
+                      df = c(1,2,4,5,6,3),
+                      na = c(0,0,0,0,0,0))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(gess_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           df = dist_df[i,'df'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve5_gess_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
+
 
 # printing out the metrics table
 tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
@@ -1352,6 +1643,24 @@ stepping_out_metrics <- trials_stepping_out %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pbeta",6),
+                      shape1 = c(.1,.8,.5,.2,.2,.2),
+                      shape2 = c(.9,.8,.8,.5,.2,.8))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(stepping_out_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           shape1 = dist_df[i,'shape1'],
+                           shape2 = dist_df[i,'shape2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve6_stepping_out_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
+
 # printing out the metrics table
 tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
                                                                                        'nThin' = 'samplesThin'),
@@ -1414,6 +1723,24 @@ latent_metrics <- trials_latent %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pbeta",6),
+                      shape1 = c(.1,.8,.5,.2,.2,.2),
+                      shape2 = c(.9,.8,.8,.5,.2,.8))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(latent_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           shape1 = dist_df[i,'shape1'],
+                           shape2 = dist_df[i,'shape2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve6_latent_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -1492,6 +1819,24 @@ gess_metrics <- trials_gess %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pbeta",6),
+                      shape1 = c(.1,.8,.5,.2,.2,.2),
+                      shape2 = c(.9,.8,.8,.5,.2,.8))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(gess_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           shape1 = dist_df[i,'shape1'],
+                           shape2 = dist_df[i,'shape2'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve6_gess_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
@@ -1599,6 +1944,24 @@ stepping_out_metrics <- trials_stepping_out %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
 
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pnorm",6),
+                      mean = c(18,21,19,20,20,20),
+                      sd = c(5,5,5,6,4,5))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(stepping_out_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           mean = dist_df[i,'mean'],
+                           sd = dist_df[i,'sd'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve7_stepping_out_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
+
 # printing out the metrics table
 tab <- xtable::xtable(stepping_out_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
                                                                                        'nThin' = 'samplesThin'),
@@ -1661,6 +2024,24 @@ latent_metrics <- trials_latent %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pnorm",6),
+                      mean = c(18,21,19,20,20,20),
+                      sd = c(5,5,5,6,4,5))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(latent_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           mean = dist_df[i,'mean'],
+                           sd = dist_df[i,'sd'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve7_latent_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(latent_metrics %>% select(-c(draws, thinDraws)) %>% rename('n' = 'samples',
@@ -1737,6 +2118,24 @@ gess_metrics <- trials_gess %>%
   select(-metrics) %>%
   mutate(SampPSec = ESS/time) %>%
   relocate(samples, .after = time)
+
+# the functions to compare against
+dist_df <- data.frame(dist = rep("pnorm",6),
+                      mean = c(18,21,19,20,20,20),
+                      sd = c(5,5,5,6,4,5))
+
+list_hldr <- list(length = nrow(dist_df))
+for(i in 1:nrow(dist_df)) {
+  list_hldr[[i]] <- lapply(gess_metrics$thinDraws[1:20],
+                           FUN = ks.test, y = dist_df[i,'dist'],
+                           mean = dist_df[i,'mean'],
+                           sd = dist_df[i,'sd'])
+}
+
+# saving the power test
+pdf(file = "images_slice_sampler_comp/curve7_gess_power.pdf")
+extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+dev.off()
 
 # printing out the metrics table
 tab <- xtable::xtable(gess_metrics %>% select(-c(draws, thinDraws)) %>% rename("$\\mu$" = 'mu',
