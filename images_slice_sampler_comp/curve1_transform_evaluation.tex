@@ -1,0 +1,18 @@
+% latex table generated in R 4.2.1 by xtable 1.8-4 package
+% Fri Sep 23 09:53:28 2022
+\begin{table}[h]
+\centering
+\begin{tabular}{llrrrr}
+  \hline
+Method & Settings & KLD & JSD & Samples & Accepted \\ 
+  \hline
+Transform & $x = 0 $,$\text{inv cdf} =$  qnorm(u, mean = 4, sd = 10) & 0.23 & 0.51 & 1,319 & 0.80 \\ 
+  Transform & $x = 0 $,$\text{inv cdf} =$  qnorm(u, mean = 5, sd = 5) & 0.23 & 0.51 & 1,240 & 1.00 \\ 
+  Transform & $x = 1 $,$\text{inv cdf} =$  qnorm(u, mean = 4, sd = 10) & 0.23 & 0.51 & 1,366 & 0.80 \\ 
+  Transform & $x = 1 $,$\text{inv cdf} =$  qnorm(u, mean = 5, sd = 5) & 0.23 & 0.51 & 1,302 & 0.90 \\ 
+  Transform & $x = 5 $,$\text{inv cdf} =$  qnorm(u, mean = 4, sd = 10) & 0.23 & 0.51 & 1,212 & 0.80 \\ 
+  Transform & $x = 5 $,$\text{inv cdf} =$  qnorm(u, mean = 5, sd = 5) & 0.23 & 0.51 & 978 & 0.90 \\ 
+   \hline
+\end{tabular}
+\caption{This table shows the method of sampling, settings for the tuning parameters, average number of effective samples taken per second, the perecentage of samples that matched the target disribution according to a kolmogorov-Smirnov test, and the Kullback-Leibler divergence.} 
+\end{table}
