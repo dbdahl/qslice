@@ -8,10 +8,10 @@ library(utils)
 source("sam_comparison_functions.R")
 
 
-reps <- 1
+reps <- 10
 
 fexp <- function(x) exp(lf(x))
-samples <- rep(500000,reps)
+samples <- rep(5000,reps)
 auto.cor.lim <- 0.05
 
 
