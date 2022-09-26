@@ -22,8 +22,8 @@ setting \code{max} to a large value (even \code{Inf}) should lead to low
 autocorrelation at the cost of more evaluations for \code{target}.}
 
 \item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the function
-evaluates the log of the density.}
+function of the target distribution.  If \code{TRUE}, the \code{target}
+function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"
@@ -38,14 +38,16 @@ This function implements a univariate slice sampler of Neal (2003) using the
 lf <- function(x) dbeta(x, 3, 4, log=TRUE)
 draws <- numeric(1000)
 nEvaluations <- 0L
-system.time({
+seconds <- system.time({
     for ( i in seq.int(2,length(draws)) ) {
         out <- slice_sampler_stepping_out(draws[i-1], target=lf, w=0.7, max=Inf)
         draws[i] <- out$x
         nEvaluations <- nEvaluations + out$nEvaluations
     }
-})
+})['elapsed']
 nEvaluations/length(draws)
+nEvaluations/ess(draws)
+ess(draws)/seconds
 plot(density(draws), xlim=c(0,1))
 curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
 

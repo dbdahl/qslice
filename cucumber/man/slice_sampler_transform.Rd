@@ -14,11 +14,11 @@ scalar.}
 
 \item{pseudo_log_pdf}{Not yet documented.}
 
-\item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the function
-evaluates the log of the density.}
+\item{pseudo_inv_cdf}{Not yet documented.}
 
-\item{pseudo_log_cdf}{Not yet documented.}
+\item{log}{If \code{FALSE}, the \code{target} function is the density
+function of the target distribution.  If \code{TRUE}, the \code{target}
+function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"
@@ -34,14 +34,16 @@ pseudoLogPDF <- function(x) dbeta(x, shape1=1, shape2=1, log=TRUE)
 pseudoInvCDF <- function(u) qbeta(u, shape1=1, shape2=1)
 draws <- numeric(1000)
 nEvaluations <- 0L
-system.time({
+seconds <- system.time({
     for ( i in seq.int(2,length(draws)) ) {
         out <- slice_sampler_transform(draws[i-1], target=lf, pseudoLogPDF, pseudoInvCDF)
         draws[i] <- out$x
         nEvaluations <- nEvaluations + out$nEvaluations
     }
-})
+})['elapsed']
 nEvaluations/length(draws)
+nEvaluations/ess(draws)
+ess(draws)/seconds
 plot(density(draws), xlim=c(0,1))
 curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
 

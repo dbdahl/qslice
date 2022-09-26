@@ -1,7 +1,7 @@
 rm(list=ls())
 
 library(cucumber)
-source("functions_log.R")
+# source("functions_log.R")
 
 # Log of density of the target distribution (select one)
 
@@ -44,7 +44,7 @@ time <- system.time({
 })
 counter
 plot(density(draws))
-coda::effectiveSize(draws) / time['user.self']
+ess(draws) / time['user.self']
 
 ## Samples with latent procedure (Li and Walker 2020)
 counter <- 0
@@ -61,7 +61,29 @@ time <- system.time({
 })
 counter
 plot(density(draws))
-coda::effectiveSize(draws) / time['user.self']
+ess(draws) / time['user.self']
+
+
+## Pseudo prior (select one)
+pseudoLogPDF <- function(x) dnorm(x, mean=4.0, sd=15.0, log=TRUE)
+pseudoInvCDF <- function(u) qnorm(u, mean=4.0, sd=15.0)
+
+pseudoLogPDF <- function(x) dt((x-ellip_ctr)/ellip_sc, df=ellip_degf, log=TRUE) - log(ellip_sc)
+pseudoInvCDF <- function(u) ellip_sc * qt(u, df=ellip_degf) + ellip_ctr
+
+pseudoLogPDF <- function(x) dgamma(x, shape=2.5, log=TRUE)
+pseudoInvCDF <- function(u) qgamma(u, shape=2.5)
+
+pseudoLogPDF <- function(x) dexp(x, log=TRUE)
+pseudoInvCDF <- function(u) qexp(u)
+
+pseudoLogPDF <- function(x) if ( x < 0 ) -Inf else dt(x, df=1.0, log=TRUE) + log(2.0)
+pseudoInvCDF <- function(u) qt((u + 1.0)/2.0, df=1) # half Cauchy
+
+pseudoLogPDF <- function(x) dbeta(x, shape1=0.5, shape2=0.5, log=TRUE)
+pseudoInvCDF <- function(u) qbeta(u, shape1=0.5, shape2=0.5)
+
+
 
 
 ######
@@ -89,24 +111,6 @@ ellip_logJacobian <- function(z) {
 ellip_logtarget <- function(z) lf( ellip_invTform(z) ) + ellip_logJacobian(z)
 
 
-## Pseudo prior (select one)
-pseudoLogPDF <- function(x) dnorm(x, mean=4.0, sd=15.0, log=TRUE)
-pseudoInvCDF <- function(u) qnorm(u, mean=4.0, sd=15.0)
-
-pseudoLogPDF <- function(x) dt((x-ellip_ctr)/ellip_sc, df=ellip_degf, log=TRUE) - log(ellip_sc)
-pseudoInvCDF <- function(u) ellip_sc * qt(u, df=ellip_degf) + ellip_ctr
-
-pseudoLogPDF <- function(x) dgamma(x, shape=2.5, log=TRUE)
-pseudoInvCDF <- function(u) qgamma(u, shape=2.5)
-
-pseudoLogPDF <- function(x) dexp(x, log=TRUE)
-pseudoInvCDF <- function(u) qexp(u)
-
-pseudoLogPDF <- function(x) if ( x < 0 ) -Inf else dt(x, df=1.0, log=TRUE) + log(2.0)
-pseudoInvCDF <- function(u) qt((u + 1.0)/2.0, df=1) # half Cauchy
-
-pseudoLogPDF <- function(x) dbeta(x, shape1=0.5, shape2=0.5, log=TRUE)
-pseudoInvCDF <- function(u) qbeta(u, shape1=0.5, shape2=0.5)
 
 
 
