@@ -381,3 +381,17 @@ find_support <- function(inv_cdf){
   support <- seq(from = lwr, to = upr, length.out = 1000)
   support
 }
+
+
+second_derivative <- function( x, h, f ) {
+  num <- f(x + h) - 2*f(x) + f(x - h)
+  denom <- h^2
+  num/denom
+}
+
+
+laplace_approx <- function( lf, h, init){
+  fit <- optim(init, lf, control = list(fnscale = -1), hessian = TRUE, method = 'BFGS')
+  sd <- sqrt(-solve(second_derivative(fit$par, h = h, f = lf)))
+  c(mean = fit$par, sd = sd)
+}
