@@ -32,7 +32,7 @@ grid <- seq(from = qnorm((1-.99999)/2, mean = 0, sd = 0.5),
             to = qnorm((1-.99999)/2, mean = 6, sd = 2, lower.tail = FALSE),
             length.out = 1000)
 
-py <- 0.2 * dnorm(grid, sd = 0.5) + 0.8 * dnorm(grid, mean = 6, sd = 2)
+py <- exp(lf(grid))
 
 xlim_range <- c(-4, 15)
 ylim_range <- c(0, 0.17 + 0.10)
@@ -362,20 +362,28 @@ rm(
 #### Transform ####
 ##
 
-log_pdf <- c('dnorm(x, mean = 5, sd = 5, log = TRUE)',
-             'dnorm(x, mean = 4, sd = 10, log = TRUE)')
+log_pdf <- c(function(x) dnorm(x, mean = 5, sd = 5, log = TRUE),
+             function(x) dnorm(x, mean = 4, sd = 10, log = TRUE))
 
-inv_cdf <- c('qnorm(u, mean = 5, sd = 5)',
-             'qnorm(u, mean = 4, sd = 10)')
+inv_cdf <- c(function(u) qnorm(u, mean = 5, sd = 5),
+             function(u) qnorm(u, mean = 4, sd = 10))
 
-find_grid <- c('seq(from = qnorm((1-.99999)/2, mean = 5, sd = 5),
-               to = qnorm((1-.99999)/2, mean = 5, sd = 5, lower.tail = FALSE), length.out = 1000)',
-               'seq(from = qnorm((1-.99999)/2, mean = 4, sd = 10),
-               to = qnorm((1-.99999)/2, mean = 4, sd = 10, lower.tail = FALSE), length.out = 1000)')
+find_grid <- list(seq(from = qnorm((1-.99999)/2, mean = 5, sd = 5),
+               to = qnorm((1-.99999)/2, mean = 5, sd = 5, lower.tail = FALSE), length.out = 1000),
+               seq(from = qnorm((1-.99999)/2, mean = 4, sd = 10),
+               to = qnorm((1-.99999)/2, mean = 4, sd = 10, lower.tail = FALSE), length.out = 1000))
 
-temp_df <- data.frame(log_pdf,
-                      inv_cdf,
-                      find_grid)
+px <- data.frame(px = matrix(nrow = length(log_pdf), ncol = 1)) 
+px$log_pdf <- log_pdf
+px$grid <- find_grid
+px <- px %>%
+  rowwise() %>% 
+  mutate(px = list(exp(log_pdf(grid)))) %$% px
+
+temp_df <- data.frame(log_pdf = matrix(nrow = length(log_pdf), ncol = 1))
+temp_df$log_pdf <- log_pdf
+temp_df$inv_cdf <- inv_cdf
+temp_df$px <- px
 
 # creating a data frame with all possible combinations
 trials_transform <- expand.grid(samples, x) %>%
@@ -400,12 +408,8 @@ transform_metrics <- trials_transform %>%
       samples = samples,
       x_0 = x,
       lf_func = lf,
-      pseudo_pdf_log = function(x) {
-        eval(parse(text = log_pdf))
-      },
-      pseudo_cdf_inv = function(u) {
-        eval(parse(text = inv_cdf))
-      },
+      pseudo_pdf_log = log_pdf,
+      pseudo_cdf_inv = inv_cdf,
       log_value = TRUE
     )
   ) %>%
@@ -420,7 +424,7 @@ transform_metrics <- trials_transform %>%
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
     ksTest = ks.test(thinDraws, cdf, mean2 = 6, sd2 = 2)$p.value,
-    KLD.JSD = list(LaplacesDemon::KLD(px = dist_comp(inv_cdf = inv_cdf, find_grid = find_grid), py = py)[c(4,6)]),
+    KLD.JSD = list(LaplacesDemon::KLD(px = px, py = py)[c(4,6)]),
     KLD = KLD.JSD$sum.KLD.px.py,
     JSD = KLD.JSD$mean.sum.KLD
   ) %>%

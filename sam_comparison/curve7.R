@@ -20,7 +20,7 @@ grid <- seq(from = qnorm((1-.9999)/2, mean = 20, sd = 5),
             length.out = 1000)
 
 # value for Kullback-Leibler Divergence
-py <- dnorm(grid, mean = 20, sd = 5)
+py <- exp(lf(grid))
 
 xlim_range <- c(0, 40)
 ylim_range <- c(0, 0.08 + 0.010)
@@ -344,20 +344,28 @@ rm(
 #### Transform ####
 ##
 
-log_pdf <- c('dnorm(x, mean = 20, sd = 6, log = TRUE)',
-             'dnorm(x, mean = 15, sd = 8, log = TRUE)')
+log_pdf <- c(function(x) dnorm(x, mean = 20, sd = 6, log = TRUE),
+             function(x) dnorm(x, mean = 15, sd = 8, log = TRUE))
 
-inv_cdf <- c('qnorm(u, mean = 20, sd = 6)',
-             'qnorm(u, mean = 15, sd = 8)')
+inv_cdf <- c(function(u) qnorm(u, mean = 20, sd = 6),
+             function(u) qnorm(u, mean = 15, sd = 8))
 
-find_grid <- c('seq(from = qnorm((1-.99999)/2, mean = 20, sd = 6),
-               to = qnorm((1-.99999)/2, mean = 20, sd = 6, lower.tail = FALSE), length.out = 1000)',
-               'seq(from = qnorm((1-.99999)/2, mean = 15, sd = 8),
-               to = qnorm((1-.99999)/2, mean = 15, sd = 8, lower.tail = FALSE), length.out = 1000)')
+find_grid <- c(seq(from = qnorm((1-.99999)/2, mean = 20, sd = 6),
+               to = qnorm((1-.99999)/2, mean = 20, sd = 6, lower.tail = FALSE), length.out = 1000),
+               seq(from = qnorm((1-.99999)/2, mean = 15, sd = 8),
+               to = qnorm((1-.99999)/2, mean = 15, sd = 8, lower.tail = FALSE), length.out = 1000))
 
-temp_df <- data.frame(log_pdf,
-                      inv_cdf,
-                      find_grid)
+px <- data.frame(px = matrix(nrow = length(log_pdf), ncol = 1)) 
+px$log_pdf <- log_pdf
+px$grid <- find_grid
+px <- px %>%
+  rowwise() %>% 
+  mutate(px = list(exp(log_pdf(grid)))) %$% px
+
+temp_df <- data.frame(log_pdf = matrix(nrow = length(log_pdf), ncol = 1))
+temp_df$log_pdf <- log_pdf
+temp_df$inv_cdf <- inv_cdf
+temp_df$px <- px
 
 # creating a data frame with all possible combinations
 trials_transform <- expand.grid(samples, x) %>%
@@ -382,12 +390,8 @@ transform_metrics <- trials_transform %>%
       samples = samples,
       x_0 = x,
       lf_func = lf,
-      pseudo_pdf_log = function(x) {
-        eval(parse(text = log_pdf))
-      },
-      pseudo_cdf_inv = function(u) {
-        eval(parse(text = inv_cdf))
-      },
+      pseudo_pdf_log = log_pdf,
+      pseudo_cdf_inv = inv_cdf,
       log_value = TRUE
     )
   ) %>%
@@ -402,7 +406,7 @@ transform_metrics <- trials_transform %>%
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
     ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value,
-    KLD.JSD = list(LaplacesDemon::KLD(px = dist_comp(inv_cdf = inv_cdf, find_grid = find_grid), py = py)[c(4,6)]),
+    KLD.JSD = list(LaplacesDemon::KLD(px = px, py = py)[c(4,6)]),
     KLD = KLD.JSD$sum.KLD.px.py,
     JSD = KLD.JSD$mean.sum.KLD
   ) %>%

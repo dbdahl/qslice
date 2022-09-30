@@ -23,7 +23,7 @@ grid <- seq(from = 0,
             length.out = 1000)
 
 # value for Kullback-Leibler Divergence
-py <- dgamma(grid, shape = 2.5, rate = 1)
+py <- exp(lf(grid))
 
 xlim_range <- c(0, 10)
 ylim_range <- c(0, 0.31 + 0.10)
@@ -354,19 +354,28 @@ rm(
 #### Transform ####
 ##
 
-log_pdf <- c('dgamma(x, shape = 2.5, rate = 1, log = TRUE)',
-             'dnorm(x, mean = 0, sd = 4, log = TRUE)')
+log_pdf <- c(function(x) dgamma(x, shape = 2.5, rate = 1, log = TRUE),
+             function(x) dnorm(x, mean = 0, sd = 4, log = TRUE))
 
-inv_cdf <- c('qgamma(u, shape = 2.5, rate = 1)',
-             'qnorm(u, mean = 0, sd = 4)')
+inv_cdf <- c(function(u) qgamma(u, shape = 2.5, rate = 1),
+             function(u) qnorm(u, mean = 0, sd = 4))
 
-find_grid <- c('seq(from = 0, to = qgamma(0.99999, shape = 2.5, rate = 1), length.out = 1000)',
-               'seq(from = qnorm((1-.99999)/2, mean = 0, sd = 4),
-               to = qnorm((1-.99999)/2, mean = 0, sd = 4, lower.tail = FALSE), length.out = 1000)')
+find_grid <- list(seq(from = 0, to = qgamma(0.99999, shape = 2.5, rate = 1), length.out = 1000),
+               seq(from = qnorm((1-.99999)/2, mean = 0, sd = 4),
+               to = qnorm((1-.99999)/2, mean = 0, sd = 4, lower.tail = FALSE), length.out = 1000))
 
-temp_df <- data.frame(log_pdf,
-                      inv_cdf,
-                      find_grid)
+px <- data.frame(px = matrix(nrow = length(log_pdf), ncol = 1)) 
+px$log_pdf <- log_pdf
+px$grid <- find_grid
+px <- px %>%
+  rowwise() %>% 
+  mutate(px = list(exp(log_pdf(grid)))) %$% px
+
+temp_df <- data.frame(log_pdf = matrix(nrow = length(log_pdf), ncol = 1))
+temp_df$log_pdf <- log_pdf
+temp_df$inv_cdf <- inv_cdf
+temp_df$px <- px
+
 
 # creating a data frame with all possible combinations
 trials_transform <- expand.grid(samples, x) %>%
@@ -391,12 +400,8 @@ transform_metrics <- trials_transform %>%
       samples = samples,
       x_0 = x,
       lf_func = lf,
-      pseudo_pdf_log = function(x) {
-        eval(parse(text = log_pdf))
-      },
-      pseudo_cdf_inv = function(u) {
-        eval(parse(text = inv_cdf))
-      },
+      pseudo_pdf_log = log_pdf,
+      pseudo_cdf_inv = inv_cdf,
       log_value = TRUE
     )
   ) %>%
@@ -411,7 +416,7 @@ transform_metrics <- trials_transform %>%
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
     ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value,
-    KLD.JSD = list(LaplacesDemon::KLD(px = dist_comp(inv_cdf = inv_cdf, find_grid = find_grid), py = py)[c(4,6)]),
+    KLD.JSD = list(LaplacesDemon::KLD(px = px, py = py)[c(4,6)]),
     KLD = KLD.JSD$sum.KLD.px.py,
     JSD = KLD.JSD$mean.sum.KLD
   ) %>%
