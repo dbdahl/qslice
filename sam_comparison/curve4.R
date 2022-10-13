@@ -25,7 +25,7 @@ cdf <- function(x, df1 = 3.0) {
 
 # plot of the log of the density function below
 pdf(file = "../images_slice_sampler_comp/curve4.pdf")
-curve(fexp(x), xlim = c(0, 10), ylim = c(0, .8))
+curve(fexp(f = lf, x = x), xlim = c(0, 10), ylim = c(0, .8))
 dev.off()
 
 grid <- seq(from = 0,
@@ -123,7 +123,7 @@ saveRDS(stepping_out_metrics,paste0("../data/curve",curve_num,"_stepping_out_met
 
 pdf(file = '../images_slice_sampler_comp/curve4_stepping_out.pdf')
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -133,7 +133,7 @@ lapply(stepping_out_metrics$thinDraws, function(x) {
   lines(density(x), col = adjustcolor('black', alpha.f = 0.95))
 })
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -223,7 +223,7 @@ saveRDS(latent_metrics,paste0("../data/curve",curve_num,"_latent_metrics"))
 # evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
 pdf(file = "../images_slice_sampler_comp/curve4_latent.pdf")
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -233,7 +233,7 @@ lapply(latent_metrics$thinDraws, function(x) {
   lines(density(x), col = adjustcolor('black', alpha.f = 0.95))
 })
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -322,7 +322,7 @@ saveRDS(gess_metrics,paste0("../data/curve",curve_num,"_gess_metrics"))
 # evalTbl_latent <- cbind(start_points_latent, s_values_latent, rate_values_latent) %>% round(.,1)
 pdf(file = "../images_slice_sampler_comp/curve4_gess.pdf")
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -332,7 +332,7 @@ lapply(gess_metrics$thinDraws, function(x) {
   lines(density(x), col = adjustcolor('black', alpha.f = 0.95))
 })
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -354,7 +354,6 @@ rm(
 ##
 #### Transform ####
 ##
-
 
 log_pdf <- c(function(x) dt(x, df = 3, log = TRUE),
              function(x) dnorm(x, mean = 0, sd = 3, log = TRUE),
@@ -459,7 +458,7 @@ saveRDS(transform_metrics,paste0("../data/curve",curve_num,"_transform_metrics")
 # evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "../images_slice_sampler_comp/curve4_transform.pdf")
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -469,7 +468,7 @@ lapply(transform_metrics$thinDraws, function(x) {
   lines(density(x), col = adjustcolor('black'))
 })
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -560,7 +559,7 @@ saveRDS(rand_walk_metrics,paste0("../data/curve",curve_num,"_rand_walk_metrics")
 # evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
 pdf(file = "../images_slice_sampler_comp/curve4_rand_walk.pdf")
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
@@ -570,7 +569,7 @@ lapply(rand_walk_metrics$thinDraws, function(x) {
   lines(density(x), col = adjustcolor('black'))
 })
 curve(
-  fexp(x),
+  fexp(f = lf, x = x),
   col = 'red',
   xlim = c(xlim_range[1], xlim_range[2]),
   ylim = c(ylim_range[1], ylim_range[2]),
