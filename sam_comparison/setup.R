@@ -8,7 +8,7 @@ library(utils)
 source("sam_comparison_functions.R")
 
 
-reps <- 10
+reps <- 2
 
 fexp <- function(f, x) exp(f(x))
 samples <- rep(5000,reps)
