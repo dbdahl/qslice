@@ -356,12 +356,12 @@ rm(
 ##
 
 log_pdf <- c(function(x) dt(x, df = 3, log = TRUE),
-             function(x) dnorm(x, mean = 0, sd = 3, log = TRUE),
-             function(x) dt(x, df = 15, log = TRUE))
+             function(x) dnorm(x, mean = 0, sd = 15, log = TRUE),
+             function(x) dt(x, df = 2, log = TRUE))
 
 inv_cdf <- c(function(u) qt(u, df = 3),
-             function(u) qnorm(u, mean = 0, sd = 3),
-             function(u) qt(u, df = 15))
+             function(u) qnorm(u, mean = 0, sd = 15),
+             function(u) qt(u, df = 2))
 
 find_grid <- list(seq(from = qt((1-.99999)/2, df = 3),
                to = qt((1-.99999)/2, df = 3, lower.tail = FALSE), length.out = 1000),
@@ -525,7 +525,7 @@ rand_walk_metrics <- trials_rand_walk %>%
     )),
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value
+    ksTest = ks.test(thinDraws, cdf)$p.value
   ) %>%
   dplyr::select(-c(metrics)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%

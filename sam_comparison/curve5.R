@@ -516,7 +516,7 @@ rand_walk_metrics <- trials_rand_walk %>%
     )),
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pgamma, shape = 2.5, rate = 1)$p.value
+    ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value
   ) %>%
   dplyr::select(-c(metrics)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
