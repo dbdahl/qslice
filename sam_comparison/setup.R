@@ -5,7 +5,7 @@ library(tidyverse)
 library(LaplacesDemon) # thin function, KLD, JSD
 library(cucumber)
 library(utils)
-source("sam_comparison_functions.R")
+source("../sam_comparison_functions.R")
 
 
 reps <- 2

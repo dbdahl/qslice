@@ -60,7 +60,7 @@ slice_sampler_comparison <- function(
            method){
     # plot of the log of the density function below
     pdf(file = paste0("../images_slice_sampler_comp/curve", curve_num, ".pdf"))
-    curve(fexp(x))
+    curve(fexp(f = lf, x = x))
     dev.off()
 
     ##
@@ -128,11 +128,11 @@ slice_sampler_comparison <- function(
         curve_num,
         "_stepping_out.pdf"
       ))
-      curve(fexp(x), col = 'red', lwd = 2)
+      curve(fexp(f = lf, x = x), col = 'red', lwd = 2)
       lapply(stepping_out_metrics$thinDraws, function(x) {
         lines(density(x), col = adjustcolor('black'))
       })
-      curve(fexp(x),
+      curve(fexp(f = lf, x = x),
             col = 'red',
             lwd = 2,
             add = TRUE)
@@ -215,11 +215,11 @@ slice_sampler_comparison <- function(
         curve_num,
         "_latent.pdf"
       ))
-      curve(fexp(x), col = 'red', lwd = 2)
+      curve(fexp(f = lf, x = x), col = 'red', lwd = 2)
       lapply(latent_metrics$thinDraws, function(x) {
         lines(density(x), col = adjustcolor('black', alpha.f = 0.95))
       })
-      curve(fexp(x),
+      curve(fexp(f = lf, x = x),
             col = 'red',
             lwd = 2,
             add = TRUE)
@@ -309,11 +309,11 @@ slice_sampler_comparison <- function(
         curve_num,
         "_gess.pdf"
       ))
-      curve(fexp(x), col = 'red', lwd = 2)
+      curve(fexp(f = lf, x = x), col = 'red', lwd = 2)
       lapply(gess_metrics$thinDraws, function(x) {
         lines(density(x), col = adjustcolor('black', alpha.f = 0.95))
       })
-      curve(fexp(x),
+      curve(fexp(f = lf, x = x),
             col = 'red',
             lwd = 2,
             add = TRUE)
@@ -415,11 +415,11 @@ slice_sampler_comparison <- function(
         curve_num,
         "_transform.pdf"
       ))
-      curve(fexp(x), col = 'red', lwd = 2)
+      curve(fexp(f = lf, x = x), col = 'red', lwd = 2)
       lapply(transform_metrics$thinDraws, function(x) {
         lines(density(x), col = adjustcolor('black'))
       })
-      curve(fexp(x),
+      curve(fexp(f = lf, x = x),
             col = 'red',
             lwd = 2,
             add = TRUE)
