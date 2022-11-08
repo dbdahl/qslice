@@ -1,0 +1,461 @@
+---
+title: "sampler_eda"
+author: "Sam Johnson"
+date: "2022-10-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source('sampler_eda.R')
+```
+
+```{r read-in-data-curve}
+# reading in all files from data folder
+files <- list.files(path = '..\\data\\', pattern = "*_metrics", full.names = TRUE)
+# saving the files as a list
+curve_comp_list <- lapply(files, extract_metrics)
+# converting the list to a data frame
+curve_comp_data <- plyr::ldply(curve_comp_list, data.frame)
+```
+
+# Overall Performance
+
+```{r curve-comp-box-plot}
+curve_comp_data %>% 
+  ggplot(aes(y = method, x = ESS, fill = method)) +
+  facet_wrap(~as.factor(curve)) + 
+  geom_boxplot() +
+  scale_x_continuous(labels = scales::number_format(scale = .001, suffix = 'K'))
+```
+
+```{r read-in-data-method}
+# saving the files as a list
+method_comp_list <- lapply(files, extract_curve_metrics)
+curves <- c(
+function(x) {
+  log(0.2 * dnorm(x, sd = 0.5) + 0.8 * dnorm(x, mean = 6, sd = 2))
+},
+function(x) {
+  log(0.2 * dnorm(x, sd = 0.5) + 0.8 * dnorm(x, mean = 20, sd = 1))
+},
+function(x) {
+  dgamma(x,
+         shape = 2.5,
+         rate = 1,
+         log = TRUE)
+},
+function(x) {
+  ifelse(x < 0, -Inf, dt(x, df = 3.0, log = TRUE) + log(2.0))
+},
+function(x) {
+  dt(x, df = 5.0, log = TRUE)
+},
+function(x) {
+  dbeta(x,
+        shape1 = 0.2,
+        shape2 = 0.8,
+        log = TRUE)
+},
+function(x) {
+  dnorm(x, mean = 20, sd = 5, log = TRUE)
+},
+function(x) {
+  if_else(x < 0, log(0),
+          if_else(x <= 5, log((x^3 + x^2 + 100*sin(x))/(-100*cos(5) + (3575)/(12))),
+                  log(0)))
+}
+)
+range <- list( 
+            list(xrange = c(-4, 15), yrange = c(0, 0.17 + 0.10)),
+            list(xrange = c(-3, 25), yrange = c(0, 0.32 + 0.10)),
+            list(xrange = c(0, 10), yrange = c(0, 0.31 + 0.10)),
+            list(xrange = c(0, 10), yrange = c(0, 0.8 + 0.10)),
+            list(xrange = c(-10, 10), yrange = c(0, 0.42 + 0.10)),
+            list(xrange = c(0, 1), yrange = c(0, 5 + 0.10)),
+            list(xrange = c(0, 40), yrange = c(0, 0.08 + 0.010)),
+            list(xrange = c(0,5), yrange = c(0, 0.8))   
+               )
+```
+
+```{r read-draws-data}
+draws_list <- lapply(files, extract_draws)
+```
+
+
+# CURVE 1
+
+```{r}
+i <- 1
+curve(fexp(f = curves[[i]], x = x), xlim = range[[i]]$xrange, ylim = range[[i]]$yrange)
+```
+
+
+```{r}
+curve_slice_sampler(draws_list,curve = i)
+```
+
+
+```{r}
+curve <- boxplot_slice_sampler(method_comp_list, curve = i)
+```
+
+### Stepping Out
+
+```{r}
+curve$stepping_out_plot
+```
+
+### Latent
+
+```{r}
+curve$latent_plot
+```
+
+
+### GESS
+
+```{r}
+curve$gess_plot
+```
+
+### Transform
+
+```{r}
+curve$transform_plot
+```
+
+
+### Random Walk
+
+```{r}
+curve$rand_walk_plot
+```
+
+
+# CURVE 2
+
+```{r}
+i <- 2
+curve(fexp(f = curves[[i]], x = x), xlim = range[[i]]$xrange, ylim = range[[i]]$yrange)
+```
+
+
+```{r}
+curve_slice_sampler(draws_list,curve = i)
+```
+
+
+```{r}
+curve <- boxplot_slice_sampler(method_comp_list, curve = i)
+```
+
+### Stepping Out
+
+```{r}
+curve$stepping_out_plot
+```
+
+### Latent
+
+```{r}
+curve$latent_plot
+```
+
+
+### GESS
+
+```{r}
+curve$gess_plot
+```
+
+### Transform
+
+```{r}
+curve$transform_plot
+```
+
+
+### Random Walk
+
+```{r}
+curve$rand_walk_plot
+```
+
+# CURVE 3
+
+```{r}
+i <- 3
+curve(fexp(f = curves[[i]], x = x), xlim = range[[i]]$xrange, ylim = range[[i]]$yrange)
+```
+
+
+```{r}
+curve_slice_sampler(draws_list,curve = i)
+```
+
+
+```{r}
+curve <- boxplot_slice_sampler(method_comp_list, curve = i)
+```
+
+### Stepping Out
+
+```{r}
+curve$stepping_out_plot
+```
+
+### Latent
+
+```{r}
+curve$latent_plot
+```
+
+
+### GESS
+
+```{r}
+curve$gess_plot
+```
+
+### Transform
+
+```{r}
+curve$transform_plot
+```
+
+
+### Random Walk
+
+```{r}
+curve$rand_walk_plot
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# CURVE 4
+
+```{r}
+i <- 4
+curve(fexp(f = curves[[i]], x = x), xlim = range[[i]]$xrange, ylim = range[[i]]$yrange)
+```
+
+
+```{r}
+curve_slice_sampler(draws_list,curve = i)
+```
+
+
+```{r}
+curve <- boxplot_slice_sampler(method_comp_list, curve = i)
+```
+
+### Stepping Out
+
+```{r}
+curve$stepping_out_plot
+```
+
+### Latent
+
+```{r}
+curve$latent_plot
+```
+
+
+### GESS
+
+```{r}
+curve$gess_plot
+```
+
+### Transform
+
+```{r}
+curve$transform_plot
+```
+
+
+### Random Walk
+
+```{r}
+curve$rand_walk_plot
+```
+
+
+
+
+
+# CURVE 5
+
+```{r}
+i <- 5
+curve(fexp(f = curves[[i]], x = x), xlim = range[[i]]$xrange, ylim = range[[i]]$yrange)
+```
+
+
+```{r}
+curve_slice_sampler(draws_list,curve = i)
+```
+
+
+```{r}
+curve <- boxplot_slice_sampler(method_comp_list, curve = i)
+```
+
+### Stepping Out
+
+```{r}
+curve$stepping_out_plot
+```
+
+### Latent
+
+```{r}
+curve$latent_plot
+```
+
+
+### GESS
+
+```{r}
+curve$gess_plot
+```
+
+### Transform
+
+```{r}
+curve$transform_plot
+```
+
+
+### Random Walk
+
+```{r}
+curve$rand_walk_plot
+```
+
+# CURVE 6
+
+```{r}
+i <- 6
+curve(fexp(f = curves[[i]], x = x), xlim = range[[i]]$xrange, ylim = range[[i]]$yrange)
+```
+
+
+```{r}
+curve_slice_sampler(draws_list,curve = i)
+```
+
+
+```{r}
+curve <- boxplot_slice_sampler(method_comp_list, curve = i)
+```
+
+### Stepping Out
+
+```{r}
+curve$stepping_out_plot
+```
+
+### Latent
+
+```{r}
+curve$latent_plot
+```
+
+
+### GESS
+
+```{r}
+curve$gess_plot
+```
+
+### Transform
+
+```{r}
+curve$transform_plot
+```
+
+
+### Random Walk
+
+```{r}
+curve$rand_walk_plot
+```
+
+# CURVE 7
+
+```{r}
+i <- 7
+curve(fexp(f = curves[[i]], x = x), xlim = range[[i]]$xrange, ylim = range[[i]]$yrange)
+```
+
+
+```{r}
+curve_slice_sampler(draws_list,curve = i)
+```
+
+
+```{r}
+curve <- boxplot_slice_sampler(method_comp_list, curve = i)
+```
+
+### Stepping Out
+
+```{r}
+curve$stepping_out_plot
+```
+
+### Latent
+
+```{r}
+curve$latent_plot
+```
+
+
+### GESS
+
+```{r}
+curve$gess_plot
+```
+
+### Transform
+
+```{r}
+curve$transform_plot
+```
+
+
+### Random Walk
+
+```{r}
+curve$rand_walk_plot
+```
