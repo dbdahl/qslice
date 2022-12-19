@@ -8,12 +8,12 @@ library(utils)
 source("../sam_comparison_functions.R")
 
 
-reps <- 2
+reps <- 10
 
 fexp <- function(f, x) exp(f(x))
 samples <- rep(5000,reps)
-auto.cor.lim <- 0.05
-
+auto.cor.lim <- 0.10
+sampleSize <- 10000
 
 # function that extracts pvalues when calculating power
 extract_pvals <- function(list_hldr, dist_df) {
@@ -189,7 +189,7 @@ second_derivative <- function( x, h = 1e-5, f ) {
 # this function provides a lapace approximation for a curve lf
 laplace_approx <- function(lf, h = 1e-5, init){
   fit <- optim(init, lf, control=list(fnscale=-1), method = 'BFGS')
-  sd <- sqrt(-solve(second_derivative(fit$par, h = h, f = lf))) * 1.5
+  sd <- sqrt(-solve(second_derivative(fit$par, h = h, f = lf))) * 3
   return(
       c(log_pdf = function(x) {dnorm(x, mean = fit$par, sd = sd, log = TRUE)},
       inv_cdf = function(u, lower.tail = TRUE) {qnorm(u, mean = fit$par, sd = sd, lower.tail = lower.tail)})
