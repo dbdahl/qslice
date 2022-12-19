@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve8')
 source('curve8_setup.R')
 
 
@@ -31,14 +32,15 @@ stepping_out_metrics <- trials_stepping_out %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 1000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, cdf)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, cdf)$p.value
   ) %>%
-  dplyr::select(-metrics) %>%
+  dplyr::select(-metrics, -truncThinDraws) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
 
@@ -95,8 +97,8 @@ stepping_min_max <-
   results(stepping_out_metrics, method = "Stepping Out")
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_stepping_out,
   stepping_out_metrics
 )

@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve8')
 source('curve8_setup.R')
 
 ##
@@ -23,14 +24,15 @@ rand_walk_metrics <- trials_rand_walk %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 5000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, cdf)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, cdf)$p.value
   ) %>%
-  dplyr::select(-c(metrics)) %>%
+  dplyr::select(-c(metrics,truncThinDraws)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
 

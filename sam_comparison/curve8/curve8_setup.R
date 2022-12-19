@@ -37,31 +37,64 @@ ylim_range <- c(0, 0.4)
 
 #### Tuning Parameters ####
 ## starting point ##
-x <- c(0.5, 1, 4.5)
+x <- c(0.5)#c(0.5, 1, 4.5)
 ## stepping out metrics to input ##
 w <- c(2, 5, 10)
 
 ## latent slice sampling metric to input ##
-s <- c(3, 5, 10)
-rate <- c(2)
+s <- c(3)#c(3, 5, 10)
+rate <- c(0.5,2)
 
 ## gess slice sampling metrics to input ##
-mu <- c(3, 5, 10)
-sigma <- c(3)
-df <- c(3)
+mu <- c(3, 5)
+sigma <- c(1,3)
+df <- c(3,10)
 
 ## transform tuning parameters ##
+laplace_approximation <- laplace_approx(lf, init = 1)
+
 log_pdf <- c(function(x) dnorm(x, mean = 5, sd = 5, log = TRUE),
-             function(x) dnorm(x, mean = 4, sd = 10, log = TRUE))
+             function(x) dnorm(x, mean = 4, sd = 10, log = TRUE),
+             laplace_approximation$log_pdf,
+             function(x) dnorm(x, mean = 2, sd = 5, log = TRUE),
+             function(x) dnorm(x, mean = 3, sd = 15, log = TRUE),
+             function(x) dgamma(x, shape = .2, rate = .1, log = TRUE),
+             function(x) dgamma(x, shape = 2, rate = .9, log = TRUE),
+             function(x) dgamma(x, shape = 3, rate = 1.1, log = TRUE),
+             function(x) dgamma(x, shape = 5, rate = 1.1, log = TRUE),
+             function(x) dgamma(x, shape = 10, rate = 1.1, log = TRUE)
+             
+             )
 
 inv_cdf <- c(function(u) qnorm(u, mean = 5, sd = 5),
-             function(u) qnorm(u, mean = 4, sd = 10))
+             function(u) qnorm(u, mean = 4, sd = 10),
+             laplace_approximation$inv_cdf,
+             function(u) qnorm(u, mean = 2, sd = 5),
+             function(u) qnorm(u, mean = 3, sd = 15),
+             function(u) qgamma(u, shape = .2, rate = .1),
+             function(u) qgamma(u, shape = 2, rate = .9),
+             function(u) qgamma(u, shape = 3, rate = 1.1),
+             function(u) qgamma(u, shape = 5, rate = 1.1),
+             function(u) qgamma(u, shape = 10, rate = 1.1)
+             )
 
 find_grid <- list(seq(from = qnorm((1-.99999)/2, mean = 5, sd = 5),
                       to = qnorm((1-.99999)/2, mean = 5, sd = 5, lower.tail = FALSE), length.out = 1000),
                   seq(from = qnorm((1-.99999)/2, mean = 4, sd = 10),
-                      to = qnorm((1-.99999)/2, mean = 4, sd = 10, lower.tail = FALSE), length.out = 1000))
+                      to = qnorm((1-.99999)/2, mean = 4, sd = 10, lower.tail = FALSE), length.out = 1000),
+                  seq(from = laplace_approximation$inv_cdf((1-0.99999)/2),
+                      to = laplace_approximation$inv_cdf((1-0.99999)/2, lower.tail = FALSE), length.out = 1000),
+                  seq(from = qnorm((1-.99999)/2, mean = 2, sd = 5),
+                      to = qnorm((1-.99999)/2, mean = 2, sd = 5, lower.tail = FALSE), length.out = 1000),
+                  seq(from = qnorm((1-.99999)/2, mean = 3, sd = 15),
+                      to = qnorm((1-.99999)/2, mean = 3, sd = 15, lower.tail = FALSE), length.out = 1000),
+                  seq(from = 0, to = qgamma(0.99999, shape = .2, rate = .1), length.out = 1000),
+                  seq(from = 0, to = qgamma(0.99999, shape = 2, rate = .9), length.out = 1000),
+                  seq(from = 0, to = qgamma(0.99999, shape = 3, rate = 1.1), length.out = 1000),
+                  seq(from = 0, to = qgamma(0.99999, shape = 5, rate = 1.1), length.out = 1000),
+                  seq(from = 0, to = qgamma(0.99999, shape = 10, rate = 1.1), length.out = 1000)
+                  )
 
 
 ## random walk tuning parameters ##
-c <- c(1)
+c <- c(0.5, 1)

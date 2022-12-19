@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve7')
 source('curve7_setup.R')
 
 ##
@@ -23,40 +24,41 @@ rand_walk_metrics <- trials_rand_walk %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 5000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, pnorm, mean = 20, sd = 5)$p.value
   ) %>%
-  dplyr::select(-c(metrics)) %>%
+  dplyr::select(-c(metrics, truncThinDraws)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
 
-# the functions to compare against
-dist_df <- data.frame(
-  dist = rep("pnorm", 6),
-  mean = c(18, 21, 19, 20, 20, 20),
-  sd = c(5, 5, 5, 6, 4, 5)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(
-    rand_walk_metrics$thinDraws,
-    FUN = ks.test,
-    y = dist_df[i, 'dist'],
-    mean = dist_df[i, 'mean'],
-    sd = dist_df[i, 'sd']
-  )
-}
-
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve7_rand_walk_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # the functions to compare against
+# dist_df <- data.frame(
+#   dist = rep("pnorm", 6),
+#   mean = c(18, 21, 19, 20, 20, 20),
+#   sd = c(5, 5, 5, 6, 4, 5)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(
+#     rand_walk_metrics$thinDraws,
+#     FUN = ks.test,
+#     y = dist_df[i, 'dist'],
+#     mean = dist_df[i, 'mean'],
+#     sd = dist_df[i, 'sd']
+#   )
+# }
+# 
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve7_rand_walk_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 # printing out metrics table
 saveRDS(rand_walk_metrics,paste0("../../data/curve",curve_num,"_rand_walk_metrics"))

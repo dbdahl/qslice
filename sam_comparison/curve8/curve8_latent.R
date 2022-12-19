@@ -1,4 +1,5 @@
-curve('curve8_setup.R')
+# setwd('~/cucumber/sam_comparison/curve8')
+source('curve8_setup.R')
 
 ##
 #### latent ####
@@ -31,14 +32,15 @@ latent_metrics <- trials_latent %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 5000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, cdf)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, cdf)$p.value
   ) %>%
-  select(-metrics) %>%
+  select(-metrics, -truncThinDraws) %>%
   mutate(SampPSec = ESS / time) %>%
   relocate(samples, .after = time)
 
@@ -93,8 +95,8 @@ dev.off()
 latent_min_max <- results(latent_metrics, method = "Latent")
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_latent,
   latent_metrics
 )

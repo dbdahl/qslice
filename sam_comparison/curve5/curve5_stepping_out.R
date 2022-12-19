@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve5')
 source('curve5_setup.R')
 
 ##
@@ -28,38 +29,39 @@ stepping_out_metrics <- trials_stepping_out %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 1000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, pt, df = 3.0)$p.value
   ) %>%
-  select(-metrics) %>%
+  select(-metrics, -truncThinDraws) %>%
   mutate(SampPSec = ESS / time) %>%
   relocate(samples, .after = time)
 
-# the functions to compare against
-dist_df <- data.frame(
-  dist = rep("pt", 6),
-  df = c(1, 2, 4, 5, 6, 3),
-  na = c(0, 0, 0, 0, 0, 0)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(
-    stepping_out_metrics$thinDraws,
-    FUN = ks.test,
-    y = dist_df[i, 'dist'],
-    df = dist_df[i, 'df']
-  )
-}
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve5_stepping_out_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # the functions to compare against
+# dist_df <- data.frame(
+#   dist = rep("pt", 6),
+#   df = c(1, 2, 4, 5, 6, 3),
+#   na = c(0, 0, 0, 0, 0, 0)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(
+#     stepping_out_metrics$thinDraws,
+#     FUN = ks.test,
+#     y = dist_df[i, 'dist'],
+#     df = dist_df[i, 'df']
+#   )
+# }
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve5_stepping_out_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 # printing out the metrics table
 saveRDS(stepping_out_metrics,paste0("../../data/curve",curve_num,"_stepping_out_metrics"))
@@ -91,8 +93,8 @@ stepping_min_max <-
   results(stepping_out_metrics, method = "Stepping Out")
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_stepping_out,
   stepping_out_metrics
 )

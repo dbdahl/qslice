@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve7')
 source('curve7_setup.R')
 
 ##
@@ -48,43 +49,44 @@ transform_metrics <- trials_transform %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 1000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pnorm, mean = 20, sd = 5)$p.value,
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, pnorm, mean = 20, sd = 5)$p.value,
     KLD.JSD = list(LaplacesDemon::KLD(px = px, py = py)[c(4,6)]),
     KLD = KLD.JSD$sum.KLD.px.py,
     JSD = KLD.JSD$mean.sum.KLD
   ) %>%
-  dplyr::select(-c(metrics,KLD.JSD)) %>%
+  dplyr::select(-c(metrics,KLD.JSD,truncThinDraws)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
 
-# the functions to compare against
-dist_df <- data.frame(
-  dist = rep("pnorm", 6),
-  mean = c(18, 21, 19, 20, 20, 20),
-  sd = c(5, 5, 5, 6, 4, 5)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(
-    transform_metrics$thinDraws,
-    FUN = ks.test,
-    y = dist_df[i, 'dist'],
-    mean = dist_df[i, 'mean'],
-    sd = dist_df[i, 'sd']
-  )
-}
-
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve7_transform_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # the functions to compare against
+# dist_df <- data.frame(
+#   dist = rep("pnorm", 6),
+#   mean = c(18, 21, 19, 20, 20, 20),
+#   sd = c(5, 5, 5, 6, 4, 5)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(
+#     transform_metrics$thinDraws,
+#     FUN = ks.test,
+#     y = dist_df[i, 'dist'],
+#     mean = dist_df[i, 'mean'],
+#     sd = dist_df[i, 'sd']
+#   )
+# }
+# 
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve7_transform_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 # printing out metrics table
 saveRDS(transform_metrics,paste0("../../data/curve",curve_num,"_transform_metrics"))
@@ -124,8 +126,8 @@ xtable::print.xtable(tab, file = '../../images_slice_sampler_comp/curve7_transfo
 
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_transform,
   transform_metrics
 )

@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve8')
 source('curve8_setup.R')
 
 ##
@@ -34,14 +35,15 @@ gess_metrics <- trials_gess %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 10000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, cdf)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, cdf)$p.value
   ) %>%
-  select(-metrics) %>%
+  select(-metrics,-truncThinDraws) %>%
   mutate(SampPSec = ESS / time) %>%
   relocate(samples, .after = time)
 
@@ -97,8 +99,8 @@ gess_min_max <- results(gess_metrics, method = "GESS")
 
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_gess,
   gess_metrics
 )

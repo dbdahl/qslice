@@ -1,24 +1,9 @@
+# setwd('~/cucumber/sam_comparison/curve6')
 source('curve6_setup.R')
 
 ##
 #### Transform ####
 ##
-
-
-log_pdf <- c(function(x) dbeta(x, shape1 = 0.3, shape2 = 0.7, log = TRUE),
-             function(x) dunif(x, min = 0, max = 1, log = TRUE),
-             function(x) dbeta(x, shape1 = 0.5, shape2 = 0.5, log = TRUE))
-
-inv_cdf <- c(function(u) qbeta(u, shape1 = 0.3, shape2 = 0.7),
-             function(u) qunif(u, min = 0, max = 1),
-             function(u) qbeta(u, shape1 = 0.5, shape2 = 0.5))
-
-find_grid <- list(seq(from = 0.00001,
-                      to = 0.99999, length.out = 1000),
-                  seq(from = 0.00001,
-                      to = 0.99999, length.out = 1000),
-                  seq(from = 0.00001,
-                      to = 0.99999, length.out = 1000))
 
 px <- data.frame(px = matrix(nrow = length(log_pdf), ncol = 1)) 
 px$log_pdf <- log_pdf
@@ -65,43 +50,44 @@ transform_metrics <- trials_transform %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 5000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value,
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value,
     KLD.JSD = list(LaplacesDemon::KLD(px = px, py = py)[c(4,6)]),
     KLD = KLD.JSD$sum.KLD.px.py,
     JSD = KLD.JSD$mean.sum.KLD
   ) %>%
-  dplyr::select(-c(metrics,KLD.JSD)) %>%
+  dplyr::select(-c(metrics,KLD.JSD,truncThinDraws)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
 
-# the functions to compare against
-dist_df <- data.frame(
-  dist = rep("pbeta", 6),
-  shape1 = c(.1, .8, .5, .2, .2, .2),
-  shape2 = c(.9, .8, .8, .5, .2, .8)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(
-    transform_metrics$thinDraws,
-    FUN = ks.test,
-    y = dist_df[i, 'dist'],
-    shape1 = dist_df[i, 'shape1'],
-    shape2 = dist_df[i, 'shape2']
-  )
-}
-
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve6_transform_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # the functions to compare against
+# dist_df <- data.frame(
+#   dist = rep("pbeta", 6),
+#   shape1 = c(.1, .8, .5, .2, .2, .2),
+#   shape2 = c(.9, .8, .8, .5, .2, .8)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(
+#     transform_metrics$thinDraws,
+#     FUN = ks.test,
+#     y = dist_df[i, 'dist'],
+#     shape1 = dist_df[i, 'shape1'],
+#     shape2 = dist_df[i, 'shape2']
+#   )
+# }
+# 
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve6_transform_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 # printing out metrics table
 saveRDS(transform_metrics,paste0("../../data/curve",curve_num,"_transform_metrics"))
@@ -140,8 +126,8 @@ tab <- transform_evaluation %>%
 xtable::print.xtable(tab, file = '../../images_slice_sampler_comp/curve6_transform_evaluation.tex')
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_transform,
   transform_metrics
 )

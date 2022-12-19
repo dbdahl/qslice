@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve6')
 source('curve6_setup.R')
 
 ##
@@ -31,39 +32,40 @@ latent_metrics <- trials_latent %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 10000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, pbeta, shape1 = 0.2, shape2 = 0.8)$p.value
   ) %>%
-  select(-metrics) %>%
+  select(-metrics,-truncThinDraws) %>%
   mutate(SampPSec = ESS / time) %>%
   relocate(samples, .after = time)
 
-# the functions to compare against
-dist_df <- data.frame(
-  dist = rep("pbeta", 6),
-  shape1 = c(.1, .8, .5, .2, .2, .2),
-  shape2 = c(.9, .8, .8, .5, .2, .8)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(
-    latent_metrics$thinDraws,
-    FUN = ks.test,
-    y = dist_df[i, 'dist'],
-    shape1 = dist_df[i, 'shape1'],
-    shape2 = dist_df[i, 'shape2']
-  )
-}
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve6_latent_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # the functions to compare against
+# dist_df <- data.frame(
+#   dist = rep("pbeta", 6),
+#   shape1 = c(.1, .8, .5, .2, .2, .2),
+#   shape2 = c(.9, .8, .8, .5, .2, .8)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(
+#     latent_metrics$thinDraws,
+#     FUN = ks.test,
+#     y = dist_df[i, 'dist'],
+#     shape1 = dist_df[i, 'shape1'],
+#     shape2 = dist_df[i, 'shape2']
+#   )
+# }
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve6_latent_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 # printing out the metrics table
 saveRDS(latent_metrics,paste0("../../data/curve",curve_num,"_latent_metrics"))
@@ -93,8 +95,8 @@ dev.off()
 latent_min_max <- results(latent_metrics, method = "Latent")
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_latent,
   latent_metrics
 )

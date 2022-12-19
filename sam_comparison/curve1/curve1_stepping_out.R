@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve1')
 source('curve1_setup.R')
 
 ##
@@ -30,40 +31,41 @@ stepping_out_metrics <- trials_stepping_out %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 1000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, cdf)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, cdf)$p.value
   ) %>%
-  dplyr::select(-metrics) %>%
+  dplyr::select(-metrics, - truncThinDraws) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
 
-# the functions to compare against
-dist_df <- data.frame(
-  dist = rep("cdf", 6),
-  mean2 = c(6, 6, 6, 7, 5, 6),
-  sd2 = c(4, 1, 3, 2, 2, 2)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(
-    stepping_out_metrics$thinDraws,
-    FUN = ks.test,
-    y = cdf,
-    mean2 = dist_df[i, 'mean2'],
-    sd2 = dist_df[i, 'sd2']
-  )
-}
-
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve1_stepping_out_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # the functions to compare against
+# dist_df <- data.frame(
+#   dist = rep("cdf", 6),
+#   mean2 = c(6, 6, 6, 7, 5, 6),
+#   sd2 = c(4, 1, 3, 2, 2, 2)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(
+#     stepping_out_metrics$thinDraws,
+#     FUN = ks.test,
+#     y = cdf,
+#     mean2 = dist_df[i, 'mean2'],
+#     sd2 = dist_df[i, 'sd2']
+#   )
+# }
+# 
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve1_stepping_out_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 # printing out metrics table
 saveRDS(stepping_out_metrics,paste0("../../data/curve",curve_num,"_stepping_out_metrics"))
@@ -94,8 +96,8 @@ stepping_min_max <-
   results(stepping_out_metrics, method = "Stepping Out")
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_stepping_out,
   stepping_out_metrics
 )

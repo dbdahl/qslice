@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve5')
 source('curve5_setup.R')
 
 ##
@@ -34,36 +35,37 @@ gess_metrics <- trials_gess %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 10000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, pt, df = 3.0)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, pt, df = 3.0)$p.value
   ) %>%
-  select(-metrics) %>%
+  select(-metrics, -truncThinDraws) %>%
   mutate(SampPSec = ESS / time) %>%
   relocate(samples, .after = time)
 
-# the functions to compare against
-dist_df <- data.frame(
-  dist = rep("pt", 6),
-  df = c(1, 2, 4, 5, 6, 3),
-  na = c(0, 0, 0, 0, 0, 0)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(gess_metrics$thinDraws,
-                           FUN = ks.test,
-                           y = dist_df[i, 'dist'],
-                           df = dist_df[i, 'df'])
-}
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve5_gess_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # the functions to compare against
+# dist_df <- data.frame(
+#   dist = rep("pt", 6),
+#   df = c(1, 2, 4, 5, 6, 3),
+#   na = c(0, 0, 0, 0, 0, 0)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(gess_metrics$thinDraws,
+#                            FUN = ks.test,
+#                            y = dist_df[i, 'dist'],
+#                            df = dist_df[i, 'df'])
+# }
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve5_gess_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 
 # printing out the metrics table
@@ -94,8 +96,8 @@ dev.off()
 gess_min_max <- results(gess_metrics, method = "GESS")
 
 rm(
-  list_hldr,
-  dist_df,
+  # list_hldr,
+  # dist_df,
   trials_gess,
   gess_metrics
 )

@@ -1,3 +1,4 @@
+# setwd('~/cucumber/sam_comparison/curve4')
 source('curve4_setup.R')
 
 ##
@@ -24,38 +25,39 @@ rand_walk_metrics <- trials_rand_walk %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = min(which(
-      acf(draws, plot = FALSE, lag.max = 5000)$acf < auto.cor.lim
-    )),
+    thin = length(draws)/ESS,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    ksTest = ks.test(thinDraws, cdf)$p.value
+    truncThinDraws = list(
+      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
+    ),
+    ksTest = ks.test(truncThinDraws, cdf)$p.value
   ) %>%
-  dplyr::select(-c(metrics)) %>%
+  dplyr::select(-c(metrics, truncThinDraws)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
 
-# function to compare against
-dist_df <- data.frame(
-  dist = rep("cdf", 6),
-  df = c(1, 2, 4, 5, 6, 3),
-  filler = c(0, 0, 0, 0, 0, 0)
-)
-
-list_hldr <- list(length = nrow(dist_df))
-for (i in 1:nrow(dist_df)) {
-  list_hldr[[i]] <- lapply(
-    rand_walk_metrics$thinDraws,
-    FUN = ks.test,
-    y = cdf,
-    df1 = dist_df[i, 'df']
-  )
-}
-
-# saving the power test
-pdf(file = "../../images_slice_sampler_comp/curve4_rand_walk_power.pdf")
-extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-dev.off()
+# # function to compare against
+# dist_df <- data.frame(
+#   dist = rep("cdf", 6),
+#   df = c(1, 2, 4, 5, 6, 3),
+#   filler = c(0, 0, 0, 0, 0, 0)
+# )
+# 
+# list_hldr <- list(length = nrow(dist_df))
+# for (i in 1:nrow(dist_df)) {
+#   list_hldr[[i]] <- lapply(
+#     rand_walk_metrics$thinDraws,
+#     FUN = ks.test,
+#     y = cdf,
+#     df1 = dist_df[i, 'df']
+#   )
+# }
+# 
+# # saving the power test
+# pdf(file = "../../images_slice_sampler_comp/curve4_rand_walk_power.pdf")
+# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
+# dev.off()
 
 # printing out metrics table
 saveRDS(rand_walk_metrics,paste0("../../data/curve",curve_num,"_rand_walk_metrics"))
