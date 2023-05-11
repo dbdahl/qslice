@@ -115,10 +115,12 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, l
   L <- 0
   R <- 1
   repeat {
-    u1 <- L + runif(1) * ( R - L )
+    u1 <- runif(1,L,R)#L + runif(1) * ( R - L )
     x1 <- pseudo_inv_cdf(u1)
+    if ( is.na( y < f(x1) ) ) { browser() }
     if ( y < f(x1) ) return(list(x=x1, nEvaluations=nEvaluations))
     if ( x1 < x ) L <- u1 else R <- u1
+    # print(c(L,R))
   }
 }
 
