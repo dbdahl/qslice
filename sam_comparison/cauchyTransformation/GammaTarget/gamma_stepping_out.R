@@ -1,0 +1,45 @@
+# setwd('~/cucumber/sam_comparison/curve1')
+source('gamma_setup.R')
+
+##
+#### Stepping out ####
+##
+
+
+# creating a data frame with all possible combinations
+trials_stepping_out <- expand.grid(samples, x, w) %>%
+  dplyr::rename('samples' = 'Var1',
+                'x' = 'Var2',
+                'w' = 'Var3')
+
+
+# evaluating the sampler at each different iteration
+stepping_out_metrics <- trials_stepping_out %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(
+    metrics = stepping_out_time_eval(
+      samples = samples,
+      x_0 = x,
+      lf_func = lf,
+      w_value = w,
+      max_value = Inf,
+      log_value = TRUE
+    )
+  ) %>%
+  mutate(
+    nEval = metrics$nEval,
+    ESS = metrics$EffSamp,
+    time = metrics$Time,
+    draws = metrics$Draws,
+    thin = (length(draws)/ESS) * 10,
+    thinDraws = list(LaplacesDemon::Thin(draws, thin)),
+    samplesThin = length(thinDraws),
+    ksTest = ks.test(thinDraws, pgamma, 2.5, 1)$p.value
+  ) %>%
+  dplyr::select(-metrics, -thinDraws) %>%
+  mutate(SampPSec = ESS / time) %>%
+  relocate(samples, .after = time)
+
+
+
+if(saveInd) saveRDS(stepping_out_metrics, file = 'data/stepping_out.rds')
