@@ -12,15 +12,7 @@ lf <- function(x) {
 }
 
 cdf <- function(x, mean2 = 6, sd2 = 2) {
-  probs <- vector(length = length(x))
-  for (i in 1:length(x)) {
-    probs[i] <-
-      integrate(function(x) {
-        exp(log(0.2 * dnorm(x, sd = 0.5) + 0.8 * dnorm(x, mean = mean2, sd = sd2)))
-      },
-      lower = -Inf, upper = x[i])$value
-  }
-  return(probs)
+  0.2 * pnorm(x, sd = 0.5) + 0.8 * pnorm(x, mean = mean2, sd = sd2)
 }
 
 # plot of the log of the density function below
@@ -28,9 +20,10 @@ pdf(file = "../../images_slice_sampler_comp/curve1.pdf")
 curve(fexp(f = lf, x = x), xlim = c(-4, 15), ylim = c(0, .17))
 dev.off()
 
+# making a grid to calculate KL divergence
 grid <- seq(from = qnorm((1-.99999)/2, mean = 0, sd = 0.5),
             to = qnorm((1-.99999)/2, mean = 6, sd = 2, lower.tail = FALSE),
-            length.out = 1000)
+            length.out = 5000)
 
 py <- exp(lf(grid))
 
@@ -49,9 +42,9 @@ s <- c(3)#c(3, 5, 10)#c(0.01, 1, 2, 10)
 rate <- c(0.1, 0.5, 1, 2, 5)#c(0.5, 1, 1.5, 2, 2.5, 3)
 
 ## gess slice sampling metrics to input ##
-mu <- c(3, 5, 10)#c(1,2,3,4.5,6,7)
-sigma <- c(2, 3, 6)#c(2,3,4,5,6,8)
-df <- c(3, 5, 30)#c(1,4,16,16^2,16^4)
+mu <- c(0, 3, 6, 10)#c(1,2,3,4.5,6,7)
+sigma <- c(2, 3, 6, 10)#c(2,3,4,5,6,8)
+df <- c(3, 5)#c(1,4,16,16^2,16^4)
 
 ## transform tuning parameters ##
 log_pdf <- c(function(x) dnorm(x, mean = 5, sd = 5, log = TRUE),
@@ -78,27 +71,5 @@ inv_cdf <- c(function(u) qnorm(u, mean = 5, sd = 5),
              function(u) qnorm(u, mean = 7, sd = 8)
              )
 
-find_grid <- list(seq(from = qnorm((1-.99999)/2, mean = 5, sd = 5),
-                      to = qnorm((1-.99999)/2, mean = 5, sd = 5, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 4, sd = 10),
-                      to = qnorm((1-.99999)/2, mean = 4, sd = 10, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 0, sd = 6),
-                      to = qnorm((1-.99999)/2, mean = 0, sd = 6, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 6, sd = 6),
-                      to = qnorm((1-.99999)/2, mean = 6, sd = 6, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 3, sd = 6),
-                      to = qnorm((1-.99999)/2, mean = 3, sd = 6, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 1, sd = 9),
-                      to = qnorm((1-.99999)/2, mean = 1, sd = 9, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 6, sd = 11),
-                      to = qnorm((1-.99999)/2, mean = 6, sd = 11, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 6, sd = 3),
-                      to = qnorm((1-.99999)/2, mean = 6, sd = 3, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 2, sd = 11),
-                      to = qnorm((1-.99999)/2, mean = 2, sd = 11, lower.tail = FALSE), length.out = 1000),
-                  seq(from = qnorm((1-.99999)/2, mean = 7, sd = 8),
-                      to = qnorm((1-.99999)/2, mean = 7, sd = 8, lower.tail = FALSE), length.out = 1000)
-                  )
-
 ## random walk tuning parameters ##
-c <- c(1,2,5,10)
+c <- c(1,2,5,10,15)
