@@ -7,7 +7,7 @@ source('curve5_setup.R')
 
 px <- data.frame(px = matrix(nrow = length(log_pdf), ncol = 1)) 
 px$log_pdf <- log_pdf
-px$grid <- find_grid
+px$grid <- list(grid)
 px <- px %>%
   rowwise() %>% 
   mutate(px = list(exp(log_pdf(grid)))) %$% px
@@ -45,88 +45,23 @@ transform_metrics <- trials_transform %>%
       log_value = TRUE
     )
   ) %>%
-  dplyr::mutate(
+  mutate(
     nEval = metrics$nEval,
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
-    thin = length(draws)/ESS,
+    thin = (length(draws)/ESS) * 10,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
-    truncThinDraws = list(
-      sample(unlist(thinDraws), ifelse(samplesThin <= sampleSize, samplesThin, sampleSize))
-    ),
-    ksTest = ks.test(truncThinDraws, pt, df = 3.0)$p.value,
+    ksTest = ks.test(thinDraws, pt, df = 5.0)$p.value,
     KLD.JSD = list(LaplacesDemon::KLD(px = px, py = py)[c(4,6)]),
     KLD = KLD.JSD$sum.KLD.px.py,
     JSD = KLD.JSD$mean.sum.KLD
   ) %>%
-  dplyr::select(-c(metrics, KLD.JSD, truncThinDraws)) %>%
+  dplyr::select(-c(metrics, KLD.JSD, thinDraws)) %>%
   dplyr::mutate(SampPSec = ESS / time) %>%
   dplyr::relocate(samples, .after = time)
-
-# # the functions to compare against
-# dist_df <- data.frame(
-#   dist = rep("pt", 6),
-#   df = c(1, 2, 4, 5, 6, 3),
-#   na = c(0, 0, 0, 0, 0, 0)
-# )
-# 
-# list_hldr <- list(length = nrow(dist_df))
-# for (i in 1:nrow(dist_df)) {
-#   list_hldr[[i]] <- lapply(
-#     transform_metrics$thinDraws,
-#     FUN = ks.test,
-#     y = dist_df[i, 'dist'],
-#     df = dist_df[i, 'df']
-#   )
-# }
-# 
-# # saving the power test
-# pdf(file = "../../images_slice_sampler_comp/curve5_transform_power.pdf")
-# extract_pvals(list_hldr = list_hldr, dist_df = dist_df)
-# dev.off()
 
 # printing out metrics table
 saveRDS(transform_metrics,paste0("../../data/curve",curve_num,"_transform_metrics"))
 
-# evalTbl_stepping_out <- cbind(start_points_stepping_out, w_values_stepping_out) %>% round(.,1)
-pdf(file = "../../images_slice_sampler_comp/curve5_transform.pdf")
-curve(
-  fexp(f = lf, x = x),
-  col = 'red',
-  xlim = c(xlim_range[1], xlim_range[2]),
-  ylim = c(ylim_range[1], ylim_range[2]),
-  lwd = 2
-)
-lapply(transform_metrics$thinDraws, function(x) {
-  lines(density(x), col = adjustcolor('black'))
-})
-curve(
-  fexp(f = lf, x = x),
-  col = 'red',
-  xlim = c(xlim_range[1], xlim_range[2]),
-  ylim = c(ylim_range[1], ylim_range[2]),
-  lwd = 2,
-  add = TRUE
-)
-dev.off()
-
-transform_min_max <-
-  results(transform_metrics, method = "Transform")
-
-transform_evaluation <- results_transform(transform_metrics)
-
-tab <- transform_evaluation %>%
-  xtable::xtable(caption = "This table shows the method of sampling, settings for the tuning parameters, average number of effective samples taken per second, the perecentage of samples that matched the target disribution according to a kolmogorov-Smirnov test, and the Kullback-Leibler divergence.",
-                 digits = c(0,0,0,2,2,0,2))
-
-xtable::print.xtable(tab, file = '../../images_slice_sampler_comp/curve5_transform_evaluation.tex')
-
-
-rm(
-  # list_hldr,
-  # dist_df,
-  trials_transform,
-  transform_metrics
-)
