@@ -63,7 +63,7 @@ fit_trunc_Cauchy <- function(y, lb=-Inf, ub=Inf) {
 }
 
 # given location and scale returns a pdf and inverse cdf on the log scale
-pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf) {
+pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf, name = NULL) {
   
   plb <- pcauchy(lb, loc=loc, sc=sc)
   pub <- pcauchy(ub, loc=loc, sc=sc)
@@ -74,7 +74,7 @@ pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf) {
   
   list(pseudo_log_pdf = pseudo_log_pdf,
        pseudo_inv_cdf = pseudo_inv_cdf,
-       t = paste0("Cauchy(loc=",round(loc,2), ", sc=",round(sc,2),"),Auto"),
+       t = paste0("Cauchy(loc=",round(loc,2), ", sc=",round(sc,2),"), ", name),
        loc = loc, sc = sc)
 }
 
@@ -149,18 +149,28 @@ makePseudo <- function(cauchy_scale) {
   )
 }
 
+## dr heiner optimization
+optimizedCauchy <- pseudo_Cauchy(loc = 1.4871, sc = 1.886, lb = 0, name = 'Optim')
+
 ## transform tuning parameters ##
 log_pdf <- lapply(scales, FUN = \(par) makePseudo(par)) %>% 
   lapply(FUN = \(x) x$d) %>% 
   unlist()
 
+log_pdf <- append(log_pdf, optimizedCauchy$pseudo_log_pdf)
+
 inv_cdf <- lapply(scales, FUN = \(par) makePseudo(par)) %>% 
   lapply(FUN = \(x) x$q) %>% 
   unlist()
+
+inv_cdf <- append(inv_cdf, optimizedCauchy$pseudo_inv_cdf)
 
 t <- lapply(scales, FUN = \(par) makePseudo(par)) %>% 
   lapply(FUN = \(x) x$t) %>% 
   unlist()
 
+t <- c(t, optimizedCauchy$t)
+
 ## random walk tuning parameters ##
 c <- c(0.25,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5)
+

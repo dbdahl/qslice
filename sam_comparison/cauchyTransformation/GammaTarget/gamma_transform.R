@@ -20,10 +20,10 @@ burnin_metrics = stepping_out_time_eval(
 
 # fitting the Cauchy
 psuedoFit <- fit_trunc_Cauchy(unlist(burnin_metrics$Draws), lb = 0)
-cauchyFit <- pseudo_Cauchy(loc = psuedoFit$loc,sc = psuedoFit$sc, lb = 0)
+cauchyFit <- pseudo_Cauchy(loc = psuedoFit$loc,sc = psuedoFit$sc, lb = 0, name = 'Auto')
 
 temp_df <- data.frame(log_pdf = matrix(nrow = length(log_pdf)+1, ncol = 1))
-temp_df$scales <- c(scales,cauchyFit$sc)
+# temp_df$scales <- c(scales,cauchyFit$sc)
 temp_df$log_pdf <- c(log_pdf,cauchyFit$pseudo_log_pdf)
 temp_df$inv_cdf <- c(inv_cdf,cauchyFit$pseudo_inv_cdf)
 temp_df$t <- c(t,cauchyFit$t)
