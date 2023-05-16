@@ -141,4 +141,4 @@ sapply(betaSamples, \(list) plot(density(c(list)), main = 'beta'))
 sapply(chainSamples, \(list) list$time)
 
 
-
+saveRDS(chainSamples, file = 'data/randWalk.rds')

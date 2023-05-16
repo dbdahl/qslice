@@ -59,7 +59,7 @@ fit_trunc_Cauchy <- function(y, lb=-Inf, ub=Inf) {
 }
 
 # given location and scale returns a pdf and inverse cdf on the log scale
-pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf) {
+pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf, name = NULL) {
   
   plb <- pcauchy(lb, loc=loc, sc=sc)
   pub <- pcauchy(ub, loc=loc, sc=sc)
@@ -70,11 +70,11 @@ pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf) {
   
   list(pseudo_log_pdf = pseudo_log_pdf,
        pseudo_inv_cdf = pseudo_inv_cdf,
-       t = paste0("Cauchy(loc=",round(loc,2), ", sc=",round(sc,2),"),Auto"),
+       t = paste0("Cauchy(loc=",round(loc,2), ", sc=",round(sc,2),"), ", name),
        loc = loc, sc = sc)
 }
 
-
+# given a function returns the second derivative at that point
 second_derivative <- function( x, h = 1e-5, f ) {
   
   num <- f(x + h) - 2*f(x) + f(x - h)
@@ -83,11 +83,12 @@ second_derivative <- function( x, h = 1e-5, f ) {
   num/denom
 }
 
-lapproxt <- function(lf, init, sc_adj = 1.0, lb = -Inf, ub = Inf, ...) {
+# returns a psuedo target given a function
+lapproxt <- function(f, init, sc_adj = 1.0, lb = -Inf, ub = Inf, ...) {
   
-  fit <- optim(par = init, fn = lf, control = list(fnscale = -1), method = 'BFGS')
+  fit <- optim(par = init, fn = f, control = list(fnscale = -1), method = 'BFGS')
   loc <- fit$par
-  hessian <- second_derivative( x = loc, h = 1e-5, f = lf )
+  hessian <- second_derivative( x = loc, h = 1e-5, f = f )
   hessian_f <- hessian * exp(fit$value) # hessian of original f
   sc <- sc_adj / sqrt(-hessian_f)
   out <- pseudo_Cauchy(loc = loc, sc = sc, lb = lb, ub = ub)
@@ -95,3 +96,56 @@ lapproxt <- function(lf, init, sc_adj = 1.0, lb = -Inf, ub = Inf, ...) {
   
   out
 }
+
+## optimizes the area under the curve to find loc and scale
+
+pseudo_Cauchy_list = function(loc, sc, lb=-Inf, ub=Inf) {
+  
+  plb = pcauchy(lb, loc=loc, sc=sc)
+  pub = pcauchy(ub, loc=loc, sc=sc)
+  normc = pub - plb
+  
+  list(d = function(x) {dcauchy(x, loc=loc, sc=sc)},
+       ld = function(x) {dcauchy(x, loc=loc, sc=sc, log=TRUE)},
+       dld = function(x) {-2*(x-loc)/sc^2 / (1 + ((x-loc)/sc)^2)}, # derivative of log density
+       q = function(u) {qcauchy(plb + u*normc)*sc + loc},
+       p = function(x) {(pcauchy(x, loc=loc, sc=sc) - plb) / normc},
+       t = paste0("Cauchy(", loc, ", ", sc, ")"))
+}
+
+samples = rnorm(10e3)
+samples = rgamma(10e3, 2.5, 1)
+
+opt_Cauchy_auc_data = function(samples, lb=-Inf, ub=Inf) {
+  
+  get_auc = function(pars, samples, lb, ub) {
+    loc = pars[1]
+    sc = pars[2]
+    
+    pseu = pseudo_Cauchy_list(loc=loc, sc=sc, lb=lb, ub=ub)
+    
+    qq = pseu$p(samples)
+    
+    nbins = 30
+    (bins = seq(0.0, 1.0, len=nbins+1))
+    (tab = tabulate( as.numeric(cut(qq, breaks = bins)), nbins=nbins))
+    
+    tab[c(1,nbins)] = 1.2 * tab[c(1,nbins)] # penalty for smiling...
+    
+    (tab_norm = tab / max(tab) / nbins)
+    
+    (auc = sum(tab_norm))
+    auc
+  }
+  
+  temp <- optim(c(0.0, 1.0), get_auc, control = list(fnscale=-1), samples=samples,
+        lb = lb, ub = ub)
+  
+  list(loc = temp$par[1], sc = temp$par[2], lb = lb, ub = ub)
+  
+}
+
+opt_Cauchy_auc_data(samples, lb=-Inf, ub=Inf)
+opt_Cauchy_auc_data(samples, lb=0, ub=Inf)
+
+

@@ -1,4 +1,4 @@
-## g prior sampling using stepping out procedure
+## exploring stepping out for the g prior
 ## Author: Sam Johnson
 
 library(mvtnorm)
@@ -47,8 +47,17 @@ samples <- list(beta = matrix(0.0, nrow = n_samples, ncol = length(beta)), psi =
 chainSamples <- vector('list', length = nChains)
 chainSamples <- lapply(chainSamples, \(list) samples)
 
+xx <- seq(from = 0.01, to = 100, length.out = 1000)
+
+f <- \(g) {
+  beta_cov <- g / psi * inv_XtX
+  exp(dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf))
+}
+yy <- sapply(xx, f)
+plot(xx,yy)
+
 # collecting the samples
-output <- foreach( chain = seq_along(chainSamples) ) %do% {
+# output <- foreach( chain = seq_along(chainSamples) ) %do% {
   time <- system.time({
     for (i in seq_len(n_samples)) {
       q <- g / (1 + g)
@@ -59,17 +68,27 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       residuals <- y - X %*% t(beta)
       b_n <- b_0 + 0.5 * sum(residuals^2)
       psi <- rgamma(1, a_n, b_n)
+      if(i %% 1000 == 0) {
+        f <- \(g) {
+          beta_cov <- g / psi * inv_XtX
+          exp(dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf))
+        }
+        yy <- sapply(xx, f)
+        plot(xx,yy)
+        browser()
+        # readline(prompt = 'continue?')
+      }
       g <- cucumber::slice_sampler_stepping_out(g, \(g) {
         beta_cov <- g / psi * inv_XtX
         dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf)
       }, w = 100, log = TRUE)$x
-      chainSamples[[chain]]$beta[i,] <- beta
-      chainSamples[[chain]]$psi[i] <- psi
-      chainSamples[[chain]]$g[i] <- g
+      chainSamples[[1]]$beta[i,] <- beta
+      chainSamples[[1]]$psi[i] <- psi
+      chainSamples[[1]]$g[i] <- g
     }
   })
-  chainSamples[[chain]]$time <- time['user.self']
-}
+#   chainSamples[[chain]]$time <- time['user.self']
+# }
 
 
 # evaluation of samples
@@ -85,7 +104,7 @@ traceplot <- function(matrix, mainTitle = NULL) {
   # making trace plot
   color <- RColorBrewer::brewer.pal(n, 'Set2')
   plot(matrix[,1], type = 'l', col = color[i], main = paste0(mainTitle, ' ESS=',effSize, ' Rhat=',Rhat),
-                                                             ylab = '')
+       ylab = '')
   for( i in 2:n ) {
     lines(matrix[,i], type = 'l', col = color[i])
   }

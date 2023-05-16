@@ -116,4 +116,4 @@ sapply(betaSamples, \(list) plot(density(c(list)), main = 'beta'))
 # time
 sapply(chainSamples, \(list) list$time)
 
-
+saveRDS(chainSamples, file = 'data/latent.rds')
