@@ -2,4 +2,9 @@
 /.Rproj.user
 /cucumber.Rcheck
 /cucumber_*.tar.gz
+/sam_comparison/cauchyTransformation/NormTarget/data
+/sam_comparison/cauchyTransformation/GammaTarget/data
+/sam_comparison/cauchyTransformation/NormTarget/log
+/sam_comparison/cauchyTransformation/GammaTarget/log
+/gprior/data
 /toDoList
