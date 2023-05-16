@@ -338,25 +338,32 @@ compDf <- avgSampPSec %>%
          bGess = ifelse(SampPSec >= avgSampPSec[grepl('mu=.*',avgSampPSec$par),"SampPSec"], 1, 0),
          bLatent = ifelse(SampPSec >= avgSampPSec[grepl('rate=.*',avgSampPSec$par),"SampPSec"], 1, 0),
          bRandWalk = ifelse(SampPSec >= avgSampPSec[grepl('^c=[1-9]*',avgSampPSec$par),"SampPSec"], 1, 0),
+         bTotal = sum(bStep, bGess, bLatent, bRandWalk)
   ) %>% 
-  slice(grep("^loc.*", par)) %>% 
-  mutate(colors = case_when(
-    bStep == 1 ~ "#66C2A5",
-    bGess == 1 ~ "#FC8D62",
-    bLatent == 1 ~ "#8DA0CB",
-    bRandWalk == 1 ~ "#E78AC3"
-  ))
+  slice(grep("^loc.*", par))
 
 uniqueIndex <- !duplicated(transform_metrics$t)
 pseu <- vector('list', length = sum(uniqueIndex))
 uniqueT <- transform_metrics$t[uniqueIndex]
 uniquePDF <- transform_metrics$log_pdf[uniqueIndex]
 uniqueInvCDF <- transform_metrics$inv_cdf[uniqueIndex]
+colFunc <- colorRampPalette(c('red','blue'))
+colors <- RColorBrewer::brewer.pal(4, 'Dark2')
+
+temp <- unlist(uniqueT)
+temp <- stringr::str_extract(temp, pattern = 'l.*') %>%
+  gsub('[)]','',.)
+
+
+compDf <- compDf[match(temp, compDf$par),]
 
 for( i in seq_along(pseu) ) {
   pseu[[i]] <- list(d = function(x) exp(uniquePDF[[i]](x)),
                     q = function(u) uniqueInvCDF[[i]](u),
-                    t = uniqueT[[i]])
+                    t = uniqueT[[i]],
+                    color = colors[compDf$bTotal[i]],
+                    lwd = compDf$bTotal[i],
+                    lty = compDf$bTotal[i])
 }
 
 truth <- list( d = function(x) dgamma(x, 2.5, 1),
@@ -379,7 +386,7 @@ plot(xx, truth$d(xx), type="l", lwd=3,
      xlab=expression(theta), ylab="", axes=FALSE)
 axis(side=1)
 for(i in 1:n_pseu) {
-  lines(xx, pseu[[i]]$d(xx), col = compDf$colors[i])#col=i+1, lwd=2, lty=i+1)	
+  lines(xx, pseu[[i]]$d(xx), col = pseu[[i]]$color, lwd = pseu[[i]]$lwd, lty = pseu[[i]]$lty)#col=i+1, lwd=2, lty=i+1)	
 }
 
 plot(uu, rep(1.0, length(uu)), type="l", col=1, lwd=3, 
@@ -388,13 +395,13 @@ plot(uu, rep(1.0, length(uu)), type="l", col=1, lwd=3,
 axis(side=1)
 
 for(i in 1:n_pseu) {
-  lines(uu, truth$d( pseu[[i]]$q(uu) ) / pseu[[i]]$d( pseu[[i]]$q(uu) ), col = compDf$colors[i])#col=i+1, lwd=2, lty=i+1)
+  lines(uu, truth$d( pseu[[i]]$q(uu) ) / pseu[[i]]$d( pseu[[i]]$q(uu) ), col = pseu[[i]]$color, lwd = pseu[[i]]$lwd, lty = pseu[[i]]$lty)#col=i+1, lwd=2, lty=i+1)
 }
 
 plot(1, type="n", axes=FALSE, xlab="", ylab="")
 legend("left", bty="n", inset=c(0.0, 0.0),
-       legend = c('Stepping Out','Gess','Latent','RandWalk'),
-       col = c("#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3"), lwd = 2, cex = 0.9)
+       legend = 1:4,
+       col = colors, lwd = 1:4, lty = 1:4, cex = 0.9)
 # legend=c(truth$t, sapply(pseu, function(x) x$t)),
 # col=1:(n_pseu+1), lwd=2, lty=1:(n_pseu+1), cex = 0.7)
 dev.off()
