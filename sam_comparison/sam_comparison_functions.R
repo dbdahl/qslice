@@ -182,6 +182,7 @@ transform_time_eval <- function(samples = 200,
   draws <- numeric(samples)
   Tdraws <- numeric(samples)
   draws[1] <- x_0
+  Tdraws[1] <- 0
   if(prog_bar) {pb <- utils::txtProgressBar(min = 0, max = samples, style = 3)}
   time <- system.time({
     print(paste0(x_0,"|",deparse1(pseudo_cdf_inv)))
