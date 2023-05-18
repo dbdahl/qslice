@@ -62,7 +62,7 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       g <- cucumber::slice_sampler_stepping_out(g, \(g) {
         beta_cov <- g / psi * inv_XtX
         dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf)
-      }, w = 100, log = TRUE)$x
+      }, w = 50, log = TRUE, max = Inf)$x
       chainSamples[[chain]]$beta[i,] <- beta
       chainSamples[[chain]]$psi[i] <- psi
       chainSamples[[chain]]$g[i] <- g
