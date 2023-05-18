@@ -101,3 +101,5 @@ sapply(chainSamples, \(list) mean(list$accept))
 # evaluation of samples
 
 saveRDS(chainSamples, file = 'data/randWalk.rds')
+
+print('finished')

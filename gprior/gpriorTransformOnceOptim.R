@@ -102,5 +102,5 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
 saveRDS(chainSamples, file = 'data/transformOnceOptim.rds')
 
 
-
+print('finished')
 
