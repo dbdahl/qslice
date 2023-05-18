@@ -7,6 +7,8 @@ library(doParallel)
 library(mcmc)
 library(coda)
 
+source('formatingFunctions.R') # needed to create the traceplots
+
 data(mtcars)
 
 attach(mtcars)
@@ -97,48 +99,5 @@ sapply(chainSamples, \(list) mean(list$accept))
 
 
 # evaluation of samples
-
-traceplot <- function(matrix, mainTitle = NULL) {
-  n <- ncol(matrix)
-  # finding eff sample size of samples
-  effSize <- round(sum(apply(matrix, 2, effectiveSize)))
-  # finding Rhat
-  chainList <- mcmc.list()
-  for (i in 1:n) chainList[[i]] <- mcmc(matrix[,i])
-  Rhat <- round(gelman.diag(chainList)$psrf[1,1],3)
-  # making trace plot
-  color <- RColorBrewer::brewer.pal(n, 'Set2')
-  plot(matrix[,1], type = 'l', col = color[i], main = paste0(mainTitle, ' ESS=',effSize, ' Rhat=',Rhat),
-       ylab = '')
-  for( i in 2:n ) {
-    lines(matrix[,i], type = 'l', col = color[i])
-  }
-}
-
-
-# g parameter
-gSamples <- sapply(chainSamples, \(list) list$g)
-
-traceplot(gSamples,'g')
-plot(density(c(gSamples)), main = 'g')
-
-# psi parameter
-psiSamples <- sapply(chainSamples, \(list) list$psi)
-
-traceplot(psiSamples, 'psi')
-plot(density(c(psiSamples)), main = 'psi')
-
-# beta parameters
-betaSamples <- lapply(1:ncol(X), \(i) sapply(chainSamples, \(list) list$beta[,i]))
-
-par(mfrow = c(3,4))
-sapply(betaSamples, traceplot)
-
-par(mfrow = c(3,4))
-sapply(betaSamples, \(list) plot(density(c(list)), main = 'beta'))
-
-# time
-sapply(chainSamples, \(list) list$time)
-
 
 saveRDS(chainSamples, file = 'data/randWalk.rds')

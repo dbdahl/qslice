@@ -99,31 +99,6 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
 
 # evaluation of samples
 
-# g parameter
-gSamples <- sapply(chainSamples, \(list) list$g)
-
-traceplot(gSamples,'g')
-plot(density(c(gSamples)), main = 'g')
-
-# psi parameter
-psiSamples <- sapply(chainSamples, \(list) list$psi)
-
-traceplot(psiSamples, 'psi')
-plot(density(c(psiSamples)), main = 'psi')
-
-# beta parameters
-betaSamples <- lapply(1:ncol(X), \(i) sapply(chainSamples, \(list) list$beta[,i]))
-
-par(mfrow = c(3,4))
-sapply(betaSamples, traceplot)
-
-par(mfrow = c(3,4))
-sapply(betaSamples, \(list) plot(density(c(list)), main = 'beta'))
-
-# time
-time <- sapply(chainSamples, \(list) list$time)
-
-
 saveRDS(chainSamples, file = 'data/transformEveryIterLaplace.rds')
 
 

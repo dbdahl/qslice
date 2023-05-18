@@ -104,7 +104,7 @@ f <- \(g) {
 yy <- sapply(xx, f)
 plot(xx,yy)
 
-w <- c(45, 50, 55, 60, 65)
+w <- c(30, 35, 40, 45, 50)
 
 unlink('explorationPlots/*', recursive = TRUE)
 
@@ -163,55 +163,19 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
 
 # evaluation of samples
 
-# time
-time <- sapply(chainSamples, \(list) list$time)
-
-# g parameter
-gSamples <- sapply(chainSamples, \(list) list$g)
-
-traceplot(gSamples,'g')
-plot(density(c(gSamples)), main = 'g')
-
-
-tst <- sapply(1:ncol(gSamples) , FUN = \(i) {
-  col <- gSamples[,i]
-  effSize <- round(coda::effectiveSize(col))
-  sampPSec <- round(effSize/time[i])
-  plot(density(col), main = paste0('w=',w[i],', SampPSec=',sampPSec))
-  fiveSummary <- round(summary(col))
-  plot(col, type = 'l', main = paste0('w=',w[i],', min=',fiveSummary[1],', mean=',fiveSummary[4],', max=',fiveSummary[5]))
-  data.frame(w = w[i], sampPSec = sampPSec, est = round(mean(col),2), lwrCred = round(quantile(col, probs = 0.025)), uprCred = round(quantile(col, probs = 0.975)) )
-})
-
-t(tst)
-
-# number of evaluations
-nEvals <- sapply(chainSamples, \(list) list$nEval)
-
-sapply(1:ncol(nEvals), FUN = \(i) {
- col <- nEvals[,i]
- plot(col, main = paste0('w=',w[i]))
-}
-)
+# tst <- sapply(1:ncol(gSamples) , FUN = \(i) {
+#   col <- gSamples[,i]
+#   effSize <- round(coda::effectiveSize(col))
+#   sampPSec <- round(effSize/time[i])
+#   plot(density(col), main = paste0('w=',w[i],', SampPSec=',sampPSec))
+#   fiveSummary <- round(summary(col))
+#   plot(col, type = 'l', main = paste0('w=',w[i],', min=',fiveSummary[1],', mean=',fiveSummary[4],', max=',fiveSummary[5]))
+#   data.frame(w = w[i], sampPSec = sampPSec, est = round(mean(col),2), lwrCred = round(quantile(col, probs = 0.025)), uprCred = round(quantile(col, probs = 0.975)) )
+# })
+# 
+# t(tst)
 
 
-# psi parameter
-psiSamples <- sapply(chainSamples, \(list) list$psi)
-
-traceplot(psiSamples, 'psi')
-plot(density(c(psiSamples)), main = 'psi')
-
-# beta parameters
-betaSamples <- lapply(1:ncol(X), \(i) sapply(chainSamples, \(list) list$beta[,i]))
-
-par(mfrow = c(3,4))
-sapply(betaSamples, traceplot)
-
-par(mfrow = c(3,4))
-sapply(betaSamples, \(list) plot(density(c(list)), main = 'beta'))
-
-
-
-# saveRDS(chainSamples, file = 'data/steppingOut.rds')
+saveRDS(chainSamples, file = 'data/steppingOutExploration.rds')
 
 
