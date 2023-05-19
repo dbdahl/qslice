@@ -76,7 +76,6 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
 
 # evaluation of samples
 
-
 saveRDS(chainSamples, file = 'data/latent.rds')
 
 print('finished')

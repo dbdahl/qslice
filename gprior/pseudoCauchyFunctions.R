@@ -39,9 +39,8 @@ fit_trunc_Cauchy <- function(y, lb=-Inf, ub=Inf) {
     loc <- params[1]
     sc <- params[2]
     
-    stopifnot(all(y <= ub))
-    stopifnot(all(y >= lb))
-    # if(any(y < lb)) browser()
+    stopifnot(all(y < ub))
+    stopifnot(all(y > lb))
     
     if (sc > 0.0) {
       llik <- dcauchy_trunc(y, loc=loc, sc=sc, lb=lb, ub=ub, log=TRUE)
@@ -95,7 +94,7 @@ lapproxt <- function(f, init, sc_adj = 1.0, lb = -Inf, ub = Inf, ...) {
   # hessian_f <- hessian * exp(fit$par) # hessian of original f
   # if(hessian_f > 0 ) browser()
   # sc <- sc_adj / sqrt(-hessian_f)
-  if(hessian > 0) browser()
+  # if(hessian > 0) browser()
   sc <- sc_adj / sqrt(-hessian)
   out <- pseudo_Cauchy(loc = loc, sc = sc, lb = lb, ub = ub)
   out[["fit"]] <- fit

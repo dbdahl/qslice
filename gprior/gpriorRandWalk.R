@@ -97,7 +97,6 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
 # acceptance rate
 sapply(chainSamples, \(list) mean(list$accept))
 
-
 # evaluation of samples
 
 saveRDS(chainSamples, file = 'data/randWalk.rds')
