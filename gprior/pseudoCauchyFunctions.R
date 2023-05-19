@@ -27,7 +27,7 @@ burnin <- function(x, lf, samples, w) {
   draws[1] <- x
   for( i in 2:samples ) {
     if(sum(is.na(draws)) != 0) browser()
-    draws[i] <- cucumber::slice_sampler_stepping_out(draws[i-1], target = lf, w = w, log = TRUE)$x
+    draws[i] <- cucumber::slice_sampler_stepping_out(draws[i-1], target = lf, w = w, log = TRUE, max = Inf)$x
   }
   draws
 }
@@ -39,8 +39,9 @@ fit_trunc_Cauchy <- function(y, lb=-Inf, ub=Inf) {
     loc <- params[1]
     sc <- params[2]
     
-    stopifnot(all(y < ub))
-    stopifnot(all(y > lb))
+    stopifnot(all(y <= ub))
+    stopifnot(all(y >= lb))
+    # if(any(y < lb)) browser()
     
     if (sc > 0.0) {
       llik <- dcauchy_trunc(y, loc=loc, sc=sc, lb=lb, ub=ub, log=TRUE)
@@ -75,9 +76,11 @@ pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf, name = NULL) {
 }
 
 # given a function returns the second derivative at that point
-second_derivative <- function( x, h = 1e-5, f ) {
+second_derivative <- function( x, h = 1e-7, f ) {
   
   num <- f(x + h) - 2*f(x) + f(x - h)
+  # num <- f(x + 2*h) - 2*f(x + h) + f(x)
+  # num <- f(x) - 2*f(x - h) + f(x - 2*h)
   denom <- h^2
   
   num/denom
@@ -88,11 +91,15 @@ lapproxt <- function(f, init, sc_adj = 1.0, lb = -Inf, ub = Inf, ...) {
   
   fit <- optim(par = init, fn = f, control = list(fnscale = -1), method = 'BFGS')
   loc <- fit$par
-  hessian <- second_derivative( x = loc, h = 1e-5, f = f )
-  hessian_f <- hessian * exp(fit$value) # hessian of original f
-  sc <- sc_adj / sqrt(-hessian_f)
+  hessian <- second_derivative( x = loc, h = 1e-7, f = f )
+  # hessian_f <- hessian * exp(fit$par) # hessian of original f
+  # if(hessian_f > 0 ) browser()
+  # sc <- sc_adj / sqrt(-hessian_f)
+  if(hessian > 0) browser()
+  sc <- sc_adj / sqrt(-hessian)
   out <- pseudo_Cauchy(loc = loc, sc = sc, lb = lb, ub = ub)
   out[["fit"]] <- fit
+  out <- append(out, list(hessian = hessian))
   
   out
 }
@@ -113,8 +120,8 @@ pseudo_Cauchy_list = function(loc, sc, lb=-Inf, ub=Inf) {
        t = paste0("Cauchy(", loc, ", ", sc, ")"))
 }
 
-samples = rnorm(10e3)
-samples = rgamma(10e3, 2.5, 1)
+# samples = rnorm(10e3)
+# samples = rgamma(10e3, 2.5, 1)
 
 opt_Cauchy_auc_data = function(samples, lb=-Inf, ub=Inf) {
   
@@ -145,7 +152,7 @@ opt_Cauchy_auc_data = function(samples, lb=-Inf, ub=Inf) {
   
 }
 
-opt_Cauchy_auc_data(samples, lb=-Inf, ub=Inf)
-opt_Cauchy_auc_data(samples, lb=0, ub=Inf)
+# opt_Cauchy_auc_data(samples, lb=-Inf, ub=Inf)
+# opt_Cauchy_auc_data(samples, lb=0, ub=Inf)
 
 
