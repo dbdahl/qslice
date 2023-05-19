@@ -64,7 +64,7 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       g <- cucumber::slice_sampler_latent(x = g, s = 1, \(g) {
         beta_cov <- g / psi * inv_XtX
         dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf)
-      }, rate = 0.05, log = TRUE)$x
+      }, rate = 0.001, log = TRUE)$x
       chainSamples[[chain]]$beta[i,] <- beta
       chainSamples[[chain]]$psi[i] <- psi
       chainSamples[[chain]]$g[i] <- g

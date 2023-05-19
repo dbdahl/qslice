@@ -64,7 +64,7 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       g <- cucumber::slice_sampler_generalized_elliptical(x = g, \(g) {
         beta_cov <- g / psi * inv_XtX
         dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf)
-      }, mu = 20, sigma = 12, df = 3, log = TRUE)$x
+      }, mu = 20, sigma = 15, df = 3, log = TRUE)$x
       chainSamples[[chain]]$beta[i,] <- beta
       chainSamples[[chain]]$psi[i] <- psi
       chainSamples[[chain]]$g[i] <- g
@@ -77,6 +77,5 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
 # evaluation of samples
 
 saveRDS(chainSamples, file = 'data/gess.rds')
-
 
 print('finished')
