@@ -60,7 +60,7 @@ f <- \(g) {
 xx <- seq(from = 0.01, to = 500, length.out = 1000)
 yy <- sapply(xx,f)
 
-plot(xx,yy)
+# plot(xx,yy)
 
 # this doesn't work because there is no maximum
 psuedoFit <- lapproxt(f, 10, lb = 0)

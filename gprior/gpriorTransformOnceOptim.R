@@ -65,7 +65,7 @@ for (i in seq_along(approxSamples)) {
   g <- cucumber::slice_sampler_stepping_out(g, \(g) {
     beta_cov <- g / psi * inv_XtX
     dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf)
-  }, w = 100, log = TRUE)$x
+  }, w = 50, log = TRUE)$x
   
   approxSamples[i] <- g
 }
