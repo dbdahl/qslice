@@ -155,6 +155,9 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       chainSamples[[chain]]$l[i] <- temp$l
       chainSamples[[chain]]$r[i] <- temp$r
     }
+    chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[-c(1:Nburnin),]
+    chainSamples[[chain]]$psi <- chainSamples[[chain]]$psi[-c(1:Nburnin)]
+    chainSamples[[chain]]$g <- chainSamples[[chain]]$g[-c(1:Nburnin)]
   })
   chainSamples[[chain]]$time <- time['user.self']
   chainSamples[[chain]]$w <- w[chain]

@@ -90,6 +90,10 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       chainSamples[[chain]]$g[i] <- g
       chainSamples[[chain]]$accept[i] <- temp$accept
     }
+    chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[-c(1:Nburnin),]
+    chainSamples[[chain]]$psi <- chainSamples[[chain]]$psi[-c(1:Nburnin)]
+    chainSamples[[chain]]$g <- chainSamples[[chain]]$g[-c(1:Nburnin)]
+    chainSamples[[chain]]$accept <- chainSamples[[chain]]$accept[-c(1:Nburnin)]
   })
   chainSamples[[chain]]$time <- time['user.self']
 }
