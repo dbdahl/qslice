@@ -1,6 +1,12 @@
 ## function to fit a psuedo cauchy
 ## Author: Matthew Heiner and Sam Johnson
 
+library(rootSolve)
+library(Deriv)
+library(numDeriv)
+
+Nburnin <- 1000
+
 # functions used to create a psuedo target
 # the pdf for a truncated cauchy
 dcauchy_trunc <- function(x, loc, sc, lb=-Inf, ub=Inf, log=FALSE) {
@@ -147,6 +153,9 @@ opt_Cauchy_auc_data = function(samples, lb=-Inf, ub=Inf) {
   temp <- optim(c(0.0, 1.0), get_auc, control = list(fnscale=-1), samples=samples,
         lb = lb, ub = ub)
   
+  # temp$par[1] <- ifelse(temp$par[1] < lb, lb, temp$par[1])
+  # temp$par[1] <- ifelse(temp$par[2] > ub, ub, temp$par[1])
+  
   list(loc = temp$par[1], sc = temp$par[2], lb = lb, ub = ub)
   
 }
@@ -154,4 +163,83 @@ opt_Cauchy_auc_data = function(samples, lb=-Inf, ub=Inf) {
 # opt_Cauchy_auc_data(samples, lb=-Inf, ub=Inf)
 # opt_Cauchy_auc_data(samples, lb=0, ub=Inf)
 
+opt_Cauchy_auc = function(target) {
+  
+  get_auc = function(pars, target) {
+    loc = pars[1]
+    sc = pars[2]
+    
+    pseu = pseudo_Cauchy_list(loc=loc, sc=sc, lb=target$lb, ub=target$ub)
+    
+    lh = function(u, targ, pseu) {
+      (targ$ld( pseu$q(u) ) - pseu$ld( pseu$q(u) ))
+    }
+    
+    h = function(u, targ, pseu) {
+      lh(u, targ, pseu) |> exp()
+    }
+    
+    dlh = function(x, targ, pseu) {
+      targ$dld(x) - pseu$dld(x)
+    }
+    
+    (extrema_x = uniroot.all(dlh, interval=c(pseu$q(0.05), pseu$q(0.95)),
+                             n = 5e3,
+                             targ=target, pseu=pseu))
+    
+    (extrema_u = pseu$p(extrema_x))
+    
+    (extrema_h = h(extrema_u, targ=target, pseu=pseu))
+    
+    m_indx = which.max(extrema_h)
+    n_extrema = length(extrema_x)
+    (m = extrema_h[m_indx])
+    
+    (tmp = c(0.0, extrema_u, 1.0))
+    (mids_u = tmp[-length(tmp)] + diff(tmp)/2)
+    (mids_x = pseu$q(mids_u))
+    (dlh_at_mids = dlh(mids_x, targ=target, pseu=pseu))
+    
+    (local_max = ((dlh_at_mids[m_indx] > 0) && (dlh_at_mids[m_indx + 1] < 0)))
+    
+    auc = integrate(function(u, t, p){h(u, targ=t, pseu=p) / m}, lower=0.0, upper=1.0, t=target, p=pseu)
+    stopifnot(auc$message == "OK")
+    
+    pen_dip = 0.0 * ifelse(length(extrema_x) == 1, 0.0, max(extrema_h) - min(extrema_h))
+    # pen_dip = ifelse(length(extrema_x) == 1, 0.0, 1.0)
+    
+    pen_loc_min = 1.0 * !local_max
+    
+    auc$value - pen_dip - pen_loc_min
+  }
+  
+  optim(c(0.0, 1.2), get_auc, control = list(fnscale=-1), target = target)
+  
+}
 
+
+## Standard normal
+truth = list(d = function(x) {dnorm(x)},
+             ld = function(x) {dnorm(x, log=TRUE)},
+             # dld = function(x) {-x},
+             q = function(u) {qnorm(u)},
+             lb = -Inf, ub = Inf,
+             t = "normal(0,1)")
+truth$dld = Deriv::Deriv(truth$ld, x="x")
+truth$dld = function(x) numDeriv::grad(truth$ld, x=x)
+
+opt_Cauchy_auc(truth)
+
+## seeing how much area under the curve
+auc_diagnostic = function(samples_u, nbins = 30) {
+  
+  (bins = seq(0.0, 1.0, len=nbins+1))
+  (tab = tabulate( as.numeric(cut(samples_u, breaks = bins)), nbins=nbins))
+  
+  tab[c(1,nbins)] = 1.2 * tab[c(1,nbins)] # penalty for smiling...
+  
+  (tab_norm = tab / max(tab) / nbins)
+  
+  (auc = sum(tab_norm))
+  auc
+}

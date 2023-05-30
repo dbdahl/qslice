@@ -11,6 +11,8 @@ data <- sapply(files, FUN = \(files) readRDS(files), simplify = FALSE)
 
 results <- lapply(data, resultsFunc)
 
+# getting the g results
+
 gResults <- sapply(1:length(results), FUN = \(i) {
   name <- names(results)[i]
   name <- stringr::str_remove(name, pattern = 'data/')
@@ -30,6 +32,8 @@ temp <- t(gResults) %>%
 
 temp
 
+## plotting the densities
+
 gDensities <- lapply(data, FUN = \(list) {
   g <- sapply(1:length(list), FUN = \(i) {
     list[[i]]$g
@@ -45,3 +49,17 @@ for(i in 2:length(gDensities)) {
   lines(density(gDensities[[i]]), col = colors[i], lty = i)
 }
 legend(x = 60, y = 0.048, legend = names, col = colors, lty = 1:length(gDensities), cex = 0.8)
+
+
+## getting the info on the u's
+transformData <- sapply(files[grepl('*transform*',files)],  FUN = \(files) readRDS(files), simplify = FALSE)
+
+sapply(1:length(transformData), FUN = \(i) {
+  list <- transformData[[i]]
+  u <- c(sapply(list, FUN = \(x) x$u))
+  aucDiagnostic <- auc_diagnostic(u)
+  hist(u, main = names(transformData)[i], sub = paste0('auc diag:', round(aucDiagnostic)))
+})
+
+
+apply(sapply(transformData[[1]], FUN = \(list) list$u),2,hist)

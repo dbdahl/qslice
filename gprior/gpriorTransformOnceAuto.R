@@ -45,7 +45,7 @@ g <- g_max / 2
 # number of samples to be taken
 n_samples <- 10000
 # pre allocating memory
-samples <- list(beta = matrix(0.0, nrow = n_samples, ncol = length(beta)), psi = numeric(n_samples), g = numeric(n_samples), time = numeric(1))
+samples <- list(beta = matrix(0.0, nrow = n_samples, ncol = length(beta)), psi = numeric(n_samples), g = numeric(n_samples), u = numeric(n_samples), time = numeric(1))
 # setting up chain storage
 chainSamples <- vector('list', length = nChains)
 chainSamples <- lapply(chainSamples, \(list) samples)
@@ -85,14 +85,20 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       residuals <- y - X %*% t(beta)
       b_n <- b_0 + 0.5 * sum(residuals^2)
       psi <- rgamma(1, a_n, b_n)
-      g <- cucumber::slice_sampler_transform(x = g, target = \(g) {
+      temp <- cucumber::slice_sampler_transform(x = g, target = \(g) {
         beta_cov <- g / psi * inv_XtX
         dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf)
-      }, pseudo_log_pdf = psuedoTarget$pseudo_log_pdf, pseudo_inv_cdf = psuedoTarget$pseudo_inv_cdf)$x
+      }, pseudo_log_pdf = psuedoTarget$pseudo_log_pdf, pseudo_inv_cdf = psuedoTarget$pseudo_inv_cdf)
+      g <- temp$x
       chainSamples[[chain]]$beta[i,] <- beta
       chainSamples[[chain]]$psi[i] <- psi
       chainSamples[[chain]]$g[i] <- g
+      chainSamples[[chain]]$u[i] <- temp$u
     }
+    chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[-c(1:Nburnin),]
+    chainSamples[[chain]]$psi <- chainSamples[[chain]]$psi[-c(1:Nburnin)]
+    chainSamples[[chain]]$g <- chainSamples[[chain]]$g[-c(1:Nburnin)]
+    chainSamples[[chain]]$u <- chainSamples[[chain]]$u[-c(1:Nburnin)]
   })
   chainSamples[[chain]]$time <- time['user.self']
 }
