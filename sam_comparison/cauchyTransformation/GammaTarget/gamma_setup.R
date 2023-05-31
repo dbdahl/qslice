@@ -79,26 +79,135 @@ pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf, name = NULL) {
 }
 
 
-second_derivative <- function( x, h = 1e-5, f ) {
+# returns a psuedo target given a function
+lapproxt <- function(f, init, sc_adj = 1.0, lb = -Inf, ub = Inf, minlb = -1e6, maxub = 1e6, ...) {
   
-  num <- f(x + h) - 2*f(x) + f(x - h)
-  denom <- h^2
-  
-  num/denom
-}
-
-lapproxt <- function(lf, init, sc_adj = 1.0, lb = -Inf, ub = Inf, ...) {
-  
-  fit <- optim(par = init, fn = lf, control = list(fnscale = -1), method = 'BFGS')
-  loc <- fit$par
-  hessian <- second_derivative( x = loc, h = 1e-5, f = lf )
-  hessian_f <- hessian * exp(fit$value) # hessian of original f
-  sc <- sc_adj / sqrt(-hessian_f)
+  tempUb <- ifelse(is.infinite(ub), maxub, ub)
+  tempLb <- ifelse(is.infinite(lb), minlb, lb)
+  loc <- optimize(f, interval = c(tempLb,tempUb), maximum = TRUE)$maximum
+  while (is.infinite(loc) | any(abs(c(tempLb - loc, tempUb - loc)) < 1)) {
+    if(abs(tempLb - loc) < 1) tempLb <- tempLb * .80
+    if(abs(tempUb - loc) < 1) tempUb <- tempUb * .80
+    loc <- optimize(f, interval = c(tempLb,tempUb), maximum = TRUE)$maximum
+  }
+  # getting the second derivative  
+  hessian <- numDeriv::hessian(func = f, x = loc, method = 'Richardson')[1,1]
+  sc <- sc_adj / sqrt(-hessian)
   out <- pseudo_Cauchy(loc = loc, sc = sc, lb = lb, ub = ub)
-  out[["fit"]] <- fit
+  # out[["fit"]] <- fit # this is needed if the maximium is found using optim
+  out <- append(out, list(hessian = hessian))
   
   out
 }
+
+## optimizes the area under the curve to find loc and scale
+
+pseudo_Cauchy_list <-  function(loc, sc, lb=-Inf, ub=Inf) {
+  
+  plb = pcauchy(lb, loc=loc, sc=sc)
+  pub = pcauchy(ub, loc=loc, sc=sc)
+  normc = pub - plb
+  
+  list(d = function(x) {dcauchy(x, loc=loc, sc=sc)},
+       ld = function(x) {dcauchy(x, loc=loc, sc=sc, log=TRUE)},
+       dld = function(x) {-2*(x-loc)/sc^2 / (1 + ((x-loc)/sc)^2)}, # derivative of log density
+       q = function(u) {qcauchy(plb + u*normc)*sc + loc},
+       p = function(x) {(pcauchy(x, loc=loc, sc=sc) - plb) / normc},
+       t = paste0("Cauchy(", loc, ", ", sc, ")"))
+}
+
+# samples = rnorm(10e3)
+# samples = rgamma(10e3, 2.5, 1)
+
+opt_Cauchy_auc_data <-  function(samples, lb=-Inf, ub=Inf) {
+  
+  get_auc = function(pars, samples, lb, ub) {
+    loc = pars[1]
+    sc = pars[2]
+    
+    pseu = pseudo_Cauchy_list(loc=loc, sc=sc, lb=lb, ub=ub)
+    
+    qq = pseu$p(samples)
+    
+    nbins = 30
+    (bins = seq(0.0, 1.0, len=nbins+1))
+    (tab = tabulate( as.numeric(cut(qq, breaks = bins)), nbins=nbins))
+    
+    tab[c(1,nbins)] = 1.2 * tab[c(1,nbins)] # penalty for smiling...
+    
+    (tab_norm = tab / max(tab) / nbins)
+    
+    (auc = sum(tab_norm))
+    auc
+  }
+  
+  temp <- optim(c(0.0, 1.0), get_auc, control = list(fnscale=-1), samples=samples,
+                lb = lb, ub = ub)
+  
+  # temp$par[1] <- ifelse(temp$par[1] < lb, lb, temp$par[1])
+  # temp$par[1] <- ifelse(temp$par[2] > ub, ub, temp$par[1])
+  
+  list(loc = temp$par[1], sc = temp$par[2], lb = lb, ub = ub)
+  
+}
+
+# opt_Cauchy_auc_data(samples, lb=-Inf, ub=Inf)
+# opt_Cauchy_auc_data(samples, lb=0, ub=Inf)
+
+opt_Cauchy_auc <-  function(target) {
+  
+  get_auc = function(pars, target) {
+    loc = pars[1]
+    sc = pars[2]
+    
+    pseu = pseudo_Cauchy_list(loc=loc, sc=sc, lb=target$lb, ub=target$ub)
+    
+    lh = function(u, targ, pseu) {
+      (targ$ld( pseu$q(u) ) - pseu$ld( pseu$q(u) ))
+    }
+    
+    h = function(u, targ, pseu) {
+      lh(u, targ, pseu) |> exp()
+    }
+    
+    dlh = function(x, targ, pseu) {
+      targ$dld(x) - pseu$dld(x)
+    }
+    
+    (extrema_x = uniroot.all(dlh, interval=c(pseu$q(0.05), pseu$q(0.95)),
+                             n = 5e3,
+                             targ=target, pseu=pseu))
+    
+    (extrema_u = pseu$p(extrema_x))
+    
+    (extrema_h = h(extrema_u, targ=target, pseu=pseu))
+    
+    m_indx = which.max(extrema_h)
+    n_extrema = length(extrema_x)
+    (m = extrema_h[m_indx])
+    
+    (tmp = c(0.0, extrema_u, 1.0))
+    (mids_u = tmp[-length(tmp)] + diff(tmp)/2)
+    (mids_x = pseu$q(mids_u))
+    (dlh_at_mids = dlh(mids_x, targ=target, pseu=pseu))
+    
+    (local_max = ((dlh_at_mids[m_indx] > 0) && (dlh_at_mids[m_indx + 1] < 0)))
+    
+    auc = integrate(function(u, t, p){h(u, targ=t, pseu=p) / m}, lower=0.0, upper=1.0, t=target, p=pseu)
+    stopifnot(auc$message == "OK")
+    
+    pen_dip = 0.0 * ifelse(length(extrema_x) == 1, 0.0, max(extrema_h) - min(extrema_h))
+    # pen_dip = ifelse(length(extrema_x) == 1, 0.0, 1.0)
+    
+    pen_loc_min = 1.0 * !local_max
+    
+    auc$value - pen_dip - pen_loc_min
+  }
+  
+  optim(c(0.0, 1.2), get_auc, control = list(fnscale=-1), target = target)
+  
+}
+
 
 
 # 1
@@ -137,10 +246,10 @@ mu <- c(0)#c(1,2,3,4.5,6,7)
 sigma <- c(0.25, 0.5,1, 2, 3)#c(2,3,4,5,6,8)
 df <- c(3, 5)#c(1,4,16,16^2,16^4)
 
-scales <- c(0.5,0.75,0.875,1,1.25,1.35,1.5,2)
+scales <- c(0.75,0.875,1,1.25,1.35)
 
 makePseudo <- function(cauchy_scale) {
-  temp <- lapproxt(lf = lf, init = 1, sc_adj = cauchy_scale, lb = 0)
+  temp <- lapproxt(f = \(x) exp(lf(x)), init = 1, sc_adj = cauchy_scale, lb = 0, maxub = 15)
   # temp <- pseudo_Cauchy(loc = temp$loc, sc = temp$sc, lb = 0)
   list(
     d = temp$pseudo_log_pdf,
@@ -149,27 +258,68 @@ makePseudo <- function(cauchy_scale) {
   )
 }
 
+### Special cases
 ## dr heiner optimization
 optimizedCauchy <- pseudo_Cauchy(loc = 1.4871, sc = 1.886, lb = 0, name = 'Optim')
+
+# standard cauchy
+standardCauchy <- pseudo_Cauchy(loc = 2.5, sc = 1, lb = 0)
+
+# Auto cauchy
+# getting burn in draws to fit pseudo target
+burnin_metrics = stepping_out_time_eval(
+  samples = min(5000, max(samples) * 0.1),
+  x_0 = x,
+  lf_func = lf,
+  w_value = median(w),
+  max_value = Inf,
+  log_value = TRUE
+)
+
+# fitting the Cauchy
+psuedoFit <- fit_trunc_Cauchy(unlist(burnin_metrics$Draws), lb = 0)
+autoCauchy <- pseudo_Cauchy(loc = psuedoFit$loc,sc = psuedoFit$sc, lb = 0, name = 'Auto')
+
+# fit using Optim Samples
+psuedoFit <- opt_Cauchy_auc_data(unlist(burnin_metrics$Draws))
+optimSamplesCauchy <- pseudo_Cauchy(loc = psuedoFit$loc,sc = psuedoFit$sc, lb = 0, name = 'Optim Samps')
+# fit using optim
+truth = list(d = function(x) {dgamma(x, 2.5)},
+             ld = function(x) {dgamma(x, 2.5, log=TRUE)},
+             # dld = function(x) {1.5/x - 1.0},
+             q = function(u) {qgamma(u, 2.5)},
+             t = "gamma(2.5,1)",
+             lb = 0,
+             ub = Inf)
+# truth$dld = Deriv::Deriv(truth$ld, x="x") # DOESN'T WORK
+truth$dld = function(x) numDeriv::grad(truth$ld, x=x)
+# truth$dld = Deriv::Deriv(truth$ld, x="x")
+truth$dld = function(x) numDeriv::grad(truth$ld, x=x)
+optimCauchy <- opt_Cauchy_auc(truth)
+optimCauchy <- pseudo_Cauchy(loc = optimCauchy$par[1], sc = optimCauchy$par[2], lb = 0, name = 'Optim')
+
 
 ## transform tuning parameters ##
 log_pdf <- lapply(scales, FUN = \(par) makePseudo(par)) %>% 
   lapply(FUN = \(x) x$d) %>% 
   unlist()
 
-log_pdf <- append(log_pdf, optimizedCauchy$pseudo_log_pdf)
+log_pdf <- append(log_pdf, list(optimizedCauchy$pseudo_log_pdf, standardCauchy$pseudo_log_pdf, 
+                                autoCauchy$pseudo_log_pdf, optimSamplesCauchy$pseudo_log_pdf, optimCauchy$pseudo_log_pdf))
 
 inv_cdf <- lapply(scales, FUN = \(par) makePseudo(par)) %>% 
   lapply(FUN = \(x) x$q) %>% 
   unlist()
 
-inv_cdf <- append(inv_cdf, optimizedCauchy$pseudo_inv_cdf)
+inv_cdf <- append(inv_cdf, list(optimizedCauchy$pseudo_inv_cdf, standardCauchy$pseudo_inv_cdf,
+                                autoCauchy$pseudo_inv_cdf, optimSamplesCauchy$pseudo_inv_cdf, optimCauchy$pseudo_inv_cdf))
 
 t <- lapply(scales, FUN = \(par) makePseudo(par)) %>% 
   lapply(FUN = \(x) x$t) %>% 
   unlist()
 
-t <- c(t, optimizedCauchy$t)
+t <- c(t, list(optimizedCauchy$t, standardCauchy$t,
+               autoCauchy$t, optimSamplesCauchy$t, optimCauchy$t))
 
 ## random walk tuning parameters ##
 c <- c(0.25,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5)

@@ -8,25 +8,12 @@ source('norm_setup.R')
 #### Transform ####
 ##
 
-# getting burn in draws to fit pseudo target
-burnin_metrics = stepping_out_time_eval(
-  samples = min(5000, max(samples) * 0.1),
-  x_0 = x,
-  lf_func = lf,
-  w_value = median(w),
-  max_value = Inf,
-  log_value = TRUE
-)
 
-# fitting the Cauchy
-psuedoFit <- fit_trunc_Cauchy(unlist(burnin_metrics$Draws))
-cauchyFit <- pseudo_Cauchy(loc = psuedoFit$loc,sc = psuedoFit$sc, name = 'Auto')
-
-temp_df <- data.frame(log_pdf = matrix(nrow = length(log_pdf)+1, ncol = 1))
+temp_df <- data.frame(log_pdf = matrix(nrow = length(log_pdf), ncol = 1))
 # temp_df$scales <- c(scales,cauchyFit$sc)
-temp_df$log_pdf <- c(log_pdf,cauchyFit$pseudo_log_pdf)
-temp_df$inv_cdf <- c(inv_cdf,cauchyFit$pseudo_inv_cdf)
-temp_df$t <- c(t,cauchyFit$t)
+temp_df$log_pdf <- log_pdf
+temp_df$inv_cdf <- inv_cdf
+temp_df$t <- t
 temp_df$px <- lapply(temp_df$log_pdf, FUN = \(func) exp(func(grid)))
 
 # creating a data frame with all possible combinations
