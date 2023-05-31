@@ -55,13 +55,13 @@ f <- \(g) {
   exp(dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf))
 }
 
-xx <- seq(from = 0.01, to = 200, length.out = 1000)
+xx <- seq(from = 0.01, to = 100, length.out = 1000)
 yy <- sapply(xx,f)
 
 # plot(xx,yy)
 
 # this doesn't work because there is no maximum
-psuedoFit <- lapproxt(f = f, init = 10, lb = 0)
+psuedoFit <- lapproxt(f = f, init = 10, lb = 0, maxub = 200)
 psuedoTarget <- pseudo_Cauchy(loc = psuedoFit$loc, sc = psuedoFit$sc, lb = 0, name = 'Laprox')
 
 cl <- makeCluster(nChains)
@@ -79,26 +79,19 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       residuals <- y - X %*% t(beta)
       b_n <- b_0 + 0.5 * sum(residuals^2)
       psi <- rgamma(1, a_n, b_n)
-      ##
-      if(i %% 1000 == 0) {
-        newg <- chainSamples[[chain]]$g[1:i]
-        if(any(newg) < 0) browser(text = 'A g is less than 0')
-        psuedoFit <- opt_Cauchy_auc_data(newg, lb = 0)
-        psuedoTarget <- pseudo_Cauchy(loc = psuedoFit$loc, sc = psuedoFit$sc, lb = psuedoFit$lb, ub = psuedoFit$ub)
+      ###
+      f <- \(g) {
+        beta_cov <- g / psi * inv_XtX
+        exp(dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf))
       }
-      ##
+      psuedoFit <- lapproxt(f = f, init = 10, lb = 0, maxub = 200)
+      if(is.nan(psuedoFit$sc)) browser()
+      psuedoTarget <- pseudo_Cauchy(loc = psuedoFit$loc, sc = psuedoFit$sc, lb = 0, name = 'Laprox')
+      ###
       temp <- cucumber::slice_sampler_transform(x = g, target = \(g) {
         beta_cov <- g / psi * inv_XtX
         dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf)
       }, pseudo_log_pdf = psuedoTarget$pseudo_log_pdf, pseudo_inv_cdf = psuedoTarget$pseudo_inv_cdf)
-      ##
-      # f <- \(g) {
-      #   beta_cov <- g / psi * inv_XtX
-      #   exp(dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf))
-      # }
-      # psuedoFit <- lapproxt(f = f, init = 10, lb = 0)
-      # psuedoTarget <- pseudo_Cauchy(loc = psuedoFit$loc, sc = psuedoFit$sc, lb = 0, name = 'Laprox')
-      ##
       g <- temp$x
       chainSamples[[chain]]$beta[i,] <- beta
       chainSamples[[chain]]$psi[i] <- psi
@@ -106,16 +99,17 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       chainSamples[[chain]]$u[i] <- temp$u
     }
     chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[-c(1:Nburnin),]
-    chainSamples[[chain]]$psi <- chainSamples[[chain]]$psi[-c(1:Nburnin)]
-    chainSamples[[chain]]$g <- chainSamples[[chain]]$g[-c(1:Nburnin)]
-    chainSamples[[chain]]$u <- chainSamples[[chain]]$u[-c(1:Nburnin)]
+    chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[LaplacesDemon::Thin(1:nrow(chainSamples[[chain]]$beta), By = Nthin),]
+    chainSamples[[chain]]$psi <- LaplacesDemon::Thin(chainSamples[[chain]]$psi[-c(1:Nburnin)], By = Nthin)
+    chainSamples[[chain]]$g <- LaplacesDemon::Thin(chainSamples[[chain]]$g[-c(1:Nburnin)], By = Nthin)
+    chainSamples[[chain]]$u <- LaplacesDemon::Thin(chainSamples[[chain]]$u[-c(1:Nburnin)], By = Nthin)
   })
   chainSamples[[chain]]$time <- time['user.self']
 }
 
 # evaluation of samples
 
-saveRDS(chainSamples, file = 'data/transformEveryIterLaplace.rds')
+# saveRDS(chainSamples, file = 'data/transformEveryIterLaplace.rds')
 
 
 print('finished')

@@ -57,7 +57,7 @@ f <- \(g) {
   exp(dmvnorm(beta, beta_0, beta_cov, log = TRUE) + ifelse(0 < g && g < g_max, 0, -Inf))
 }
 
-xx <- seq(from = 0.01, to = 500, length.out = 1000)
+xx <- seq(from = 0.01, to = 100, length.out = 5000)
 yy <- sapply(xx,f)
 
 # plot(xx,yy)
@@ -89,9 +89,10 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       chainSamples[[chain]]$u[i] <- temp$u
     }
     chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[-c(1:Nburnin),]
-    chainSamples[[chain]]$psi <- chainSamples[[chain]]$psi[-c(1:Nburnin)]
-    chainSamples[[chain]]$g <- chainSamples[[chain]]$g[-c(1:Nburnin)]
-    chainSamples[[chain]]$u <- chainSamples[[chain]]$u[-c(1:Nburnin)]
+    chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[LaplacesDemon::Thin(1:nrow(chainSamples[[chain]]$beta), By = Nthin),]
+    chainSamples[[chain]]$psi <- LaplacesDemon::Thin(chainSamples[[chain]]$psi[-c(1:Nburnin)], By = Nthin)
+    chainSamples[[chain]]$g <- LaplacesDemon::Thin(chainSamples[[chain]]$g[-c(1:Nburnin)], By = Nthin)
+    chainSamples[[chain]]$u <- LaplacesDemon::Thin(chainSamples[[chain]]$u[-c(1:Nburnin)], By = Nthin)
   })
   chainSamples[[chain]]$time <- time['user.self']
 }
@@ -103,4 +104,3 @@ saveRDS(chainSamples, file = 'data/transformOnceLaplace.rds')
 
 
 print('finished')
-

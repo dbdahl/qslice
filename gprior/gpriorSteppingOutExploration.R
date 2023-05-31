@@ -156,8 +156,9 @@ output <- foreach( chain = seq_along(chainSamples) ) %do% {
       chainSamples[[chain]]$r[i] <- temp$r
     }
     chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[-c(1:Nburnin),]
-    chainSamples[[chain]]$psi <- chainSamples[[chain]]$psi[-c(1:Nburnin)]
-    chainSamples[[chain]]$g <- chainSamples[[chain]]$g[-c(1:Nburnin)]
+    chainSamples[[chain]]$beta <- chainSamples[[chain]]$beta[LaplacesDemon::Thin(1:nrow(chainSamples[[chain]]$beta), By = Nthin),]
+    chainSamples[[chain]]$psi <- LaplacesDemon::Thin(chainSamples[[chain]]$psi[-c(1:Nburnin)], By = Nthin)
+    chainSamples[[chain]]$g <- LaplacesDemon::Thin(chainSamples[[chain]]$g[-c(1:Nburnin)], By = Nthin)
   })
   chainSamples[[chain]]$time <- time['user.self']
   chainSamples[[chain]]$w <- w[chain]

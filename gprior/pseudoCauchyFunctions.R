@@ -6,6 +6,7 @@ library(Deriv)
 library(numDeriv)
 
 Nburnin <- 1000
+Nthin <- 2
 
 # functions used to create a psuedo target
 # the pdf for a truncated cauchy
@@ -80,30 +81,29 @@ pseudo_Cauchy <- function(loc, sc, lb=-Inf, ub=Inf, name = NULL) {
        loc = loc, sc = sc)
 }
 
-# given a function returns the second derivative at that point
-second_derivative <- function( x, h = 1e-7, f ) {
-  
-  num <- f(x + h) - 2*f(x) + f(x - h)
-  # num <- f(x + 2*h) - 2*f(x + h) + f(x)
-  # num <- f(x) - 2*f(x - h) + f(x - 2*h)
-  denom <- h^2
-  
-  num/denom
-}
 
 # returns a psuedo target given a function
-lapproxt <- function(f, init, sc_adj = 1.0, lb = -Inf, ub = Inf, ...) {
+lapproxt <- function(f, init, sc_adj = 1.0, lb = -Inf, ub = Inf, minlb = -1e6, maxub = 1e6, ...) {
   
-  fit <- optim(par = init, fn = f, control = list(fnscale = -1), method = 'BFGS')
-  loc <- fit$par
-  hessian <- second_derivative( x = loc, h = 1e-7, f = f )
+  # fit <- optim(par = init, fn = f, control = list(fnscale = -1), method = 'BFGS')
+  # loc <- fit$par
+  tempUb <- ifelse(is.infinite(ub), maxub, ub)
+  tempLb <- ifelse(is.infinite(lb), minlb, lb)
+  loc <- optimize(f, interval = c(tempLb,tempUb), maximum = TRUE)$maximum
+  while (is.infinite(loc) | any(abs(c(tempLb - loc, tempUb - loc)) < 1)) {
+    if(abs(tempLb - loc) < 1) tempLb <- tempLb * .80
+    if(abs(tempUb - loc) < 1) tempUb <- tempUb * .80
+    loc <- optimize(f, interval = c(tempLb,tempUb), maximum = TRUE)$maximum
+  }
+  # getting the second derivative  
+  hessian <- numDeriv::hessian(func = f, x = loc, method = 'Richardson')[1,1]
   # hessian_f <- hessian * exp(fit$par) # hessian of original f
   # if(hessian_f > 0 ) browser()
   # sc <- sc_adj / sqrt(-hessian_f)
   # if(hessian > 0) browser()
   sc <- sc_adj / sqrt(-hessian)
   out <- pseudo_Cauchy(loc = loc, sc = sc, lb = lb, ub = ub)
-  out[["fit"]] <- fit
+  # out[["fit"]] <- fit # this is needed if the maximium is found using optim
   out <- append(out, list(hessian = hessian))
   
   out
