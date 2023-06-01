@@ -49,6 +49,7 @@ transform_metrics <- trials_transform %>%
     ESS = metrics$EffSamp,
     time = metrics$Time,
     draws = metrics$Draws,
+    udraws = metrics$TDraws,
     thin = (length(draws)/ESS) * 10,
     thinDraws = list(LaplacesDemon::Thin(draws, thin)),
     samplesThin = length(thinDraws),
