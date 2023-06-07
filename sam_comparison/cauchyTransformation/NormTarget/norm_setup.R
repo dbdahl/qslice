@@ -138,7 +138,8 @@ opt_Cauchy_auc_data <-  function(samples, lb=-Inf, ub=Inf) {
     (tab_norm = tab / max(tab) / nbins)
     
     (auc = sum(tab_norm))
-    auc
+    dip_pen <- (1 - tab[nbins/2] / max(tab)) # penalty for dip
+    auc - dip_pen
   }
   
   temp <- optim(c(0.0, 1.0), get_auc, control = list(fnscale=-1), samples=samples,
@@ -196,7 +197,7 @@ opt_Cauchy_auc <-  function(target) {
     auc = integrate(function(u, t, p){h(u, targ=t, pseu=p) / m}, lower=0.0, upper=1.0, t=target, p=pseu)
     stopifnot(auc$message == "OK")
     
-    pen_dip = 0.0 * ifelse(length(extrema_x) == 1, 0.0, max(extrema_h) - min(extrema_h))
+    pen_dip = ifelse(length(extrema_x) == 1, 0.0, max(extrema_h) - min(extrema_h)) # * 0.0
     # pen_dip = ifelse(length(extrema_x) == 1, 0.0, 1.0)
     
     pen_loc_min = 1.0 * !local_max
