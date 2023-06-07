@@ -7,6 +7,19 @@ library(doParallel)
 library(parallel)
 library(tidyverse)
 
+auc_diagnostic = function(samples_u, nbins = 30) {
+  
+  (bins = seq(0.0, 1.0, len=nbins+1))
+  (tab = tabulate( as.numeric(cut(samples_u, breaks = bins)), nbins=nbins))
+  
+  tab[c(1,nbins)] = 1.2 * tab[c(1,nbins)] # penalty for smiling...
+  
+  (tab_norm = tab / max(tab) / nbins)
+  
+  (auc = sum(tab_norm))
+  auc
+}
+
 files <- Sys.glob('data/*.rds')
 output <- sapply(files, FUN = readRDS)
 targetTitle <- 'Normal Target'
@@ -405,4 +418,25 @@ legend("left", bty="n", inset=c(0.0, 0.0),
        col = colors, lwd = 1:4, cex = 0.9, lty = 1:4)
        # legend=c(truth$t, sapply(pseu, function(x) x$t)),
        # col=1:(n_pseu+1), lwd=2, lty=1:(n_pseu+1), cex = 0.7)
+dev.off()
+
+
+
+# plotting the us
+
+transformUdraws <- transform_metrics |> 
+  dplyr::select(t, udraws) |>
+  mutate(t = unlist(t)) |> 
+  group_by(t) |> 
+  reframe(udraws = list(unlist(list(udraws))))
+
+pdf(file = 'images/histOfUDraws.pdf')
+par(mfrow = c(ceiling(nrow(transformUdraws)/3),3))
+
+apply(transformUdraws, 1, FUN = \(row) {
+  psuedoTarget <- row[1]
+  u <- unlist(row[2])
+  aucDiagnostic <- round(auc_diagnostic(u),3)
+  hist(u, main = psuedoTarget$t, sub = paste0('auc:',aucDiagnostic))
+})
 dev.off()

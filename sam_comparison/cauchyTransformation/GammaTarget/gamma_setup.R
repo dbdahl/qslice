@@ -8,6 +8,7 @@ library(tidyverse)
 library(LaplacesDemon) # thin function, KLD, JSD
 library(cucumber)
 library(utils)
+library(rootSolve)
 
 reps <- 10
 
