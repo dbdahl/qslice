@@ -5,9 +5,6 @@ library(rootSolve)
 library(Deriv)
 library(numDeriv)
 
-Nburnin <- 1000
-Nthin <- 2
-
 # functions used to create a psuedo target
 # the pdf for a truncated cauchy
 dcauchy_trunc <- function(x, loc, sc, lb=-Inf, ub=Inf, log=FALSE) {
@@ -28,16 +25,6 @@ dcauchy_trunc <- function(x, loc, sc, lb=-Inf, ub=Inf, log=FALSE) {
   out
 }
 
-# get samples using stepping out procedure
-burnin <- function(x, lf, samples, w) {
-  draws <- numeric(samples)
-  draws[1] <- x
-  for( i in 2:samples ) {
-    if(sum(is.na(draws)) != 0) browser()
-    draws[i] <- cucumber::slice_sampler_stepping_out(draws[i-1], target = lf, w = w, log = TRUE, max = Inf)$x
-  }
-  draws
-}
 
 # given draws this function returns a fitted cauchy
 fit_trunc_Cauchy <- function(y, lb=-Inf, ub=Inf) {
@@ -142,12 +129,13 @@ opt_Cauchy_auc_data = function(samples, lb=-Inf, ub=Inf) {
     (bins = seq(0.0, 1.0, len=nbins+1))
     (tab = tabulate( as.numeric(cut(qq, breaks = bins)), nbins=nbins))
     
-    tab[c(1,nbins)] = 1.2 * tab[c(1,nbins)] # penalty for smiling...
+    tab[c(1,nbins)] = 1.2 * tab[c(1,nbins)] # penalty for smiling... original penalty was 1.2
     
     (tab_norm = tab / max(tab) / nbins)
     
     (auc = sum(tab_norm))
-    auc
+    dip_pen <- (1 - tab[nbins/2] / max(tab)) # penalty for dip
+    auc - dip_pen
   }
   
   temp <- optim(c(0.0, 1.0), get_auc, control = list(fnscale=-1), samples=samples,
@@ -187,6 +175,8 @@ opt_Cauchy_auc = function(target) {
                              n = 5e3,
                              targ=target, pseu=pseu))
     
+    if(length(extrema_x) == 0) extrema_x <- c(pseu$q(0.05), pseu$q(0.95))
+    
     (extrema_u = pseu$p(extrema_x))
     
     (extrema_h = h(extrema_u, targ=target, pseu=pseu))
@@ -202,10 +192,11 @@ opt_Cauchy_auc = function(target) {
     
     (local_max = ((dlh_at_mids[m_indx] > 0) && (dlh_at_mids[m_indx + 1] < 0)))
     
-    auc = integrate(function(u, t, p){h(u, targ=t, pseu=p) / m}, lower=0.0, upper=1.0, t=target, p=pseu)
+    auc = integrate(function(u, t, p){h(u, targ=t, pseu=p) / m}, lower=.Machine$double.eps, upper=1.0, stop.on.error = FALSE, t=target, p=pseu)
     stopifnot(auc$message == "OK")
+    # print(auc$message)
     
-    pen_dip = 0.0 * ifelse(length(extrema_x) == 1, 0.0, max(extrema_h) - min(extrema_h))
+    pen_dip = ifelse(length(extrema_x) == 1, 0.0, max(extrema_h) - min(extrema_h)) # * 0.0
     # pen_dip = ifelse(length(extrema_x) == 1, 0.0, 1.0)
     
     pen_loc_min = 1.0 * !local_max
@@ -217,18 +208,17 @@ opt_Cauchy_auc = function(target) {
   
 }
 
-
-## Standard normal
-truth = list(d = function(x) {dnorm(x)},
-             ld = function(x) {dnorm(x, log=TRUE)},
-             # dld = function(x) {-x},
-             q = function(u) {qnorm(u)},
-             lb = -Inf, ub = Inf,
-             t = "normal(0,1)")
-truth$dld = Deriv::Deriv(truth$ld, x="x")
-truth$dld = function(x) numDeriv::grad(truth$ld, x=x)
-
-opt_Cauchy_auc(truth)
+# # Example
+# truth = list(d = function(x) {dnorm(x)},
+#              ld = function(x) {dnorm(x, log=TRUE)},
+#              # dld = function(x) {-x},
+#              q = function(u) {qnorm(u)},
+#              lb = -Inf, ub = Inf,
+#              t = "normal(0,1)")
+# truth$dld = Deriv::Deriv(truth$ld, x="x")
+# truth$dld = function(x) numDeriv::grad(truth$ld, x=x)
+# 
+# sam <- opt_Cauchy_auc(truth)
 
 ## seeing how much area under the curve
 auc_diagnostic = function(samples_u, nbins = 30) {
@@ -241,5 +231,7 @@ auc_diagnostic = function(samples_u, nbins = 30) {
   (tab_norm = tab / max(tab) / nbins)
   
   (auc = sum(tab_norm))
-  auc
+  dip_pen <- (1 - tab[nbins/2] / max(tab)) # penalty for dip
+  auc - dip_pen
 }
+

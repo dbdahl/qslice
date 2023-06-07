@@ -3,6 +3,7 @@
 
 library(magrittr)
 source('formatingFunctions.R')
+source('pseudoCauchyFunctions.R')
 
 # reading in all the files
 files <- (Sys.glob("data/*.rds"))
@@ -30,7 +31,9 @@ temp <- t(gResults) %>%
   dplyr::relocate(method, .before = 'lwrCrd') %>% 
   dplyr::arrange(desc(unlist(SampPSec)))
 
-temp
+temp |> 
+  filter(!grepl('.*Iter.*',method)) |> 
+  arrange(desc(Est))
 
 ## plotting the densities
 
@@ -54,12 +57,39 @@ legend(x = 60, y = 0.048, legend = names, col = colors, lty = 1:length(gDensitie
 ## getting the info on the u's
 transformData <- sapply(files[grepl('*transform*',files)],  FUN = \(files) readRDS(files), simplify = FALSE)
 
+par(mfrow = c(ceiling((length(transformData))/3), 3))
+
 sapply(1:length(transformData), FUN = \(i) {
   list <- transformData[[i]]
   u <- c(sapply(list, FUN = \(x) x$u))
+  if(is.list(u)) {
+    nullCheck <- do.call(cbind,u)
+    if(is.null(nullCheck)) return(print('u is null'))
+    return('IDK what is happening')
+  }
   aucDiagnostic <- auc_diagnostic(u)
-  hist(u, main = names(transformData)[i], sub = paste0('auc diag:', round(aucDiagnostic)))
+  plot(density(u), main = names(transformData)[i], sub = paste0('auc diag:', round(aucDiagnostic,3)))
 })
 
 
-apply(sapply(transformData[[1]], FUN = \(list) list$u),2,hist)
+sapply(1:length(transformData), FUN = \(i) {
+  name <- names(transformData)[i]
+  list <- transformData[[i]]
+  u <- c(sapply(list, FUN = \(x) x$u))
+  if(is.list(u)) {
+    nullCheck <- do.call(cbind,u)
+    if(is.null(nullCheck)) u <- seq(from = 0, to = 1, length = 1000) 
+  }
+  aucDiagnostic <- auc_diagnostic(u)
+  g <- c(sapply(list, FUN = \(x) x$g))
+  effSamp <- coda::effectiveSize(g)
+  sampPSec <- effSamp / sum(sapply(list, FUN = \(x) x$time))
+  data.frame(method = name, auc = aucDiagnostic, sampPSec = sampPSec)
+}, simplify = FALSE) |> 
+  plyr::ldply(data.frame) |>
+  filter(!grepl('.*Optim.rds', method)) |> 
+  mutate(method = stringr::str_remove_all(method, 'data/transform')) |> 
+  ggplot(aes(x = auc, y = sampPSec, color = method)) +
+  geom_point(size = 5)
+
+

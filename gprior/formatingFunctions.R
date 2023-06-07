@@ -11,9 +11,10 @@ detach(mtcars)
 # these functions are use to create a dataframe
 singleLineFunc <- function(matrix, totTime) {
   vector <- c(matrix)
+  effSamps <- coda::effectiveSize(vector)
   credInt <- round( quantile(vector, probs = c(0.025,0.975)), 2 )
-  confInt <- round( mean(vector) + c(-1,0,1) * 1.96 * sd(vector)/sqrt(length(vector)), 2 )
-  SamplesPSec <- round(effectiveSize(vector)/totTime)
+  confInt <- round( mean(vector) + c(-1,0,1) * 1.96 * sd(vector)/sqrt(effSamps), 2 )
+  SamplesPSec <- round(effSamps/totTime)
   c(credInt[1], lwrConf = confInt[1], est = confInt[2], uprConf = confInt[3], credInt[2],  SamplesPSec)
 }
 
