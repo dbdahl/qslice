@@ -10,3 +10,5 @@
 /gprior/data
 /toDoList
 /sam_comparison/cauchyTransformation/*/images
+/samCode/standardTargets/*/output/*
+/samCode/gprior/output/*
