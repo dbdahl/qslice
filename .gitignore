@@ -12,3 +12,5 @@
 /sam_comparison/cauchyTransformation/*/images
 /samCode/standardTargets/*/output/*
 /samCode/gprior/output/*
+/samCode/gprior/data/*
+/samCode/standardTargets/*/data/*
