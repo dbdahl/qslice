@@ -6,8 +6,6 @@ filesToSource <- Sys.glob('../../utilityFunctions/*.R')
 discard <- grepl('*num_of_lines*',filesToSource)
 sapply(filesToSource[!discard], source)
 
-library(doParallel)
-library(parallel)
 library(tidyverse)
 
 theme_set(
@@ -189,7 +187,7 @@ rand_walk_metrics |>
 dev.off()
 
 # combining them all
-totalsampPsec <-  combine_func(stepping_out_metrics = stepping_out_metrics, 
+totalsampPsec <- combine_func(stepping_out_metrics = stepping_out_metrics, 
                                latent_metrics = latent_metrics,
                                gess_metrics = gess_metrics,
                                rand_walk_metrics = rand_walk_metrics,
@@ -197,17 +195,17 @@ totalsampPsec <-  combine_func(stepping_out_metrics = stepping_out_metrics,
                                metric = 'sampPsec') |> 
   rowwise() |> 
   mutate(waterPenatly = case_when(
-    grepl('*c2:0.01 [A-Z]*',par) ~ 0.01,
-    grepl('*c2:0.1 [A-Z]*',par) ~ 0.1,
+    # grepl('*c2:0.01 [A-Z]*',par) ~ 0.01,
+    # grepl('*c2:0.1 [A-Z]*',par) ~ 0.1,
     grepl('*c2:0.5 [A-Z]*',par) ~ 0.5,
-    grepl('*c2:0.66 [A-Z]*',par) ~ 0.66,
-    grepl('*c2:0.75 [A-Z]*',par) ~ 0.75,
+    # grepl('*c2:0.66 [A-Z]*',par) ~ 0.66,
+    # grepl('*c2:0.75 [A-Z]*',par) ~ 0.75,
     grepl('*c2:0 [A-Z]*',par) ~ 0,
-    grepl('*c2:1.33 [A-Z]*',par) ~ 1.33,
-    grepl('*c2:1.5 [A-Z]*',par) ~ 1.5,
+    # grepl('*c2:1.33 [A-Z]*',par) ~ 1.33,
+    # grepl('*c2:1.5 [A-Z]*',par) ~ 1.5,
     grepl('*c2:2 [A-Z]*',par) ~ 2,
-    grepl('*c2:100 [A-Z]*',par) ~ 100,
-    grepl('*c2:10 [A-Z]*',par) ~ 10,
+    # grepl('*c2:100 [A-Z]*',par) ~ 100,
+    # grepl('*c2:10 [A-Z]*',par) ~ 10,
     grepl('*c2:1 [A-Z]*',par) ~ 1,
     TRUE ~ 99
   ),
@@ -216,15 +214,16 @@ totalsampPsec <-  combine_func(stepping_out_metrics = stepping_out_metrics,
     grepl('*OAUC', par) ~ 'OAUC',
     grepl('*OS', par) ~ 'OS',
     grepl('*O', par) ~ 'O',
-    grepl('*Man|*Auto|*Laplace', par) ~ 'Transform',
+    grepl('*Man|*Auto|*Laplace', par) ~ 'Man',
     grepl('*w=*|*c=*|*rate=*|*mu=*', par) ~ 'Comp',
     TRUE ~ 'Other'
   )) |> 
   mutate(par = forcats::fct_reorder2(par,optimMethod,waterPenatly))
-# mutate(par = fct_reorder(par,optimMethod))
+  # mutate(par = fct_reorder(par,optimMethod))
 
 pdf(file = 'images/totalsampPsec.pdf')
 totalsampPsec %>% 
+  dplyr::filter(optimMethod != 'Transform') |> 
   ggplot(aes(y = par, x = sampPsec, color = method, fill = optimMethod)) + 
   geom_boxplot() +
   labs(
@@ -232,33 +231,27 @@ totalsampPsec %>%
   )
 dev.off()
 
-totalNEval <- combine_func(stepping_out_metrics = stepping_out_metrics, 
-            latent_metrics = latent_metrics,
-            gess_metrics = gess_metrics,
-            rand_walk_metrics = rand_walk_metrics,
-            transform_metrics = transform_metrics,
-            metric = 'nEval')
-
-pdf(file = 'images/totalNEval.pdf')
-totalNEval %>% 
-  ggplot(aes(y = par, x = nEval/50000, fill = method)) + 
+## simplified
+totalsampPsec |> 
+  dplyr::filter(optimMethod %in% c('OSAUC','OAUC','Man','Comp')) |> 
+  dplyr::filter(!grepl('*Auto|Man*',par)) |> 
+  dplyr::filter(waterPenatly == 0 || waterPenatly == 99) |> 
+  mutate(par = case_when(
+    grepl('*mu=*', par) ~ 'GESS',
+    grepl('*rate=*', par) ~ 'Latent',
+    grepl('*w=*', par) ~ 'Stepping Out',
+    grepl('*Laplace*', par) ~ 'Laplace',
+    grepl('*OSAUC*', par) ~ 'AUC Samples',
+    grepl('*OAUC*', par) ~ 'AUC',
+    grepl('*c=*', par) ~ 'Random Walk'
+  )) |>
+  mutate(par = ordered(par, levels = c('Stepping Out','GESS','Latent','Random Walk','Laplace','AUC Samples','AUC'))) |> 
+  ggplot(aes(y = par, x = sampPsec, fill = method)) + 
   geom_boxplot() +
   labs(
-    title = targetTitle
-  )
-dev.off()
-
-total_metrics <- lapply(list(stepping_out_metrics, latent_metrics, gess_metrics, rand_walk_metrics, transform_metrics),
-                        format_df)
-total_metrics <- do.call(rbind, total_metrics)
-
-pdf(file = 'images/total_sampPsecAndnEval.pdf')
-total_metrics %>%
-  ggplot(aes(x = nEval, y = sampPsec, color = method)) +
-  geom_point(alpha = 0.15) +
-  geom_point(data = total_metrics %>% 
-               group_by(par, method) %>% 
-               summarise(sampPsec = mean(sampPsec), nEval = mean(nEval)),
-             aes(x = nEval, y = sampPsec, color = method), size = 5, shape = 9)
-dev.off()
+    title = targetTitle,
+    y = '',
+    x = 'Effective Samples Per CPU Second'
+  ) +
+  scale_x_continuous(labels = scales::number_format(scale = 1e-3, suffix = 'K'))
 

@@ -10,7 +10,7 @@ echo $num_of_trials
 for ((i = 1; i <= $num_of_trials; i++)); do
   #echo $i
   echo "Rscript invgamma_$1.R $i > log/$1/$1$i.txt 2>&1" 
-done | parallel --jobs 20
+done | parallel --jobs 10
 wait
 
 echo "finished"

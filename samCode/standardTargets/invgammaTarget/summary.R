@@ -6,8 +6,6 @@ filesToSource <- Sys.glob('../../utilityFunctions/*.R')
 discard <- grepl('*num_of_lines*',filesToSource)
 sapply(filesToSource[!discard], source)
 
-library(doParallel)
-library(parallel)
 library(tidyverse)
 
 theme_set(
@@ -261,3 +259,28 @@ total_metrics %>%
                summarise(sampPsec = mean(sampPsec), nEval = mean(nEval)),
              aes(x = nEval, y = sampPsec, color = method), size = 5, shape = 9)
 dev.off()
+
+
+## simplified
+totalsampPsec |> 
+  dplyr::filter(optimMethod %in% c('OSAUC','OAUC','Man','Comp')) |> 
+  dplyr::filter(!grepl('*Auto|Man*',par)) |> 
+  dplyr::filter(waterPenatly == 0 || waterPenatly == 99) |> 
+  mutate(par = case_when(
+    grepl('*mu=*', par) ~ 'GESS',
+    grepl('*rate=*', par) ~ 'Latent',
+    grepl('*w=*', par) ~ 'Stepping Out',
+    grepl('*Laplace*', par) ~ 'Laplace',
+    grepl('*OSAUC*', par) ~ 'AUC Samples',
+    grepl('*OAUC*', par) ~ 'AUC',
+    grepl('*c=*', par) ~ 'Random Walk'
+  )) |>
+  mutate(par = ordered(par, levels = c('Stepping Out','GESS','Latent','Random Walk','Laplace','AUC Samples','AUC'))) |> 
+  ggplot(aes(y = par, x = sampPsec, fill = method)) + 
+  geom_boxplot() +
+  labs(
+    title = targetTitle,
+    y = '',
+    x = 'Effective Samples Per CPU Second'
+  ) +
+  scale_x_continuous(labels = scales::number_format(scale = 1e-3, suffix = 'K'))
