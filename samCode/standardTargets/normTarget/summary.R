@@ -213,11 +213,22 @@ totalsampPsec <-  combine_func(stepping_out_metrics = stepping_out_metrics,
     grepl('*OAUC', par) ~ 'OAUC',
     grepl('*OS', par) ~ 'OS',
     grepl('*O', par) ~ 'O',
-    grepl('*Man|*Auto|*Laplace', par) ~ 'Transform',
+    grepl('*Man|*Auto|*Laplace|*MM', par) ~ 'Transform',
     grepl('*w=*|*c=*|*rate=*|*mu=*', par) ~ 'Comp',
     TRUE ~ 'Other'
-  )) |> 
-  mutate(par = forcats::fct_reorder2(par,optimMethod,waterPenatly))
+  )) #|>
+
+Comp <- totalsampPsec$par[!grepl('*loc = *', totalsampPsec$par)] |> unique()
+Transform <- totalsampPsec$par[grepl('.*Man|.*MM|.*Auto|.*Laplace', totalsampPsec$par)] |> unique()
+OSAUC <- totalsampPsec$par[grepl('*OSAUC*', totalsampPsec$par)] |> unique()
+OAUC <- totalsampPsec$par[grepl('*OAUC', totalsampPsec$par)] |> unique()
+O <- totalsampPsec$par[grepl('.*O$', totalsampPsec$par)] |> unique()
+OS <- totalsampPsec$par[grepl('.*OS$', totalsampPsec$par)] |> unique()
+
+totalsampPsec$par <- factor(totalsampPsec$par, levels = c(Comp, Transform, OSAUC, OAUC, O, OS))
+
+
+# mutate(par = forcats::fct_reorder2(par,optimMethod,waterPenatly))
 # mutate(par = fct_reorder(par,optimMethod))
 
 pdf(file = 'images/totalsampPsec.pdf')
@@ -230,38 +241,8 @@ totalsampPsec %>%
 dev.off()
 
 
-totalNEval <- combine_func(stepping_out_metrics = stepping_out_metrics, 
-            latent_metrics = latent_metrics,
-            gess_metrics = gess_metrics,
-            rand_walk_metrics = rand_walk_metrics,
-            transform_metrics = transform_metrics,
-            metric = 'nEval')
-
-pdf(file = 'images/totalNEval.pdf')
-totalNEval %>% 
-  ggplot(aes(y = par, x = nEval/50000, fill = method)) + 
-  geom_boxplot() +
-  labs(
-    title = targetTitle
-  )
-dev.off()
-
-total_metrics <- lapply(list(stepping_out_metrics, latent_metrics, gess_metrics, rand_walk_metrics, transform_metrics),
-                        format_df)
-total_metrics <- do.call(rbind, total_metrics)
-
-pdf(file = 'images/total_sampPsecAndnEval.pdf')
-total_metrics %>%
-  ggplot(aes(x = nEval, y = sampPsec, color = method)) +
-  geom_point(alpha = 0.15) +
-  geom_point(data = total_metrics %>% 
-               group_by(par, method) %>% 
-               summarise(sampPsec = mean(sampPsec), nEval = mean(nEval)),
-             aes(x = nEval, y = sampPsec, color = method), size = 5, shape = 9)
-dev.off()
-
-
 ## simplified
+pdf(file = 'images/totalsampPsecSimplfied.pdf')
 totalsampPsec |> 
   dplyr::filter(optimMethod %in% c('OSAUC','OAUC','Man','Comp')) |> 
   dplyr::filter(!grepl('*Auto|Man*',par)) |> 
@@ -284,3 +265,4 @@ totalsampPsec |>
     x = 'Effective Samples Per CPU Second'
   ) +
   scale_x_continuous(labels = scales::number_format(scale = 1e-3, suffix = 'K'))
+dev.off()

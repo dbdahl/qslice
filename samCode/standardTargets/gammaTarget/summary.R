@@ -195,17 +195,17 @@ totalsampPsec <- combine_func(stepping_out_metrics = stepping_out_metrics,
                                metric = 'sampPsec') |> 
   rowwise() |> 
   mutate(waterPenatly = case_when(
-    # grepl('*c2:0.01 [A-Z]*',par) ~ 0.01,
-    # grepl('*c2:0.1 [A-Z]*',par) ~ 0.1,
+    grepl('*c2:0.01 [A-Z]*',par) ~ 0.01,
+    grepl('*c2:0.1 [A-Z]*',par) ~ 0.1,
     grepl('*c2:0.5 [A-Z]*',par) ~ 0.5,
-    # grepl('*c2:0.66 [A-Z]*',par) ~ 0.66,
-    # grepl('*c2:0.75 [A-Z]*',par) ~ 0.75,
+    grepl('*c2:0.66 [A-Z]*',par) ~ 0.66,
+    grepl('*c2:0.75 [A-Z]*',par) ~ 0.75,
     grepl('*c2:0 [A-Z]*',par) ~ 0,
-    # grepl('*c2:1.33 [A-Z]*',par) ~ 1.33,
-    # grepl('*c2:1.5 [A-Z]*',par) ~ 1.5,
+    grepl('*c2:1.33 [A-Z]*',par) ~ 1.33,
+    grepl('*c2:1.5 [A-Z]*',par) ~ 1.5,
     grepl('*c2:2 [A-Z]*',par) ~ 2,
-    # grepl('*c2:100 [A-Z]*',par) ~ 100,
-    # grepl('*c2:10 [A-Z]*',par) ~ 10,
+    grepl('*c2:100 [A-Z]*',par) ~ 100,
+    grepl('*c2:10 [A-Z]*',par) ~ 10,
     grepl('*c2:1 [A-Z]*',par) ~ 1,
     TRUE ~ 99
   ),
@@ -217,9 +217,19 @@ totalsampPsec <- combine_func(stepping_out_metrics = stepping_out_metrics,
     grepl('*Man|*Auto|*Laplace', par) ~ 'Man',
     grepl('*w=*|*c=*|*rate=*|*mu=*', par) ~ 'Comp',
     TRUE ~ 'Other'
-  )) |> 
-  mutate(par = forcats::fct_reorder2(par,optimMethod,waterPenatly))
-  # mutate(par = fct_reorder(par,optimMethod))
+  ))
+
+Comp <- totalsampPsec$par[!grepl('*loc = *', totalsampPsec$par)] |> unique()
+Transform <- totalsampPsec$par[grepl('.*Man|.*MM|.*Auto|.*Laplace', totalsampPsec$par)] |> unique()
+OSAUC <- totalsampPsec$par[grepl('*OSAUC*', totalsampPsec$par)] |> unique()
+OAUC <- totalsampPsec$par[grepl('*OAUC', totalsampPsec$par)] |> unique()
+O <- totalsampPsec$par[grepl('.*O$', totalsampPsec$par)] |> unique()
+OS <- totalsampPsec$par[grepl('.*OS$', totalsampPsec$par)] |> unique()
+
+totalsampPsec$par <- factor(totalsampPsec$par, levels = c(Comp, Transform, OSAUC, OAUC, O, OS))
+
+# mutate(par = forcats::fct_reorder2(par,optimMethod,waterPenatly))
+# mutate(par = fct_reorder(par,optimMethod))
 
 pdf(file = 'images/totalsampPsec.pdf')
 totalsampPsec %>% 
@@ -232,6 +242,7 @@ totalsampPsec %>%
 dev.off()
 
 ## simplified
+pdf(file = 'images/totalsampPsecSimplfied.pdf')
 totalsampPsec |> 
   dplyr::filter(optimMethod %in% c('OSAUC','OAUC','Man','Comp')) |> 
   dplyr::filter(!grepl('*Auto|Man*',par)) |> 
@@ -254,4 +265,5 @@ totalsampPsec |>
     x = 'Effective Samples Per CPU Second'
   ) +
   scale_x_continuous(labels = scales::number_format(scale = 1e-3, suffix = 'K'))
+dev.off()
 

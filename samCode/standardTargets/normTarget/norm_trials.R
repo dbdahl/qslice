@@ -130,7 +130,7 @@ log_pdf_samples_optim <- lapply(optimSamplesT, \(list) list$ld) |> unlist()
 log_pdf_samples_optim_auc <- lapply(optimSamplesTAUC, \(list) list$ld) |> unlist()
 
 
-log_pdf <- append(log_pdf, list(autoCauchy$ld, laplaceCauchy$pseu$ld)) |> append(log_pdf_optim) |> append(log_pdf_samples_optim) |> 
+log_pdf <- append(log_pdf, list(autoCauchy$ld, laplaceCauchy$ld)) |> append(log_pdf_optim) |> append(log_pdf_samples_optim) |> 
   append(log_pdf_optim_auc) |> append(log_pdf_samples_optim_auc)
 
 inv_cdf <- lapply(miscPseudoTargets, \(list) list$q) |> unlist()
@@ -140,7 +140,7 @@ inv_cdf_optim_auc <- lapply(optimTAUC, \(list) list$q) %>% unlist()
 inv_cdf_samples_optim <- lapply(optimSamplesT, \(list) list$q) |> unlist()
 inv_cdf_samples_optim_auc <- lapply(optimSamplesTAUC, \(list) list$q) |> unlist()
 
-inv_cdf <- append(inv_cdf, list(autoCauchy$q, laplaceCauchy$pseu$q)) |> append(inv_cdf_optim) |> append(inv_cdf_samples_optim) |> 
+inv_cdf <- append(inv_cdf, list(autoCauchy$q, laplaceCauchy$q)) |> append(inv_cdf_optim) |> append(inv_cdf_samples_optim) |> 
   append(inv_cdf_optim_auc) |> append(inv_cdf_samples_optim_auc)
 
 t <- lapply(miscPseudoTargets, \(list) list$t) |> unlist()
@@ -150,7 +150,7 @@ t_optim_auc <- lapply(optimTAUC, \(list) list$t) %>% unlist()
 t_samples_optim <- lapply(optimSamplesT, \(list) list$t) |> unlist()
 t_samples_optim_auc <- lapply(optimSamplesTAUC, \(list) list$t) |> unlist()
 
-t <- c(t, list(autoCauchy$t, laplaceCauchy$pseu$t)) |> append(t_optim) |> append(t_samples_optim) |> 
+t <- c(t, list(autoCauchy$t, laplaceCauchy$t)) |> append(t_optim) |> append(t_samples_optim) |> 
   append(t_optim_auc) |> append(t_samples_optim_auc)
 
 #####

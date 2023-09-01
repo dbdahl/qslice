@@ -57,7 +57,7 @@ randWalkList <- list(Nsamples = nSamples, Nburnin = nBurnin, Nthin = nThin,
                      method = 'RandWalk', c = 30)
 # independence
 independenceList <- list(Nsamples = nSamples, Nburnin = nBurnin, Nthin = nThin,
-                         method = 'Independence', pseudoType = 'OptimSamples',
+                         method = 'Independence', pseudoType = 'OptimSamplesAUC',
                          optimType = 'samples', approxSamples = NULL, everyIter = FALSE)
 # transform
 # auto
