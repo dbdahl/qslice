@@ -7,8 +7,9 @@ library(parallel)
 library(mcmc)
 library(coda)
 
-filesToSource <- Sys.glob('../utilityFunctions/*.R')[-13]
-sapply(filesToSource, source)
+filesToSource <- Sys.glob('../utilityFunctions/*.R')
+discard <- grepl('*num_of_lines*',filesToSource)
+sapply(filesToSource[!discard], source)
 
 nChains <- 5
 nSamples <- 55000
