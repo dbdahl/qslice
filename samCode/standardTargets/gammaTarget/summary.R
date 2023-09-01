@@ -214,7 +214,7 @@ totalsampPsec <- combine_func(stepping_out_metrics = stepping_out_metrics,
     grepl('*OAUC', par) ~ 'OAUC',
     grepl('*OS', par) ~ 'OS',
     grepl('*O', par) ~ 'O',
-    grepl('*Man|*Auto|*Laplace', par) ~ 'Man',
+    grepl('*Man|*Auto|*Laplace|*MM', par) ~ 'Man',
     grepl('*w=*|*c=*|*rate=*|*mu=*', par) ~ 'Comp',
     TRUE ~ 'Other'
   ))
@@ -242,21 +242,22 @@ totalsampPsec %>%
 dev.off()
 
 ## simplified
-pdf(file = 'images/totalsampPsecSimplfied.pdf')
+pdf(file = 'images/gammatotalsampPsecSimplfied.pdf')
 totalsampPsec |> 
-  dplyr::filter(optimMethod %in% c('OSAUC','OAUC','Man','Comp')) |> 
-  dplyr::filter(!grepl('*Auto|Man*',par)) |> 
+  dplyr::filter(optimMethod %in% c('OSAUC','OAUC','Man','Comp','Transform')) |> 
+  dplyr::filter(!grepl('*Auto|*Man',par)) |> 
   dplyr::filter(waterPenatly == 0 || waterPenatly == 99) |> 
   mutate(par = case_when(
     grepl('*mu=*', par) ~ 'GESS',
     grepl('*rate=*', par) ~ 'Latent',
+    grepl('*MM', par) ~ 'Moment Matching',
     grepl('*w=*', par) ~ 'Stepping Out',
     grepl('*Laplace*', par) ~ 'Laplace',
     grepl('*OSAUC*', par) ~ 'AUC Samples',
     grepl('*OAUC*', par) ~ 'AUC',
     grepl('*c=*', par) ~ 'Random Walk'
   )) |>
-  mutate(par = ordered(par, levels = c('Stepping Out','GESS','Latent','Random Walk','Laplace','AUC Samples','AUC'))) |> 
+  mutate(par = ordered(par, levels = c('Stepping Out','GESS','Latent','Random Walk','Laplace','Moment Matching','AUC Samples','AUC'))) |> 
   ggplot(aes(y = par, x = sampPsec, fill = method)) + 
   geom_boxplot() +
   labs(
