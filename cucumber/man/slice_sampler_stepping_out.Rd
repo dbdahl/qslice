@@ -35,20 +35,20 @@ This function implements a univariate slice sampler of Neal (2003) using the
 "stepping out" procedure, followed by the "shrinkage" procedure.
 }
 \examples{
-lf <- function(x) dbeta(x, 3, 4, log=TRUE)
+lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 draws <- numeric(1000)
 nEvaluations <- 0L
 seconds <- system.time({
-    for ( i in seq.int(2,length(draws)) ) {
-        out <- slice_sampler_stepping_out(draws[i-1], target=lf, w=0.7, max=Inf)
-        draws[i] <- out$x
-        nEvaluations <- nEvaluations + out$nEvaluations
-    }
-})['elapsed']
-nEvaluations/length(draws)
-nEvaluations/ess(draws)
-ess(draws)/seconds
-plot(density(draws), xlim=c(0,1))
-curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+  for (i in seq.int(2, length(draws))) {
+    out <- slice_sampler_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
+    draws[i] <- out$x
+    nEvaluations <- nEvaluations + out$nEvaluations
+  }
+})["elapsed"]
+nEvaluations / length(draws)
+nEvaluations / ess(draws)
+ess(draws) / seconds
+plot(density(draws), xlim = c(0, 1))
+curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 
 }

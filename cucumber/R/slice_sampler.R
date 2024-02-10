@@ -24,28 +24,31 @@
 #' @importFrom stats runif
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x, 3, 4, log=TRUE)
+#' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' seconds <- system.time({
-#'     for ( i in seq.int(2,length(draws)) ) {
-#'         out <- slice_sampler_stepping_out(draws[i-1], target=lf, w=0.7, max=Inf)
-#'         draws[i] <- out$x
-#'         nEvaluations <- nEvaluations + out$nEvaluations
-#'     }
-#' })['elapsed']
-#' nEvaluations/length(draws)
-#' nEvaluations/ess(draws)
-#' ess(draws)/seconds
-#' plot(density(draws), xlim=c(0,1))
-#' curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+#'   for (i in seq.int(2, length(draws))) {
+#'     out <- slice_sampler_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
+#'     draws[i] <- out$x
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#'   }
+#' })["elapsed"]
+#' nEvaluations / length(draws)
+#' nEvaluations / ess(draws)
+#' ess(draws) / seconds
+#' plot(density(draws), xlim = c(0, 1))
+#' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
 slice_sampler_stepping_out <- function(x, target, w, max = Inf, log = TRUE) {
   nEvaluations <- 0
-  f <- function(x) { nEvaluations <<- nEvaluations + 1; target(x) }
+  f <- function(x) {
+    nEvaluations <<- nEvaluations + 1
+    target(x)
+  }
   # Step 1
   fx <- f(x)
-  y <- if ( isTRUE(log) ) {
+  y <- if (isTRUE(log)) {
     log(runif(1)) + fx
   } else {
     runif(1) * fx
@@ -53,26 +56,28 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf, log = TRUE) {
   # Step 2 ("Stepping out" procedure)
   L <- x - runif(1) * w
   R <- L + w
-  if ( ! is.finite(max) ) {
-    while ( y < f(L) ) L <- L - w
-    while ( y < f(R) ) R <- R + w
-  } else if ( max > 0 ) {
-    J <- floor( runif(1) * max )
+  if (!is.finite(max)) {
+    while (y < f(L)) L <- L - w
+    while (y < f(R)) R <- R + w
+  } else if (max > 0) {
+    J <- floor(runif(1) * max)
     K <- max - 1 - J
-    while ( J > 0 && y < f(L) ) {
+    while (J > 0 && y < f(L)) {
       L <- L - w
       J <- J - 1
     }
-    while ( K > 0 && y < f(R) ) {
+    while (K > 0 && y < f(R)) {
       R <- R + w
       K <- K - 1
     }
   }
   # Step 3 ("Shrinkage" procedure)
   repeat {
-    x1 <- L + runif(1) * ( R - L )
-    if ( y < f(x1) ) return(list(x=x1, nEvaluations=nEvaluations))
-    if ( x1 < x ) L <- x1 else R <- x1
+    x1 <- L + runif(1) * (R - L)
+    if (y < f(x1)) {
+      return(list(x = x1, nEvaluations = nEvaluations))
+    }
+    if (x1 < x) L <- x1 else R <- x1
   }
 }
 
@@ -92,28 +97,31 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf, log = TRUE) {
 #' @importFrom stats runif
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x, 3, 4, log=TRUE)
-#' pseudoLogPDF <- function(x) dbeta(x, shape1=1, shape2=1, log=TRUE)
-#' pseudoInvCDF <- function(u) qbeta(u, shape1=1, shape2=1)
+#' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
+#' pseudoLogPDF <- function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE)
+#' pseudoInvCDF <- function(u) qbeta(u, shape1 = 1, shape2 = 1)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' seconds <- system.time({
-#'     for ( i in seq.int(2,length(draws)) ) {
-#'         out <- slice_sampler_transform(draws[i-1], target=lf, pseudoLogPDF, pseudoInvCDF)
-#'         draws[i] <- out$x
-#'         nEvaluations <- nEvaluations + out$nEvaluations
-#'     }
-#' })['elapsed']
-#' nEvaluations/length(draws)
-#' nEvaluations/ess(draws)
-#' ess(draws)/seconds
-#' plot(density(draws), xlim=c(0,1))
-#' curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+#'   for (i in seq.int(2, length(draws))) {
+#'     out <- slice_sampler_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
+#'     draws[i] <- out$x
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#'   }
+#' })["elapsed"]
+#' nEvaluations / length(draws)
+#' nEvaluations / ess(draws)
+#' ess(draws) / seconds
+#' plot(density(draws), xlim = c(0, 1))
+#' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, log=TRUE) {
-  if ( ! isTRUE(log) ) stop("'log=FALSE' is not implemented.")
+slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, log = TRUE) {
+  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
   nEvaluations <- 0
-  f <- function(x) { nEvaluations <<- nEvaluations + 1; target(x) - pseudo_log_pdf(x) }
+  f <- function(x) {
+    nEvaluations <<- nEvaluations + 1
+    target(x) - pseudo_log_pdf(x)
+  }
   # Step 1
   y <- log(runif(1)) + f(x)
   # Step 2 ("Shrinkage" procedure)
@@ -122,8 +130,10 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, l
   repeat {
     u1 <- runif(1, L, R)
     x1 <- pseudo_inv_cdf(u1)
-    if ( y < f(x1) ) return(list(x = x1, u = u1, nEvaluations = nEvaluations))
-    if ( x1 < x ) L <- u1 else R <- u1
+    if (y < f(x1)) {
+      return(list(x = x1, u = u1, nEvaluations = nEvaluations))
+    }
+    if (x1 < x) L <- u1 else R <- u1
   }
 }
 
@@ -140,42 +150,47 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, l
 #' @importFrom stats runif
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x, 3, 4, log=TRUE)
+#' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' seconds <- system.time({
-#'     s <- 0.5
-#'     for ( i in seq.int(2,length(draws)) ) {
-#'         out <- slice_sampler_latent(draws[i-1], s, target=lf, rate=0.3)
-#'         draws[i] <- out$x
-#'         s <- out$s
-#'         nEvaluations <- nEvaluations + out$nEvaluations
-#'     }
-#' })['elapsed']
-#' nEvaluations/length(draws)
-#' nEvaluations/ess(draws)
-#' ess(draws)/seconds
-#' plot(density(draws), xlim=c(0,1))
-#' curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+#'   s <- 0.5
+#'   for (i in seq.int(2, length(draws))) {
+#'     out <- slice_sampler_latent(draws[i - 1], s, target = lf, rate = 0.3)
+#'     draws[i] <- out$x
+#'     s <- out$s
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#'   }
+#' })["elapsed"]
+#' nEvaluations / length(draws)
+#' nEvaluations / ess(draws)
+#' ess(draws) / seconds
+#' plot(density(draws), xlim = c(0, 1))
+#' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_latent <- function(x, s, target, rate, log=TRUE) {
-  if ( ! isTRUE(log) ) stop("'log=FALSE' is not implemented.")
+slice_sampler_latent <- function(x, s, target, rate, log = TRUE) {
+  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
   nEvaluations <- 0
-  f <- function(x) { nEvaluations <<- nEvaluations + 1; target(x) }
+  f <- function(x) {
+    nEvaluations <<- nEvaluations + 1
+    target(x)
+  }
   # Step 1
   y <- log(runif(1)) + f(x)
-  half_s <- s/2
+  half_s <- s / 2
   l <- runif(1, x - half_s, x + half_s)
   # Eq. 7... a truncated exponential using the inverse CDF method.
-  s <- -log(runif(1))/rate + 2*abs(l-x)
-  half_s <- s/2
+  s <- -log(runif(1)) / rate + 2 * abs(l - x)
+  half_s <- s / 2
   L <- l - half_s
   R <- l + half_s
   # Step 2 ("Shrinkage" procedure)
   repeat {
-    x1 <- L + runif(1) * ( R - L )
-    if ( y < f(x1) ) return(list(x=x1, s=s, nEvaluations=nEvaluations))
-    if ( x1 < x ) L <- x1 else R <- x1
+    x1 <- L + runif(1) * (R - L)
+    if (y < f(x1)) {
+      return(list(x = x1, s = s, nEvaluations = nEvaluations))
+    }
+    if (x1 < x) L <- x1 else R <- x1
   }
 }
 
@@ -191,37 +206,45 @@ slice_sampler_latent <- function(x, s, target, rate, log=TRUE) {
 #' @importFrom stats runif rnorm
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x, 3, 4, log=TRUE)
+#' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' seconds <- system.time({
-#'     for ( i in seq.int(2,length(draws)) ) {
-#'         out <- slice_sampler_elliptical(draws[i-1], target=lf, mu=0.5, sigma=1)
-#'         draws[i] <- out$x
-#'         nEvaluations <- nEvaluations + out$nEvaluations
-#'     }
-#' })['elapsed']
-#' nEvaluations/length(draws)
-#' nEvaluations/ess(draws)
-#' ess(draws)/seconds
-#' plot(density(draws), xlim=c(0,1))
-#' curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+#'   for (i in seq.int(2, length(draws))) {
+#'     out <- slice_sampler_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
+#'     draws[i] <- out$x
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#'   }
+#' })["elapsed"]
+#' nEvaluations / length(draws)
+#' nEvaluations / ess(draws)
+#' ess(draws) / seconds
+#' plot(density(draws), xlim = c(0, 1))
+#' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_elliptical <- function(x, target, mu=2, sigma=5, log=TRUE) {
-  if ( ! isTRUE(log) ) stop("'log=FALSE' is not implemented.")
+slice_sampler_elliptical <- function(x, target, mu = 2, sigma = 5, log = TRUE) {
+  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
   nEvaluations <- 0
-  f <- function(x) { nEvaluations <<- nEvaluations + 1; target(x) }
+  f <- function(x) {
+    nEvaluations <<- nEvaluations + 1
+    target(x)
+  }
   # Step 1
   y <- log(runif(1)) + f(x)
-  nu <- rnorm(1,mu,sigma)
-  theta <- runif(1,0,2*pi)
-  theta_min <- theta - 2*pi
+  nu <- rnorm(1, mu, sigma)
+  theta <- runif(1, 0, 2 * pi)
+  theta_min <- theta - 2 * pi
   theta_max <- theta
   repeat {
-    x1 <- (x - mu)*cos(theta) + (nu - mu)*sin(theta) + mu
-    if ( y < f(x1) ) return(list(x=x1, nEvaluations=nEvaluations))
-    if (theta < 0) theta_min <- theta
-    else theta_max <- theta
+    x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
+    if (y < f(x1)) {
+      return(list(x = x1, nEvaluations = nEvaluations))
+    }
+    if (theta < 0) {
+      theta_min <- theta
+    } else {
+      theta_max <- theta
+    }
     theta <- runif(1, theta_min, theta_max)
   }
 }
@@ -241,31 +264,34 @@ slice_sampler_elliptical <- function(x, target, mu=2, sigma=5, log=TRUE) {
 #' @importFrom stats dt rgamma
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x, 3, 4, log=TRUE)
+#' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' seconds <- system.time({
-#'     for ( i in seq.int(2,length(draws)) ) {
-#'         out <- slice_sampler_generalized_elliptical(draws[i-1], target=lf, mu=0.5, sigma=1, df=5)
-#'         draws[i] <- out$x
-#'         nEvaluations <- nEvaluations + out$nEvaluations
-#'     }
-#' })['elapsed']
-#' nEvaluations/length(draws)
-#' nEvaluations/ess(draws)
-#' ess(draws)/seconds
-#' plot(density(draws), xlim=c(0,1))
-#' curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+#'   for (i in seq.int(2, length(draws))) {
+#'     out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1, df = 5)
+#'     draws[i] <- out$x
+#'     nEvaluations <- nEvaluations + out$nEvaluations
+#'   }
+#' })["elapsed"]
+#' nEvaluations / length(draws)
+#' nEvaluations / ess(draws)
+#' ess(draws) / seconds
+#' plot(density(draws), xlim = c(0, 1))
+#' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_generalized_elliptical <- function(x, target, mu=2, sigma=5, df, log=TRUE) {
-  if ( ! isTRUE(log) ) stop("'log=FALSE' is not implemented.")
+slice_sampler_generalized_elliptical <- function(x, target, mu = 2, sigma = 5, df, log = TRUE) {
+  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
   nEvaluations <- 0
-  f <- function(x) { nEvaluations <<- nEvaluations + 1; target(x) }
+  f <- function(x) {
+    nEvaluations <<- nEvaluations + 1
+    target(x)
+  }
   a <- (df + 1.0) / 2.0
-  b <- 0.5*(df + ((x - mu)/sigma)^2)
-  s <- 1.0 / rgamma(1, shape=a, rate=b) # rate of gamma <=> shape of inv-gamma
-  lff <- function(xx) f(xx) - ( dt((xx-mu)/sigma, df=df, log=TRUE) - log(sigma) )
-  out <- slice_sampler_elliptical(x=x, target=lff, mu=mu, sigma=sqrt(s)*sigma, log=log)
+  b <- 0.5 * (df + ((x - mu) / sigma)^2)
+  s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
+  lff <- function(xx) f(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
+  out <- slice_sampler_elliptical(x = x, target = lff, mu = mu, sigma = sqrt(s) * sigma, log = log)
   out$nEvaluations <- nEvaluations
   out
 }
@@ -286,7 +312,9 @@ slice_sampler_generalized_elliptical <- function(x, target, mu=2, sigma=5, df, l
 #' ess(rnorm(100))
 #'
 ess <- function(x) {
-  o <- ar(x, aic=TRUE)
-  if ( length(o$ar) == 0 ) return(length(x))
-  length(x) * var(x) / o$var.pred * (1-sum(o$ar))^2
+  o <- ar(x, aic = TRUE)
+  if (length(o$ar) == 0) {
+    return(length(x))
+  }
+  length(x) * var(x) / o$var.pred * (1 - sum(o$ar))^2
 }

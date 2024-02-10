@@ -30,20 +30,20 @@ This function implements  Algorithm 1 of Nishihara et al (2014) of the
 elliptical slice sampler of Murray, Adams, MacKay (2010) ...More details...
 }
 \examples{
-lf <- function(x) dbeta(x, 3, 4, log=TRUE)
+lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 draws <- numeric(1000)
 nEvaluations <- 0L
 seconds <- system.time({
-    for ( i in seq.int(2,length(draws)) ) {
-        out <- slice_sampler_elliptical(draws[i-1], target=lf, mu=0.5, sigma=1)
-        draws[i] <- out$x
-        nEvaluations <- nEvaluations + out$nEvaluations
-    }
-})['elapsed']
-nEvaluations/length(draws)
-nEvaluations/ess(draws)
-ess(draws)/seconds
-plot(density(draws), xlim=c(0,1))
-curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
+  for (i in seq.int(2, length(draws))) {
+    out <- slice_sampler_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
+    draws[i] <- out$x
+    nEvaluations <- nEvaluations + out$nEvaluations
+  }
+})["elapsed"]
+nEvaluations / length(draws)
+nEvaluations / ess(draws)
+ess(draws) / seconds
+plot(density(draws), xlim = c(0, 1))
+curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 
 }
