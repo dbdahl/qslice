@@ -43,7 +43,8 @@ draws <- numeric(1000)
 nEvaluations <- 0L
 seconds <- system.time({
   for (i in seq.int(2, length(draws))) {
-    out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1, df = 5)
+    out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf,
+                                                mu = 0.5, sigma = 1, df = 5)
     draws[i] <- out$x
     nEvaluations <- nEvaluations + out$nEvaluations
   }
