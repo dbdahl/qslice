@@ -21,9 +21,10 @@ function of the target distribution.  If \code{TRUE}, the \code{target}
 function evaluates the log of the density of the target distribution.}
 }
 \value{
-A list contains two elements: "x" is the new state and "nEvaluations"
-is the number of evaluations of the target function used to obtain the new
-state.
+A list contains three elements: "x" is the new state, "u" is the
+value of the CDF of the psuedo target associated with the returned value,
+inverse CDF method, and "nEvaluations is the number of evaluations of the
+target function used to obtain the new state.
 }
 \description{
 This function implements the transform slice sampler.  ...More details...

@@ -40,7 +40,7 @@
 #' plot(density(draws), xlim=c(0,1))
 #' curve(exp(lf(x)), 0, 1, col="blue", add=TRUE)
 #'
-slice_sampler_stepping_out <- function(x, target, w, max=0, log=TRUE) {
+slice_sampler_stepping_out <- function(x, target, w, max = Inf, log = TRUE) {
   nEvaluations <- 0
   f <- function(x) { nEvaluations <<- nEvaluations + 1; target(x) }
   # Step 1
@@ -84,6 +84,11 @@ slice_sampler_stepping_out <- function(x, target, w, max=0, log=TRUE) {
 #' @param pseudo_log_pdf Not yet documented.
 #' @param pseudo_inv_cdf Not yet documented.
 #'
+#' @return A list contains three elements: "x" is the new state, "u" is the
+#'   value of the CDF of the psuedo target associated with the returned value,
+#'   inverse CDF method, and "nEvaluations is the number of evaluations of the
+#'   target function used to obtain the new state.
+#'
 #' @importFrom stats runif
 #' @export
 #' @examples
@@ -115,12 +120,10 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, l
   L <- 0
   R <- 1
   repeat {
-    u1 <- runif(1,L,R)#L + runif(1) * ( R - L )
+    u1 <- runif(1, L, R)
     x1 <- pseudo_inv_cdf(u1)
-    if ( is.na( y < f(x1) ) ) { browser() }
-    if ( y < f(x1) ) return(list(x=x1, nEvaluations=nEvaluations))
+    if ( y < f(x1) ) return(list(x = x1, u = u1, nEvaluations = nEvaluations))
     if ( x1 < x ) L <- u1 else R <- u1
-    # print(c(L,R))
   }
 }
 
@@ -266,15 +269,6 @@ slice_sampler_generalized_elliptical <- function(x, target, mu=2, sigma=5, df, l
   out$nEvaluations <- nEvaluations
   out
 }
-
-# #' Slice Sampler using the Stepping Out and Shrinkage Procedures (using Rust)
-# #'
-# #' @inheritParams slice_sampler_stepping_out
-# #' @inherit slice_sampler_stepping_out return examples
-# #'
-# slice_sampler <- function(x, target, w, max=0, log=FALSE) {
-#   .Call(.slice_sampler, x, target, w, max, log)
-# }
 
 #' Effective Sample Size
 #'

@@ -4,7 +4,7 @@
 \alias{slice_sampler_stepping_out}
 \title{Slice Sampler using the Stepping Out and Shrinkage Procedures}
 \usage{
-slice_sampler_stepping_out(x, target, w, max = 0, log = TRUE)
+slice_sampler_stepping_out(x, target, w, max = Inf, log = TRUE)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
