@@ -2,7 +2,7 @@
 % Please edit documentation in R/slice_sampler.R
 \name{slice_sampler_generalized_elliptical}
 \alias{slice_sampler_generalized_elliptical}
-\title{General Elliptical Slice Sampler}
+\title{General Elliptical Slice Sampler (univariate)}
 \usage{
 slice_sampler_generalized_elliptical(
   x,
@@ -23,7 +23,7 @@ scalar.}
 
 \item{sigma}{A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.}
 
-\item{df}{Number of degrees of freedom}
+\item{df}{Degrees of freedom of t pseudo-target}
 
 \item{log}{If \code{FALSE}, the \code{target} function is the density
 function of the target distribution.  If \code{TRUE}, the \code{target}

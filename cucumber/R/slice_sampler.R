@@ -249,13 +249,13 @@ slice_sampler_elliptical <- function(x, target, mu = 2, sigma = 5, log = TRUE) {
   }
 }
 
-#' General Elliptical Slice Sampler
+#' General Elliptical Slice Sampler (univariate)
 #'
 #' General Elliptical Slice Sampler of Nishihara (2014)
 #'
 #' @inheritParams slice_sampler_stepping_out
 #' @inheritParams slice_sampler_elliptical
-#' @param df Number of degrees of freedom
+#' @param df Degrees of freedom of t pseudo-target
 #'
 #' @return A list contains two elements: "x" is the new state and "nEvaluations"
 #'   is the number of evaluations of the target function used to obtain the new
@@ -283,17 +283,11 @@ slice_sampler_elliptical <- function(x, target, mu = 2, sigma = 5, log = TRUE) {
 #'
 slice_sampler_generalized_elliptical <- function(x, target, mu = 2, sigma = 5, df, log = TRUE) {
   if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
-  nEvaluations <- 0
-  f <- function(x) {
-    nEvaluations <<- nEvaluations + 1
-    target(x)
-  }
   a <- (df + 1.0) / 2.0
   b <- 0.5 * (df + ((x - mu) / sigma)^2)
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
-  lff <- function(xx) f(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
+  lff <- function(xx) target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
   out <- slice_sampler_elliptical(x = x, target = lff, mu = mu, sigma = sqrt(s) * sigma, log = log)
-  out$nEvaluations <- nEvaluations
   out
 }
 
