@@ -168,7 +168,8 @@ opt_t <- function(target = NULL,
 
       if (verbose) cat("trying", pseu$t, "\n")
 
-      out <- util_pseu(pseu = pseu, target = target, samples = samples, # this function is found in utility_shrinkslice.R
+      # this function is found in utility_shrinkslice.R; output is the same as utility_shrinkslice()
+      out <- util_pseu(pseu = pseu, target = target, samples = samples,
                        type = type, x = x,
                        bins = bins, nbins = nbins,
                        coeffs = coeffs, plot = FALSE,
@@ -178,6 +179,10 @@ opt_t <- function(target = NULL,
       if (verbose) {
         print(out)
         cat("\n")
+      }
+
+      if (out["util"] > 1.0) { # then the result isn't viable. Penalize.
+        out["util"] <- -1.0
       }
 
     }
