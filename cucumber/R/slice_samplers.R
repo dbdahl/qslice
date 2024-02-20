@@ -4,8 +4,8 @@
 #' "stepping out" procedure, followed by the "shrinkage" procedure.
 #'
 #' @param x The current state (as a numeric scalar).
-#' @param target A function taking numeric scalar that evaluates the target density, returning a numeric
-#'   scalar (evaluates log density if \code{log = TRUE}).
+#' @param target A function taking numeric scalar that evaluates the target (or,
+#'   if \code{log = TRUE}, the log of the target) density, returning a numeric scalar.
 #' @param w A numeric scalar tuning the algorithm which gives the typical slice
 #'   width. This is a main tuning parameter of the algorithm.
 #' @param max The maximum number of times to step out. Setting \code{max} to
@@ -249,13 +249,13 @@ slice_sampler_elliptical <- function(x, target, mu = 2, sigma = 5, log = TRUE) {
   }
 }
 
-#' General Elliptical Slice Sampler (univariate)
+#' General Elliptical Slice Sampler (Univariate)
 #'
 #' General Elliptical Slice Sampler of Nishihara (2014)
 #'
 #' @inheritParams slice_sampler_stepping_out
 #' @inheritParams slice_sampler_elliptical
-#' @param df Degrees of freedom of t pseudo-target
+#' @param df Degrees of freedom of Student t pseudo-target.
 #'
 #' @return A list contains two elements: "x" is the new state and "nEvaluations"
 #'   is the number of evaluations of the target function used to obtain the new
