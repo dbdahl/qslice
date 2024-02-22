@@ -4,8 +4,8 @@
 #' "stepping out" procedure, followed by the "shrinkage" procedure.
 #'
 #' @param x The current state (as a numeric scalar).
-#' @param target A function taking numeric scalar that evaluates the target (or,
-#'   if \code{log = TRUE}, the log of the target) density, returning a numeric scalar.
+#' @param target A function taking numeric scalar that evaluates the target
+#'   density, returning a numeric scalar.
 #' @param w A numeric scalar tuning the algorithm which gives the typical slice
 #'   width. This is a main tuning parameter of the algorithm.
 #' @param max The maximum number of times to step out. Setting \code{max} to
@@ -13,9 +13,6 @@
 #'   high autocorrelation if \code{w} is too small.  If \code{w} is too small,
 #'   setting \code{max} to a large value (even \code{Inf}) should lead to low
 #'   autocorrelation at the cost of more evaluations for \code{target}.
-#' @param log If \code{FALSE}, the \code{target} function is the density
-#'   function of the target distribution.  If \code{TRUE}, the \code{target}
-#'   function evaluates the log of the density of the target distribution.
 #'
 #' @return A list contains two elements: "x" is the new state and "nEvaluations"
 #'   is the number of evaluations of the target function used to obtain the new
@@ -24,7 +21,7 @@
 #' @importFrom stats runif
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
+#' lf <- function(x) dbeta(x, 3, 4)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' seconds <- system.time({
@@ -40,7 +37,7 @@
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_stepping_out <- function(x, target, w, max = Inf, log = TRUE) {
+slice_sampler_stepping_out <- function(x, target, w, max = Inf) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -48,11 +45,7 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf, log = TRUE) {
   }
   # Step 1
   fx <- f(x)
-  y <- if (isTRUE(log)) {
-    log(runif(1)) + fx
-  } else {
-    runif(1) * fx
-  }
+  y <- log(runif(1)) + fx
   # Step 2 ("Stepping out" procedure)
   L <- x - runif(1) * w
   R <- L + w
@@ -115,8 +108,7 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf, log = TRUE) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, log = TRUE) {
-  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
+slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -168,8 +160,7 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf, l
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_latent <- function(x, s, target, rate, log = TRUE) {
-  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
+slice_sampler_latent <- function(x, s, target, rate) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -222,8 +213,7 @@ slice_sampler_latent <- function(x, s, target, rate, log = TRUE) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_elliptical <- function(x, target, mu = 2, sigma = 5, log = TRUE) {
-  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
+slice_sampler_elliptical <- function(x, target, mu, sigma) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -281,14 +271,12 @@ slice_sampler_elliptical <- function(x, target, mu = 2, sigma = 5, log = TRUE) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_generalized_elliptical <- function(x, target, mu = 2, sigma = 5, df, log = TRUE) {
-  if (!isTRUE(log)) stop("'log=FALSE' is not implemented.")
+slice_sampler_generalized_elliptical <- function(x, target, mu, sigma, df) {
   a <- (df + 1.0) / 2.0
   b <- 0.5 * (df + ((x - mu) / sigma)^2)
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
   lff <- function(xx) target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
-  out <- slice_sampler_elliptical(x = x, target = lff, mu = mu, sigma = sqrt(s) * sigma, log = log)
-  out
+  slice_sampler_elliptical(x = x, target = lff, mu = mu, sigma = sqrt(s) * sigma)
 }
 
 #' Effective Sample Size
