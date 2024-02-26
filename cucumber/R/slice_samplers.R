@@ -4,7 +4,7 @@
 #' "stepping out" procedure, followed by the "shrinkage" procedure.
 #'
 #' @param x The current state (as a numeric scalar).
-#' @param target A function taking numeric scalar that evaluates the target
+#' @param target A function taking numeric scalar that evaluates the log-target
 #'   density, returning a numeric scalar.
 #' @param w A numeric scalar tuning the algorithm which gives the typical slice
 #'   width. This is a main tuning parameter of the algorithm.

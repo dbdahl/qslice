@@ -4,13 +4,13 @@
 \alias{slice_sampler_stepping_out}
 \title{Slice Sampler using the Stepping Out and Shrinkage Procedures}
 \usage{
-slice_sampler_stepping_out(x, target, w, max = Inf, log = TRUE)
+slice_sampler_stepping_out(x, target, w, max = Inf)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the target (or,
-if \code{log = TRUE}, the log of the target) density, returning a numeric scalar.}
+\item{target}{A function taking numeric scalar that evaluates the log-target
+density, returning a numeric scalar.}
 
 \item{w}{A numeric scalar tuning the algorithm which gives the typical slice
 width. This is a main tuning parameter of the algorithm.}
@@ -20,10 +20,6 @@ zero avoids some evaluations of \code{target}, but may lead to relatively
 high autocorrelation if \code{w} is too small.  If \code{w} is too small,
 setting \code{max} to a large value (even \code{Inf}) should lead to low
 autocorrelation at the cost of more evaluations for \code{target}.}
-
-\item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the \code{target}
-function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"
@@ -35,7 +31,7 @@ This function implements a univariate slice sampler of Neal (2003) using the
 "stepping out" procedure, followed by the "shrinkage" procedure.
 }
 \examples{
-lf <- function(x) dbeta(x, 3, 4, log = TRUE)
+lf <- function(x) dbeta(x, 3, 4)
 draws <- numeric(1000)
 nEvaluations <- 0L
 seconds <- system.time({

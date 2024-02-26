@@ -4,21 +4,17 @@
 \alias{slice_sampler_elliptical}
 \title{Univariate Elliptical Slice Sampler}
 \usage{
-slice_sampler_elliptical(x, target, mu = 2, sigma = 5, log = TRUE)
+slice_sampler_elliptical(x, target, mu, sigma)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the target (or,
-if \code{log = TRUE}, the log of the target) density, returning a numeric scalar.}
+\item{target}{A function taking numeric scalar that evaluates the log-target
+density, returning a numeric scalar.}
 
 \item{mu}{A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.}
 
 \item{sigma}{A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.}
-
-\item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the \code{target}
-function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"

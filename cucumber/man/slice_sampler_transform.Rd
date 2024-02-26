@@ -4,21 +4,17 @@
 \alias{slice_sampler_transform}
 \title{Transform Slice Sampler}
 \usage{
-slice_sampler_transform(x, target, pseudo_log_pdf, pseudo_inv_cdf, log = TRUE)
+slice_sampler_transform(x, target, pseudo_log_pdf, pseudo_inv_cdf)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the target (or,
-if \code{log = TRUE}, the log of the target) density, returning a numeric scalar.}
+\item{target}{A function taking numeric scalar that evaluates the log-target
+density, returning a numeric scalar.}
 
 \item{pseudo_log_pdf}{Not yet documented.}
 
 \item{pseudo_inv_cdf}{Not yet documented.}
-
-\item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the \code{target}
-function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list containing three elements: "x" is the new state, "u" is the

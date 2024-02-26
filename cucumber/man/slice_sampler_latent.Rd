@@ -4,7 +4,7 @@
 \alias{slice_sampler_latent}
 \title{Latent Slice Sampler}
 \usage{
-slice_sampler_latent(x, s, target, rate, log = TRUE)
+slice_sampler_latent(x, s, target, rate)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
@@ -12,14 +12,10 @@ slice_sampler_latent(x, s, target, rate, log = TRUE)
 \item{s}{A random variable that determines how far the algorithm samples from
 on each side}
 
-\item{target}{A function taking numeric scalar that evaluates the target (or,
-if \code{log = TRUE}, the log of the target) density, returning a numeric scalar.}
+\item{target}{A function taking numeric scalar that evaluates the log-target
+density, returning a numeric scalar.}
 
 \item{rate}{The rate parameter for a truncated exponential.}
-
-\item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the \code{target}
-function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"

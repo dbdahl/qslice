@@ -4,30 +4,19 @@
 \alias{slice_sampler_generalized_elliptical}
 \title{General Elliptical Slice Sampler (Univariate)}
 \usage{
-slice_sampler_generalized_elliptical(
-  x,
-  target,
-  mu = 2,
-  sigma = 5,
-  df,
-  log = TRUE
-)
+slice_sampler_generalized_elliptical(x, target, mu, sigma, df)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the target (or,
-if \code{log = TRUE}, the log of the target) density, returning a numeric scalar.}
+\item{target}{A function taking numeric scalar that evaluates the log-target
+density, returning a numeric scalar.}
 
 \item{mu}{A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.}
 
 \item{sigma}{A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.}
 
 \item{df}{Degrees of freedom of Student t pseudo-target.}
-
-\item{log}{If \code{FALSE}, the \code{target} function is the density
-function of the target distribution.  If \code{TRUE}, the \code{target}
-function evaluates the log of the density of the target distribution.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"

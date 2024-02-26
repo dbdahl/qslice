@@ -39,8 +39,7 @@ for (i in 2:n_sim) {
   state <- slice_sampler_transform(samp_x[i-1], 
                                    target = target$ld, 
                                    pseudo_log_pdf = pseudo$pseu$ld, 
-                                   pseudo_inv_cdf = pseudo$pseu$q,
-                                   log = TRUE)
+                                   pseudo_inv_cdf = pseudo$pseu$q)
   n_eval <- n_eval + state$nEvaluations
   samp_psi[i] <- state$u
   samp_x[i] <- state$x
