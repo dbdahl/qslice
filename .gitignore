@@ -1,5 +1,12 @@
 /.Rhistory
 /.Rproj.user
+*.Rapp.history
+*.Rhistory
+*.rda
+*.RData
+*.csv
+*.pdf
+*.DS_store
 cucumber.Rcheck
 cucumber_*.tar.gz
 /sam_comparison/cauchyTransformation/NormTarget/data
