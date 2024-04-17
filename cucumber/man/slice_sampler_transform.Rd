@@ -23,7 +23,7 @@ inverse CDF method, and "nEvaluations is the number of evaluations of the
 target function used to obtain the new state.
 }
 \description{
-This function implements the quantile slice sampler.  ...More details...
+Quantile slice sampler.
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
@@ -31,16 +31,13 @@ pseudoLogPDF <- function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE)
 pseudoInvCDF <- function(u) qbeta(u, shape1 = 1, shape2 = 1)
 draws <- numeric(1000)
 nEvaluations <- 0L
-seconds <- system.time({
-  for (i in seq.int(2, length(draws))) {
-    out <- slice_sampler_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
-    draws[i] <- out$x
-    nEvaluations <- nEvaluations + out$nEvaluations
-  }
-})["elapsed"]
+for (i in seq.int(2, length(draws))) {
+  out <- slice_sampler_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
+  draws[i] <- out$x
+  nEvaluations <- nEvaluations + out$nEvaluations
+}
 nEvaluations / length(draws)
 nEvaluations / ess(draws)
-ess(draws) / seconds
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 

@@ -4,11 +4,10 @@
 \alias{lapproxt}
 \title{Cauchy Pseudo-Target from Laplace Approximation}
 \usage{
-lapproxt(f, init, sc_adj = 1, lb = -Inf, ub = Inf, ...)
+lapproxt(lf, init, sc_adj = 1, lb = -Inf, ub = Inf, maxit = 100, ...)
 }
 \arguments{
-\item{f}{Univariate function evaluating the unnormalized density to approximate.
-Note that this is not on the log scale.}
+\item{lf}{Univariate function evaluating the unnormalized log density to approximate.}
 
 \item{init}{Numeric scalar for an initial value (used in optimization).}
 
@@ -25,6 +24,7 @@ Defaults to \code{Inf}.}
 Author: Sam Johnson
 }
 \examples{
-pseu <- lapproxt(function(x) exp(-x^2), init = 0.5, lb = 0.0)
-curve(pseu$d(x), from = -2, to = 6)
+pseu <- lapproxt(function(x) dnorm(x, log = TRUE), init = 0.5, lb = -1.0)
+curve(dnorm(x)/(1- pnorm(-1)), from = -1, to = 6, col = "blue")
+curve(pseu$d(x), from = -2, to = 6, add = TRUE)
 }

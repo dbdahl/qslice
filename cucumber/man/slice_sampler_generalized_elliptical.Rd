@@ -12,9 +12,9 @@ slice_sampler_generalized_elliptical(x, target, mu, sigma, df)
 \item{target}{A function taking numeric scalar that evaluates the log-target
 density, returning a numeric scalar.}
 
-\item{mu}{A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.}
+\item{mu}{A numeric scalar with the mean of the normal to be sampled}
 
-\item{sigma}{A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.}
+\item{sigma}{A numeric scalar with the standard deviation of the normal to be sampled.}
 
 \item{df}{Degrees of freedom of Student t pseudo-target.}
 }
@@ -30,17 +30,14 @@ General Elliptical Slice Sampler of Nishihara (2014)
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 draws <- numeric(1000)
 nEvaluations <- 0L
-seconds <- system.time({
-  for (i in seq.int(2, length(draws))) {
-    out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf,
-                                                mu = 0.5, sigma = 1, df = 5)
-    draws[i] <- out$x
-    nEvaluations <- nEvaluations + out$nEvaluations
-  }
-})["elapsed"]
+for (i in seq.int(2, length(draws))) {
+  out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf,
+                                              mu = 0.5, sigma = 1, df = 5)
+  draws[i] <- out$x
+  nEvaluations <- nEvaluations + out$nEvaluations
+}
 nEvaluations / length(draws)
 nEvaluations / ess(draws)
-ess(draws) / seconds
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 

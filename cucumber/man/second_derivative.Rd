@@ -4,7 +4,7 @@
 \alias{second_derivative}
 \title{Helper Function for Laplace Approximation}
 \usage{
-second_derivative(x, h = 1e-05, f)
+second_derivative(x, h = 1e-05, f, ...)
 }
 \description{
 Helper Function for Laplace Approximation

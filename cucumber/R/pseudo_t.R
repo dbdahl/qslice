@@ -58,13 +58,22 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
   plb <- pt((lb - loc)/sc, df = degf)
   pub <- pt((ub - loc)/sc, df = degf)
   normc <- pub - plb
+  lognormc <- log(normc)
 
   logsc <- log(sc)
 
-  list(d = function(x) {dt((x - loc)/sc, df = degf) / sc * (x > lb & x < ub)},
-       ld = function(x) {dt((x - loc)/sc, df = degf, log=TRUE) - logsc + log(x > lb & x < ub)},
-       q = function(u, log.p = FALSE) {qt(plb + u*normc, log.p = log.p, df = degf)*sc + loc},
-       p = function(x) {(pt((x - loc)/sc, df = degf) - plb) / normc * (x > lb)},
+  list(d = function(x) {
+         dt((x - loc) / sc, df = degf) / sc * (x > lb & x < ub) / normc
+         },
+       ld = function(x) {
+         dt((x - loc) / sc, df = degf, log = TRUE) - logsc - lognormc + log(x > lb & x < ub)
+         },
+       q = function(u, log.p = FALSE) {
+         qt(plb + u * normc, log.p = log.p, df = degf) * sc + loc
+         },
+       p = function(x) {
+         (pt((x - loc) / sc, df = degf) - plb) / normc * (x > lb)
+         },
        t = t,
        loc = loc, sc = sc, degf = degf, lb = lb, ub = ub)
 }

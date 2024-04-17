@@ -153,6 +153,8 @@ water_area <- function(x, y, u = NULL, nbins = 30, plot = FALSE) {
 #'
 #' \code{totalWaterArea}: Total water-holding area (not restricted to unit square)
 #'
+#' @importFrom rootSolve uniroot.all
+#' @importFrom numDeriv grad
 #' @export
 #' @examples
 #' f <- function(x) {0.33 * dnorm(x,0,0.5) + 0.33 * dnorm(x,2,1) + 0.33 * dnorm(x,7,2)}

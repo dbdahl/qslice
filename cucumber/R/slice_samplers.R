@@ -1,6 +1,6 @@
 #' Slice Sampler using the Stepping Out and Shrinkage Procedures
 #'
-#' This function implements a univariate slice sampler of Neal (2003) using the
+#' Univariate slice sampler of Neal (2003) using the
 #' "stepping out" procedure, followed by the "shrinkage" procedure.
 #'
 #' @param x The current state (as a numeric scalar).
@@ -24,16 +24,13 @@
 #' lf <- function(x) dbeta(x, 3, 4)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
-#' seconds <- system.time({
-#'   for (i in seq.int(2, length(draws))) {
-#'     out <- slice_sampler_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
-#'     draws[i] <- out$x
-#'     nEvaluations <- nEvaluations + out$nEvaluations
-#'   }
-#' })["elapsed"]
+#' for (i in seq.int(2, length(draws))) {
+#'   out <- slice_sampler_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
+#'   draws[i] <- out$x
+#'   nEvaluations <- nEvaluations + out$nEvaluations
+#' }
 #' nEvaluations / length(draws)
 #' nEvaluations / ess(draws)
-#' ess(draws) / seconds
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -76,7 +73,7 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf) {
 
 #' Transform Slice Sampler
 #'
-#' This function implements the quantile slice sampler.  ...More details...
+#' Quantile slice sampler.
 #'
 #' @inherit slice_sampler_stepping_out
 #' @param pseudo_log_pdf Not yet documented.
@@ -95,16 +92,13 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf) {
 #' pseudoInvCDF <- function(u) qbeta(u, shape1 = 1, shape2 = 1)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
-#' seconds <- system.time({
-#'   for (i in seq.int(2, length(draws))) {
-#'     out <- slice_sampler_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
-#'     draws[i] <- out$x
-#'     nEvaluations <- nEvaluations + out$nEvaluations
-#'   }
-#' })["elapsed"]
+#' for (i in seq.int(2, length(draws))) {
+#'   out <- slice_sampler_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
+#'   draws[i] <- out$x
+#'   nEvaluations <- nEvaluations + out$nEvaluations
+#' }
 #' nEvaluations / length(draws)
 #' nEvaluations / ess(draws)
-#' ess(draws) / seconds
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -131,32 +125,32 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
 
 #' Latent Slice Sampler
 #'
-#' This function implements the latent slice sampler of Li and Walker (2020).
-#' ...More details...
+#' Latent slice sampler of Li and Walker (2020).
 #'
 #' @inherit slice_sampler_stepping_out
 #' @param s A random variable that determines how far the algorithm samples from
 #'   on each side
 #' @param rate The rate parameter for a truncated exponential.
 #'
+#' @return A list contains three elements: "x" is the new state of the target variable,
+#'   "s" is the new state of the latent scale variable, and "nEvaluations"
+#'   is the number of evaluations of the target function used to obtain the new
+#'   state.
 #' @importFrom stats runif
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
-#' seconds <- system.time({
-#'   s <- 0.5
-#'   for (i in seq.int(2, length(draws))) {
-#'     out <- slice_sampler_latent(draws[i - 1], s, target = lf, rate = 0.3)
-#'     draws[i] <- out$x
-#'     s <- out$s
-#'     nEvaluations <- nEvaluations + out$nEvaluations
-#'   }
-#' })["elapsed"]
+#' s <- 0.5
+#' for (i in seq.int(2, length(draws))) {
+#'   out <- slice_sampler_latent(draws[i - 1], s, target = lf, rate = 0.3)
+#'   draws[i] <- out$x
+#'   s <- out$s
+#'   nEvaluations <- nEvaluations + out$nEvaluations
+#' }
 #' nEvaluations / length(draws)
 #' nEvaluations / ess(draws)
-#' ess(draws) / seconds
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -187,12 +181,12 @@ slice_sampler_latent <- function(x, s, target, rate) {
 
 #' Univariate Elliptical Slice Sampler
 #'
-#' This function implements  Algorithm 1 of Nishihara et al (2014) of the
-#' elliptical slice sampler of Murray, Adams, MacKay (2010) ...More details...
+#' Algorithm 1 of Nishihara et al (2014) of the
+#' elliptical slice sampler of Murray, Adams, MacKay (2010).
 #'
 #' @inherit slice_sampler_stepping_out
-#' @param mu A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.
-#' @param sigma A numeric scalar tuning the algorithm which gives the theta value that will be used to sample a random value from the ellipse.
+#' @param mu A numeric scalar with the mean of the normal to be sampled
+#' @param sigma A numeric scalar with the standard deviation of the normal to be sampled.
 #'
 #' @importFrom stats runif rnorm
 #' @export
@@ -200,16 +194,13 @@ slice_sampler_latent <- function(x, s, target, rate) {
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
-#' seconds <- system.time({
-#'   for (i in seq.int(2, length(draws))) {
-#'     out <- slice_sampler_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
-#'     draws[i] <- out$x
-#'     nEvaluations <- nEvaluations + out$nEvaluations
-#'   }
-#' })["elapsed"]
+#' for (i in seq.int(2, length(draws))) {
+#'   out <- slice_sampler_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
+#'   draws[i] <- out$x
+#'   nEvaluations <- nEvaluations + out$nEvaluations
+#' }
 #' nEvaluations / length(draws)
 #' nEvaluations / ess(draws)
-#' ess(draws) / seconds
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -257,17 +248,14 @@ slice_sampler_elliptical <- function(x, target, mu, sigma) {
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
-#' seconds <- system.time({
-#'   for (i in seq.int(2, length(draws))) {
-#'     out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf,
-#'                                                 mu = 0.5, sigma = 1, df = 5)
-#'     draws[i] <- out$x
-#'     nEvaluations <- nEvaluations + out$nEvaluations
-#'   }
-#' })["elapsed"]
+#' for (i in seq.int(2, length(draws))) {
+#'   out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf,
+#'                                               mu = 0.5, sigma = 1, df = 5)
+#'   draws[i] <- out$x
+#'   nEvaluations <- nEvaluations + out$nEvaluations
+#' }
 #' nEvaluations / length(draws)
 #' nEvaluations / ess(draws)
-#' ess(draws) / seconds
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -281,8 +269,8 @@ slice_sampler_generalized_elliptical <- function(x, target, mu, sigma, df) {
 
 #' Effective Sample Size
 #'
-#' This function computes the effective sample size when estimating a mean based
-#' on autocorrelated samples.
+#' Effective sample size when estimating a mean from
+#' autocorrelated samples.
 #'
 #' @param x A numeric vector of samples from which the mean will be
 #'   estimated.

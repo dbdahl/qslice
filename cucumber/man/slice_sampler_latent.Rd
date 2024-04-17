@@ -18,30 +18,27 @@ density, returning a numeric scalar.}
 \item{rate}{The rate parameter for a truncated exponential.}
 }
 \value{
-A list contains two elements: "x" is the new state and "nEvaluations"
+A list contains three elements: "x" is the new state of the target variable,
+"s" is the new state of the latent scale variable, and "nEvaluations"
 is the number of evaluations of the target function used to obtain the new
 state.
 }
 \description{
-This function implements the latent slice sampler of Li and Walker (2020).
-...More details...
+Latent slice sampler of Li and Walker (2020).
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 draws <- numeric(1000)
 nEvaluations <- 0L
-seconds <- system.time({
-  s <- 0.5
-  for (i in seq.int(2, length(draws))) {
-    out <- slice_sampler_latent(draws[i - 1], s, target = lf, rate = 0.3)
-    draws[i] <- out$x
-    s <- out$s
-    nEvaluations <- nEvaluations + out$nEvaluations
-  }
-})["elapsed"]
+s <- 0.5
+for (i in seq.int(2, length(draws))) {
+  out <- slice_sampler_latent(draws[i - 1], s, target = lf, rate = 0.3)
+  draws[i] <- out$x
+  s <- out$s
+  nEvaluations <- nEvaluations + out$nEvaluations
+}
 nEvaluations / length(draws)
 nEvaluations / ess(draws)
-ess(draws) / seconds
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 

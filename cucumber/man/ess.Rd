@@ -14,8 +14,8 @@ estimated.}
 A numeric scalar giving the effective sample size.
 }
 \description{
-This function computes the effective sample size when estimating a mean based
-on autocorrelated samples.
+Effective sample size when estimating a mean from
+autocorrelated samples.
 }
 \examples{
 ess(rnorm(100))
