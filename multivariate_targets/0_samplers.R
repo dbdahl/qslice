@@ -12,16 +12,14 @@ gess_sampler <- function(lt, n_iter, x0, loc, ScL, degf, is_chol) {
   list(draws = draws[-1,], n_eval = n_eval)
 }
 
-Qslice_sampler <- function(lt, n_iter, x0, ps_lpdf, ps_icdf, ps_cdf) {
+Qslice_sampler <- function(lt, n_iter, x0, pseudo) {
   draws <- matrix(rep(x0, n_iter + 1), nrow = n_iter + 1, byrow = TRUE)
   draws_u <- matrix(rep(x0, n_iter), nrow = n_iter, byrow = TRUE)
   n_eval <- 0
   for (i in 2:(n_iter + 1)) {
     tmp <- slice_mv_transform(draws[i-1,],
                               target = lt,
-                              pseudo_log_pdf = ps_lpdf,
-                              pseudo_inv_cdf = ps_icdf,
-                              pseudo_cdf = ps_cdf)
+                              pseudo = pseudo)
     draws[i,] <- tmp$x
     draws_u[i-1,] <- tmp$u
     n_eval <- n_eval + tmp$nEvaluations
@@ -45,3 +43,12 @@ Qslice_seq_sampler <- function(lt, n_iter, x0, pseudo_control) {
   list(draws = draws[-1,], draws_u = draws_u, n_eval = n_eval)
 }
 
+imh_sampler <- function(lt, n_iter, x0, pseudo) {
+  draws <- matrix(rep(x0, n_iter + 1), nrow = n_iter + 1, byrow = TRUE)
+  for (i in 2:(n_iter + 1)) {
+    draws[i,] <- imh_pseudo(x = draws[i-1,],
+                            ltarget = lt,
+                            pseudo = pseudo)
+  }
+  draws[-1,]
+}

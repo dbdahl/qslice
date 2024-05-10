@@ -92,10 +92,9 @@ slice_hyperrect <- function(x, target,
 #' through independent univariate distributions.
 #'
 #' @inherit slice_hyperrect
-#' @param pseudo_log_pdf List of functions evaluating each of the univariate log pdfs of the pseudo-target.
-#' @param pseudo_inv_cdf List of functions evaluating each of the univariate inverse-cdfs of the pseudo-target.
-#' @param pseudo_cdf List of functions evaluating each of the univariate cdfs of the pseudo-target.
-#'
+#' @param pseudo List of length equal to the number of dimensions in \code{x}. Each element is itself a list that specifies
+#' the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density,
+#' \code{p} that evaluates the CDF, and \code{q} that evaluates the quantile (inverse-CDF) function.
 #' @return A list containing three elements: "x" is the new state, "u" is the
 #'   value of the CDF of the psuedo-target associated with the returned value,
 #'   inverse CDF method, and "nEvaluations is the number of evaluations of the
@@ -106,21 +105,20 @@ slice_hyperrect <- function(x, target,
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
 #' ps_shsc <- list(c(2, 2), c(2, 1))
-#' ps_lpdf <- list(function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = T),
-#'                 function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = T))
-#' ps_icdf <- list(function(x) qbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
-#'                 function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]))
-#' ps_cdf <- list(function(x) pbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
-#'                function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]))
+#' ps <- list(
+#'   list(ld = function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = T),
+#'        p = function(x) pbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
+#'        q = function(x) qbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]) ),
+#'   list(ld = function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = T),
+#'        p = function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]),
+#'        q = function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]) )
+#'   )
 #' draws <- matrix(0.2, nrow = 10e3, ncol = 2)
 #' draws_u <- draws
-#' draws_u[1,] <- sapply(1:length(ps_cdf), function(k) ps_cdf[[k]](draws[1,k]))
+#' draws_u[1,] <- sapply(1:length(ps), function(k) ps[[k]]$p(draws[1,k]))
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, nrow(draws))) {
-#'   out <- slice_mv_transform(draws[i - 1, ], target = lf,
-#'                     pseudo_log_pdf = ps_lpdf,
-#'                     pseudo_inv_cdf = ps_icdf,
-#'                     pseudo_cdf = ps_cdf)
+#'   out <- slice_mv_transform(draws[i - 1, ], target = lf, pseudo = ps)
 #'   draws[i,] <- out$x
 #'   draws_u[i,] <- out$u
 #'   nEvaluations <- nEvaluations + out$nEvaluations
@@ -136,21 +134,18 @@ slice_hyperrect <- function(x, target,
 #' hist(draws_u[,2], freq = F)
 #' auc(u = draws_u[,1])
 #' auc(u = draws_u[,2])
-slice_mv_transform <- function(x, target,
-                               pseudo_log_pdf,
-                               pseudo_inv_cdf,
-                               pseudo_cdf) {
+slice_mv_transform <- function(x, target, pseudo) {
 
   K <- length(x)
 
   lhu <- function(u) {
-    xx <- sapply(1:K, function(k) pseudo_inv_cdf[[k]](u[k]))
-    target(xx) - sum(sapply(1:K, function(k) pseudo_log_pdf[[k]](xx[k])))
+    xx <- sapply(1:K, function(k) pseudo[[k]]$q(u[k]))
+    target(xx) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(xx[k])))
   }
 
-  u0 <- sapply(1:K, function(k) pseudo_cdf[[k]](x[k]))
+  u0 <- sapply(1:K, function(k) pseudo[[k]]$p(x[k]))
   shyp <- slice_hyperrect(u0, target = lhu, w = NULL, L = NULL, R = NULL)
-  x1 <- sapply(1:K, function(k) pseudo_inv_cdf[[k]](shyp$x[k]))
+  x1 <- sapply(1:K, function(k) pseudo[[k]]$q(shyp$x[k]))
 
   list(x = x1, u = shyp$x, nEvaluations = shyp$nEvaluations)
 }

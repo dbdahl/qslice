@@ -4,7 +4,7 @@
 \alias{slice_mv_transform}
 \title{Multivariate Transform Slice Sampler}
 \usage{
-slice_mv_transform(x, target, pseudo_log_pdf, pseudo_inv_cdf, pseudo_cdf)
+slice_mv_transform(x, target, pseudo)
 }
 \arguments{
 \item{x}{The current state (as a numeric vector).}
@@ -12,11 +12,9 @@ slice_mv_transform(x, target, pseudo_log_pdf, pseudo_inv_cdf, pseudo_cdf)
 \item{target}{A function taking numeric vector that evaluates the log-target
 density, returning a numeric scalar.}
 
-\item{pseudo_log_pdf}{List of functions evaluating each of the univariate log pdfs of the pseudo-target.}
-
-\item{pseudo_inv_cdf}{List of functions evaluating each of the univariate inverse-cdfs of the pseudo-target.}
-
-\item{pseudo_cdf}{List of functions evaluating each of the univariate cdfs of the pseudo-target.}
+\item{pseudo}{List of length equal to the number of dimensions in \code{x}. Each element is itself a list that specifies
+the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density,
+\code{p} that evaluates the CDF, and \code{q} that evaluates the quantile (inverse-CDF) function.}
 }
 \value{
 A list containing three elements: "x" is the new state, "u" is the
@@ -31,21 +29,20 @@ through independent univariate distributions.
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
 ps_shsc <- list(c(2, 2), c(2, 1))
-ps_lpdf <- list(function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = T),
-                function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = T))
-ps_icdf <- list(function(x) qbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
-                function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]))
-ps_cdf <- list(function(x) pbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
-               function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]))
+ps <- list(
+  list(ld = function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = T),
+       p = function(x) pbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
+       q = function(x) qbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]) ),
+  list(ld = function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = T),
+       p = function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]),
+       q = function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]) )
+  )
 draws <- matrix(0.2, nrow = 10e3, ncol = 2)
 draws_u <- draws
-draws_u[1,] <- sapply(1:length(ps_cdf), function(k) ps_cdf[[k]](draws[1,k]))
+draws_u[1,] <- sapply(1:length(ps), function(k) ps[[k]]$p(draws[1,k]))
 nEvaluations <- 0L
 for (i in seq.int(2, nrow(draws))) {
-  out <- slice_mv_transform(draws[i - 1, ], target = lf,
-                    pseudo_log_pdf = ps_lpdf,
-                    pseudo_inv_cdf = ps_icdf,
-                    pseudo_cdf = ps_cdf)
+  out <- slice_mv_transform(draws[i - 1, ], target = lf, pseudo = ps)
   draws[i,] <- out$x
   draws_u[i,] <- out$u
   nEvaluations <- nEvaluations + out$nEvaluations

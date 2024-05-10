@@ -17,10 +17,14 @@ ls()
 
 n_iter <- 10e3
 
+degf <- 1
+
+
+
 sc_adj <- 1.3
 (SigL_use <- sc_adj * SigL_hat)
 (SigL_use <- diag(sc_adj * sqrt(diag(Sig_hat)))) # the target uses SigL, which is also defined in the sampler; correctness depends on lexical scoping
-degf <- 1
+
 
 time <- system.time({
   mcmc_out <- gess_sampler(ltarget, n_iter = n_iter, x0 = runif(K),
@@ -41,15 +45,14 @@ colMeans(mcmc_out$draws)
 
 
 ## chain of indep pseudo
-ps_lpdf <- lapply(1:K, function(k) function(x) dt((x - mu_hat[k])/SigL_use[k,k], 
-                                                  df = degf, log = TRUE))
-ps_icdf <- lapply(1:K, function(k) function(u) mu_hat[k] + SigL_use[k,k] * qt(u, df = degf))
-ps_cdf <- lapply(1:K, function(k) function(x) pt((x - mu_hat[k])/SigL_use[k,k], 
-                                                 df = degf))
+ps <- lapply(1:K, function(k) {
+  list(ld = function(x) dt((x - mu_hat[k])/SigL_use[k,k], df = degf, log = TRUE),
+       p = function(x) pt((x - mu_hat[k])/SigL_use[k,k], df = degf),
+       q = function(u) mu_hat[k] + SigL_use[k,k] * qt(u, df = degf) )
+})
 
 time <- system.time({
-  mcmc_out <- Qslice_sampler(ltarget, n_iter = n_iter, x0 = runif(K),
-                            ps_lpdf = ps_lpdf, ps_icdf = ps_icdf, ps_cdf = ps_cdf)
+  mcmc_out <- Qslice_sampler(ltarget, n_iter = n_iter, x0 = runif(K), pseudo = ps)
 })
 
 time <- system.time({
