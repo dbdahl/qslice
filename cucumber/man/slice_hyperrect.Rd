@@ -17,7 +17,9 @@ width in each dimension. This is a main tuning parameter of the algorithm.
 If \code{NULL}, the sampler begins shrinking from the supplied boundaries (should,
 correspond with the support).}
 
-\item{L}{Numeric vector giving the lower boundaries of support in each dimension.
+\item{L}{Numeric vector giving the lower boundary of support in each dimension.}
+
+\item{R}{Numeric vector giving the upper boundary of support in each dimension.
 Will be used if \code{w} is null. If all of \code{L}, \code{R}, and \code{w}
 are null, then the boundaries default to those of the unit hypercube.}
 }
@@ -43,7 +45,7 @@ for (i in seq.int(2, nrow(draws))) {
 nEvaluations / (nrow(draws) - 1)
 nEvaluations / diag(ess(draws))
 plot(draws[,1], draws[,2], xlim = c(0, 1))
-hist(draws[,1], freq = F); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
-hist(draws[,2], freq = F); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
+hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
+hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 
 }

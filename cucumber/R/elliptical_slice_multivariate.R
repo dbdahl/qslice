@@ -4,7 +4,7 @@
 #' Algorithm 1 of Nishihara et al (2014) of the
 #' elliptical slice sampler of Murray, Adams, MacKay (2010).
 #'
-#' @inherit slice_sampler_stepping_out
+#' @inherit slice_stepping_out
 #' @param mu Numeric vector with the mean of the normal to be sampled.
 #' @param Sig Positive definite covariance matrix. Alternatively, a
 #' lower-triangular matrix with the Cholesky factor of the covariance matrix
@@ -97,8 +97,8 @@ slice_elliptical_mv <- function(x, target, mu, Sig, is_chol = FALSE) {
 #' nEvaluations / nrow(draws)
 #' nEvaluations / ess(draws[,1])
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
-#' hist(draws[,1], freq = F); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
-#' hist(draws[,2], freq = F); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
+#' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
+#' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
 slice_genelliptical_mv <- function(x, target, mu, Sig, df, is_chol = FALSE) {
 

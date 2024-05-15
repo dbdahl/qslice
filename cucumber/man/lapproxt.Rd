@@ -19,6 +19,10 @@ Defaults to \code{-Inf}.}
 
 \item{ub}{Numeric scalar giving the value of right truncation of the resulting pseudo-target.
 Defaults to \code{Inf}.}
+
+\item{maxit}{See \link[coda]{optim}.}
+
+\item{...}{See \link[coda]{optim}.}
 }
 \description{
 Author: Sam Johnson

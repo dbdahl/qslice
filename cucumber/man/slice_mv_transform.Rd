@@ -30,10 +30,10 @@ through independent univariate distributions.
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
 ps_shsc <- list(c(2, 2), c(2, 1))
 ps <- list(
-  list(ld = function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = T),
+  list(ld = function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = TRUE),
        p = function(x) pbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
        q = function(x) qbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]) ),
-  list(ld = function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = T),
+  list(ld = function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = TRUE),
        p = function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]),
        q = function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]) )
   )
@@ -51,11 +51,11 @@ for (i in seq.int(2, nrow(draws))) {
 nEvaluations / (nrow(draws) - 1)
 nEvaluations / diag(ess(draws))
 plot(draws[,1], draws[,2], xlim = c(0, 1))
-hist(draws[,1], freq = F); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
-hist(draws[,2], freq = F); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
+hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
+hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 plot(draws_u[,1], draws_u[,2], xlim = c(0, 1))
-hist(draws_u[,1], freq = F)
-hist(draws_u[,2], freq = F)
+hist(draws_u[,1], freq = FALSE)
+hist(draws_u[,2], freq = FALSE)
 auc(u = draws_u[,1])
 auc(u = draws_u[,2])
 }

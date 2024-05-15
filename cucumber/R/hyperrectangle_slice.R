@@ -10,7 +10,8 @@
 #'   width in each dimension. This is a main tuning parameter of the algorithm.
 #'   If \code{NULL}, the sampler begins shrinking from the supplied boundaries (should,
 #'   correspond with the support).
-#' @param L Numeric vector giving the lower boundaries of support in each dimension.
+#' @param L Numeric vector giving the lower boundary of support in each dimension.
+#' @param R Numeric vector giving the upper boundary of support in each dimension.
 #' Will be used if \code{w} is null. If all of \code{L}, \code{R}, and \code{w}
 #' are null, then the boundaries default to those of the unit hypercube.
 #'
@@ -33,11 +34,10 @@
 #' nEvaluations / (nrow(draws) - 1)
 #' nEvaluations / diag(ess(draws))
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
-#' hist(draws[,1], freq = F); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
-#' hist(draws[,2], freq = F); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
+#' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
+#' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
-slice_hyperrect <- function(x, target,
-                            w = NULL, L = NULL, R = NULL) {
+slice_hyperrect <- function(x, target, w = NULL, L = NULL, R = NULL) {
 
   k <- length(x)
 
@@ -106,10 +106,10 @@ slice_hyperrect <- function(x, target,
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
 #' ps_shsc <- list(c(2, 2), c(2, 1))
 #' ps <- list(
-#'   list(ld = function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = T),
+#'   list(ld = function(x) dbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2], log = TRUE),
 #'        p = function(x) pbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]),
 #'        q = function(x) qbeta(x, ps_shsc[[1]][1], ps_shsc[[1]][2]) ),
-#'   list(ld = function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = T),
+#'   list(ld = function(x) dbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2], log = TRUE),
 #'        p = function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]),
 #'        q = function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]) )
 #'   )
@@ -127,11 +127,11 @@ slice_hyperrect <- function(x, target,
 #' nEvaluations / (nrow(draws) - 1)
 #' nEvaluations / diag(ess(draws))
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
-#' hist(draws[,1], freq = F); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
-#' hist(draws[,2], freq = F); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
+#' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
+#' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #' plot(draws_u[,1], draws_u[,2], xlim = c(0, 1))
-#' hist(draws_u[,1], freq = F)
-#' hist(draws_u[,2], freq = F)
+#' hist(draws_u[,1], freq = FALSE)
+#' hist(draws_u[,2], freq = FALSE)
 #' auc(u = draws_u[,1])
 #' auc(u = draws_u[,2])
 slice_mv_transform <- function(x, target, pseudo) {
@@ -274,6 +274,7 @@ pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 #'   target function used to obtain the new state.
 #'
 #' @importFrom stats runif
+#' @seealso \pkg{\link{coda}}
 #' @export
 #' @examples
 #' # Funnel distribution from Neal (2003).
@@ -327,8 +328,10 @@ pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 #'   n_eval <- n_eval + tmp$nEvaluations
 #' }
 #'
-#' (es <- coda::effectiveSize(as.mcmc(draws)))
-#' mean(es)
+#' if (requireNamespace("coda", quietly = TRUE)) {
+#'   (es <- coda::effectiveSize(coda::as.mcmc(draws)))
+#'   mean(es)
+#' }
 #'
 #' n_eval / n_iter
 #' sapply(1:K, function (k) auc(u = draws_u[,k]))

@@ -1,15 +1,3 @@
-
-#' Helper Function for Laplace Approximation
-#'
-#'
-second_derivative <- function( x, h = 1e-5, f, ... ) {
-
-  num <- f(x + h, ...) - 2*f(x, ...) + f(x - h, ...)
-  denom <- h^2
-
-  num/denom
-}
-
 #' Cauchy Pseudo-Target from Laplace Approximation
 #'
 #' Author: Sam Johnson
@@ -22,6 +10,8 @@ second_derivative <- function( x, h = 1e-5, f, ... ) {
 #' Defaults to \code{-Inf}.
 #' @param ub Numeric scalar giving the value of right truncation of the resulting pseudo-target.
 #' Defaults to \code{Inf}.
+#' @param maxit See \link[coda]{optim}.
+#' @param ... See \link[coda]{optim}.
 #'
 #' @export
 #' @examples
@@ -40,4 +30,12 @@ lapproxt <- function(lf, init, sc_adj = 1.0, lb = -Inf, ub = Inf, maxit = 100, .
   out <- pseudo_t_list(loc = loc, sc = sc, degf = 1, lb = lb, ub = ub, name = 'Laplace')
 
   out
+}
+
+second_derivative <- function( x, h = 1e-5, f, ... ) {
+
+  num <- f(x + h, ...) - 2*f(x, ...) + f(x - h, ...)
+  denom <- h^2
+
+  num/denom
 }

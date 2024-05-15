@@ -102,10 +102,6 @@ utility_shrinkslice <- function(h = NULL, x = NULL, y = NULL, u = NULL,
   out
 }
 
-
-#' Calculate Utility for a given Pseudo-Target
-#'
-#' Intermediate function to bridge between \code{opt_t} and \code{utility_shrinkslice}.
 util_pseu <- function(pseu, target = NULL, samples = NULL,
                       type = "samples",
                       x = NULL,

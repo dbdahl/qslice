@@ -25,7 +25,7 @@
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
-#'   out <- slice_sampler_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
+#'   out <- slice_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
 #'   draws[i] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
@@ -34,7 +34,7 @@
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_stepping_out <- function(x, target, w, max = Inf) {
+slice_stepping_out <- function(x, target, w, max = Inf) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -75,7 +75,7 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf) {
 #'
 #' Quantile slice sampler.
 #'
-#' @inherit slice_sampler_stepping_out
+#' @inherit slice_stepping_out
 #' @param pseudo_log_pdf Not yet documented.
 #' @param pseudo_inv_cdf Not yet documented.
 #'
@@ -93,7 +93,7 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf) {
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
-#'   out <- slice_sampler_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
+#'   out <- slice_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
 #'   draws[i] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
@@ -102,7 +102,7 @@ slice_sampler_stepping_out <- function(x, target, w, max = Inf) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
+slice_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -127,7 +127,7 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
 #'
 #' Latent slice sampler of Li and Walker (2020).
 #'
-#' @inherit slice_sampler_stepping_out
+#' @inherit slice_stepping_out
 #' @param s A random variable that determines how far the algorithm samples from
 #'   on each side
 #' @param rate The rate parameter for a truncated exponential.
@@ -144,7 +144,7 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
 #' nEvaluations <- 0L
 #' s <- 0.5
 #' for (i in seq.int(2, length(draws))) {
-#'   out <- slice_sampler_latent(draws[i - 1], s, target = lf, rate = 0.3)
+#'   out <- slice_latent(draws[i - 1], s, target = lf, rate = 0.3)
 #'   draws[i] <- out$x
 #'   s <- out$s
 #'   nEvaluations <- nEvaluations + out$nEvaluations
@@ -154,7 +154,7 @@ slice_sampler_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_latent <- function(x, s, target, rate) {
+slice_latent <- function(x, s, target, rate) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -184,7 +184,7 @@ slice_sampler_latent <- function(x, s, target, rate) {
 #' Algorithm 1 of Nishihara et al (2014) of the
 #' elliptical slice sampler of Murray, Adams, MacKay (2010).
 #'
-#' @inherit slice_sampler_stepping_out
+#' @inherit slice_stepping_out
 #' @param mu A numeric scalar with the mean of the normal to be sampled
 #' @param sigma A numeric scalar with the standard deviation of the normal to be sampled.
 #'
@@ -195,7 +195,7 @@ slice_sampler_latent <- function(x, s, target, rate) {
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
-#'   out <- slice_sampler_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
+#'   out <- slice_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
 #'   draws[i] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
@@ -204,7 +204,7 @@ slice_sampler_latent <- function(x, s, target, rate) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_elliptical <- function(x, target, mu, sigma) {
+slice_elliptical <- function(x, target, mu, sigma) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
@@ -234,8 +234,8 @@ slice_sampler_elliptical <- function(x, target, mu, sigma) {
 #'
 #' General Elliptical Slice Sampler of Nishihara (2014)
 #'
-#' @inheritParams slice_sampler_stepping_out
-#' @inheritParams slice_sampler_elliptical
+#' @inheritParams slice_stepping_out
+#' @inheritParams slice_elliptical
 #' @param df Degrees of freedom of Student t pseudo-target.
 #'
 #' @return A list contains two elements: "x" is the new state and "nEvaluations"
@@ -249,8 +249,8 @@ slice_sampler_elliptical <- function(x, target, mu, sigma) {
 #' draws <- numeric(1000)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
-#'   out <- slice_sampler_generalized_elliptical(draws[i - 1], target = lf,
-#'                                               mu = 0.5, sigma = 1, df = 5)
+#'   out <- slice_generalized_elliptical(draws[i - 1], target = lf,
+#'                                       mu = 0.5, sigma = 1, df = 5)
 #'   draws[i] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
@@ -259,12 +259,12 @@ slice_sampler_elliptical <- function(x, target, mu, sigma) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_sampler_generalized_elliptical <- function(x, target, mu, sigma, df) {
+slice_generalized_elliptical <- function(x, target, mu, sigma, df) {
   a <- (df + 1.0) / 2.0
   b <- 0.5 * (df + ((x - mu) / sigma)^2)
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
   lff <- function(xx) target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
-  slice_sampler_elliptical(x = x, target = lff, mu = mu, sigma = sqrt(s) * sigma)
+  slice_elliptical(x = x, target = lff, mu = mu, sigma = sqrt(s) * sigma)
 }
 
 #' Effective Sample Size

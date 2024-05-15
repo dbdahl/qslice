@@ -86,8 +86,10 @@ for (i in 2:(n_iter + 1)) {
   n_eval <- n_eval + tmp$nEvaluations
 }
 
-(es <- coda::effectiveSize(as.mcmc(draws)))
-mean(es)
+if (requireNamespace("coda", quietly = TRUE)) {
+  (es <- coda::effectiveSize(coda::as.mcmc(draws)))
+  mean(es)
+}
 
 n_eval / n_iter
 sapply(1:K, function (k) auc(u = draws_u[,k]))
@@ -96,4 +98,7 @@ hist(draws_u[,1])
 plot(draws[,1], draws[,2])
 points(Y[,1], Y[,2], col = "blue", cex = 0.5)
 
+}
+\seealso{
+\pkg{\link{coda}}
 }
