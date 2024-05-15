@@ -12,7 +12,6 @@ opt_t(
   lb = -Inf,
   ub = Inf,
   nbins = 100,
-  coeffs = c(1, 0),
   tol_opt = 1e-06,
   tol_int = 0.001,
   plot = TRUE,
@@ -40,10 +39,6 @@ Use of "grid" requires \code{target}. Defaults to "samples".}
 \item{nbins}{Positive integer specifying the number of histogram bins if using "samples" or "grid".
 Defaults to 100.}
 
-\item{coeffs}{Positive numeric vector of length two giving relative weights of
-1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
-measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.}
-
 \item{tol_opt}{Positive numeric scalar that passes to \code{reltol} in the call
 to \code{optim()}. Defaults to \code{1.0e-6}.}
 
@@ -59,6 +54,10 @@ Defaults to \code{FALSE}.}
 \item{use_meanSliceWidth}{Logical for whether the base utility should use
 Expected Slice Width (if \code{TRUE}; slower) or Area Under the Curve (AUC) if
 \code{FALSE}. Defaults to \code{FALSE}.}
+
+\item{coeffs}{Positive numeric vector of length two giving relative weights of
+1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
+measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.}
 }
 \value{
 A list with named components:

@@ -40,7 +40,6 @@ for (i in seq.int(2, length(draws))) {
   nEvaluations <- nEvaluations + out$nEvaluations
 }
 nEvaluations / length(draws)
-nEvaluations / ess(draws)
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 

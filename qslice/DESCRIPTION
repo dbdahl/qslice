@@ -10,7 +10,6 @@ Description: Various verions of the slice samplers are provided for the sake of 
 License: MIT + file LICENSE | Apache License 2.0
 Depends: R (>= 4.1.0)
 Imports: numDeriv, rootSolve
-Suggests: coda
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1

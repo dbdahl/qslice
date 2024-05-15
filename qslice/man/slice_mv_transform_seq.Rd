@@ -86,10 +86,8 @@ for (i in 2:(n_iter + 1)) {
   n_eval <- n_eval + tmp$nEvaluations
 }
 
-if (requireNamespace("coda", quietly = TRUE)) {
-  (es <- coda::effectiveSize(coda::as.mcmc(draws)))
-  mean(es)
-}
+# (es <- coda::effectiveSize(coda::as.mcmc(draws)))
+# mean(es)
 
 n_eval / n_iter
 sapply(1:K, function (k) auc(u = draws_u[,k]))

@@ -30,7 +30,6 @@
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
 #' nEvaluations / length(draws)
-#' nEvaluations / ess(draws)
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -98,7 +97,6 @@ slice_stepping_out <- function(x, target, w, max = Inf) {
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
 #' nEvaluations / length(draws)
-#' nEvaluations / ess(draws)
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -150,7 +148,6 @@ slice_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
 #' nEvaluations / length(draws)
-#' nEvaluations / ess(draws)
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -200,7 +197,6 @@ slice_latent <- function(x, s, target, rate) {
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
 #' nEvaluations / length(draws)
-#' nEvaluations / ess(draws)
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -255,7 +251,6 @@ slice_elliptical <- function(x, target, mu, sigma) {
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
 #' nEvaluations / length(draws)
-#' nEvaluations / ess(draws)
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
@@ -267,25 +262,3 @@ slice_generalized_elliptical <- function(x, target, mu, sigma, df) {
   slice_elliptical(x = x, target = lff, mu = mu, sigma = sqrt(s) * sigma)
 }
 
-#' Effective Sample Size
-#'
-#' Effective sample size when estimating a mean from
-#' autocorrelated samples.
-#'
-#' @param x A numeric vector of samples from which the mean will be
-#'   estimated.
-#'
-#' @return A numeric scalar giving the effective sample size.
-#' @export
-#'
-#' @importFrom stats ar var
-#' @examples
-#' ess(rnorm(100))
-#'
-ess <- function(x) {
-  o <- ar(x, aic = TRUE)
-  if (length(o$ar) == 0) {
-    return(length(x))
-  }
-  length(x) * var(x) / o$var.pred * (1 - sum(o$ar))^2
-}
