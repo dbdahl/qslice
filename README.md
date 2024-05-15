@@ -1,8 +1,8 @@
-# Cucumber Package
+# Qslice Package
 
 Functions to facilitate implementing the quantile slice sampler and other popular slice samplers. Package includes utility functions for specifying psueudo-targets, for diagnostics, and for tuning.
 
-This repository has two parts found in two different directories. The **cucumber** directory has the code needed to run each slice sampler (GESS, Latent, Stepping Out, Quantile). The **samCode** directory has all the code to run the simulations used to compare each of the sampling methods.
+This repository has two parts found in two different directories. The **qslice** directory has the code needed to run each slice sampler (GESS, Latent, Stepping Out, Quantile). The **samCode** directory has all the code to run the simulations used to compare each of the sampling methods.
 
 The **samCode** directory contains sub-directories for the G prior simulation study and each of the standard targets that were tested, standard normal, gamma, and inverse gamma. Each sub-directory has README files that explain each script.
 
