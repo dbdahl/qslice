@@ -19,6 +19,3 @@ density supported on the unit interval.
 \details{
 Uses an approximation to the density on a grid of \code{(x, y)} pairs.
 }
-\examples{
-meanSliceWidth_grid(x = seq(0, 1, length = 1001), y = dbeta(seq(0, 1, length = 1001), 1, 2))
-}

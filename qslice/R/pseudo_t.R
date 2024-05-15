@@ -123,13 +123,13 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 #' @export
 #' @importFrom stats sd
 #' @examples
-#' (pseu <- opt_t(samples = rnorm(1e3), nbins = 30, coeffs = c(1,0), plot = TRUE,
+#' (pseu <- opt_t(samples = rnorm(1e3), nbins = 30, plot = TRUE,
 #'                verbose = FALSE, use_meanSliceWidth = FALSE))
 #' (pseu <- opt_t(target = list(ld = function(x) dnorm(x, log = TRUE)),
-#'                type = "grid", nbins = 100, coeffs = c(1,0), plot = TRUE, verbose = FALSE,
+#'                type = "grid", nbins = 100, plot = TRUE, verbose = FALSE,
 #'                use_meanSliceWidth = FALSE, tol_opt = 1e-3))
 #' (pseu <- opt_t(target = list(ld = function(x) dnorm(x, log = TRUE)),
-#'                type = "function", coeffs = c(1,0), plot = TRUE, verbose = TRUE,
+#'                type = "function", plot = TRUE, verbose = TRUE,
 #'                use_meanSliceWidth = FALSE, tol_opt = 1e-3, tol_int = 1e-2))
 opt_t <- function(target = NULL,
                   samples = NULL,
@@ -142,9 +142,9 @@ opt_t <- function(target = NULL,
                   verbose = FALSE,
                   use_meanSliceWidth = FALSE) {
 
-  #' @param coeffs Positive numeric vector of length two giving relative weights of
-  #' 1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
-  #' measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.
+  # @param coeffs Positive numeric vector of length two giving relative weights of
+  # 1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
+  # measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.
   coeffs <- c(1.0, 0.0)
 
   if (type == "function") {

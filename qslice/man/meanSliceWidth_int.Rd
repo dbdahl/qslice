@@ -18,6 +18,3 @@ density supported on the unit interval.
 \details{
 Uses numeric integration to evaluate a double integral.
 }
-\examples{
-meanSliceWidth_int(h = function(x) {dbeta(x, 1, 2)})
-}

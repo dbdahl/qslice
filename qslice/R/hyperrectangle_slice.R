@@ -32,7 +32,6 @@
 #'  cat(i, '\r')
 #' }
 #' nEvaluations / (nrow(draws) - 1)
-#' nEvaluations / diag(ess(draws))
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
@@ -125,7 +124,6 @@ slice_hyperrect <- function(x, target, w = NULL, L = NULL, R = NULL) {
 #'   cat(i, '\r')
 #' }
 #' nEvaluations / (nrow(draws) - 1)
-#' nEvaluations / diag(ess(draws))
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)

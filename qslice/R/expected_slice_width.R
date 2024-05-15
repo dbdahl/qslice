@@ -10,8 +10,6 @@
 #' @param tol Numerical scalar passed to \code{abs.tol} in the call to \code{integrate()}.
 #'
 #' @importFrom stats integrate
-#' @examples
-#' meanSliceWidth_int(h = function(x) {dbeta(x, 1, 2)})
 meanSliceWidth_int <- function(h, tol = 0.005) {
 
   interval <- c(0.0, 1.0)
@@ -47,8 +45,6 @@ meanSliceWidth_int <- function(h, tol = 0.005) {
 #' @param y Numeric vector of evaluations of the unnormalized density at the
 #' supplied values of \code{x}.
 #'
-#' @examples
-#' meanSliceWidth_grid(x = seq(0, 1, length = 1001), y = dbeta(seq(0, 1, length = 1001), 1, 2))
 meanSliceWidth_grid <- function(x, y) {
   n <- length(x)
 

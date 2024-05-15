@@ -40,7 +40,6 @@ for (i in seq.int(2, nrow(draws))) {
   nEvaluations <- nEvaluations + out$nEvaluations
 }
 nEvaluations / nrow(draws)
-nEvaluations / ess(draws[,1])
 plot(draws[,1], draws[,2], xlim = c(0, 1))
 
 }

@@ -54,10 +54,6 @@ Defaults to \code{FALSE}.}
 \item{use_meanSliceWidth}{Logical for whether the base utility should use
 Expected Slice Width (if \code{TRUE}; slower) or Area Under the Curve (AUC) if
 \code{FALSE}. Defaults to \code{FALSE}.}
-
-\item{coeffs}{Positive numeric vector of length two giving relative weights of
-1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
-measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.}
 }
 \value{
 A list with named components:
@@ -78,12 +74,12 @@ the given (unnormalized) target. Optimize over a variety of utility functions.
 Optionally supply samples from the target distribution.
 }
 \examples{
-(pseu <- opt_t(samples = rnorm(1e3), nbins = 30, coeffs = c(1,0), plot = TRUE,
+(pseu <- opt_t(samples = rnorm(1e3), nbins = 30, plot = TRUE,
                verbose = FALSE, use_meanSliceWidth = FALSE))
 (pseu <- opt_t(target = list(ld = function(x) dnorm(x, log = TRUE)),
-               type = "grid", nbins = 100, coeffs = c(1,0), plot = TRUE, verbose = FALSE,
+               type = "grid", nbins = 100, plot = TRUE, verbose = FALSE,
                use_meanSliceWidth = FALSE, tol_opt = 1e-3))
 (pseu <- opt_t(target = list(ld = function(x) dnorm(x, log = TRUE)),
-               type = "function", coeffs = c(1,0), plot = TRUE, verbose = TRUE,
+               type = "function", plot = TRUE, verbose = TRUE,
                use_meanSliceWidth = FALSE, tol_opt = 1e-3, tol_int = 1e-2))
 }
