@@ -1,49 +1,3 @@
-#' @export
-imh_pseudo_univ <- function(x, ltarget, pseudo) {
-
-  lfx0 <- ltarget(x) - pseu$ld(x)
-
-  u1 <- runif(K)
-
-  x1 <- pseu$q(u1)
-
-  lfx1 <- ltarget(x1) - pseu$ld(x1)
-
-  lprob_accpt <- lfx1 - lfx0
-  lu_accpt <- log(runif(1))
-
-  if (isTRUE(lu_accpt < lprob_accpt)) {
-    out <- list(x = x1, accpt = TRUE)
-  } else {
-    out <- list(x = x, accpt = FALSE)
-  }
-  out
-}
-
-#' @export
-imh_pseudo_mv <- function(x, ltarget, pseudo) {
-
-  K <- length(x)
-
-  lfx0 <- ltarget(x) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x[k])))
-
-  u1 <- runif(K)
-
-  x1 <- sapply(1:K, function(k) pseudo[[k]]$q(u1[k]))
-
-  lfx1 <- ltarget(x1) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x1[k])))
-
-  lprob_accpt <- lfx1 - lfx0
-  lu_accpt <- log(runif(1))
-
-  if (isTRUE(lu_accpt < lprob_accpt)) {
-    out <- list(x = x1, accpt = TRUE)
-  } else {
-    out <- list(x = x, accpt = FALSE)
-  }
-  out
-}
-
 #' Independence Metropolis-Hastings Sampler
 #'
 #' @param x The current state (scalar or numeric vector).
@@ -78,9 +32,52 @@ imh_pseudo_mv <- function(x, ltarget, pseudo) {
 imh_pseudo <- function(x, ltarget, pseudo) {
   K <- length(x)
   if (K == 1) {
-    out <- imh_pseudo_univ(x = x, ltarget = ltarget, pseudo = pseudo)
+    out <- imh_pseudo_univ(x = x, ltarget = ltarget, pseudo = pseudo, K = K)
   } else {
-    out <- imh_pseudo_mv(x = x, ltarget = ltarget, pseudo = pseudo)
+    out <- imh_pseudo_mv(x = x, ltarget = ltarget, pseudo = pseudo, K = K)
   }
   out
 }
+
+imh_pseudo_univ <- function(x, ltarget, pseudo, K = K) {
+
+  lfx0 <- ltarget(x) - pseudo$ld(x)
+
+  u1 <- runif(K)
+
+  x1 <- pseudo$q(u1)
+
+  lfx1 <- ltarget(x1) - pseudo$ld(x1)
+
+  lprob_accpt <- lfx1 - lfx0
+  lu_accpt <- log(runif(1))
+
+  if (isTRUE(lu_accpt < lprob_accpt)) {
+    out <- list(x = x1, accpt = TRUE)
+  } else {
+    out <- list(x = x, accpt = FALSE)
+  }
+  out
+}
+
+imh_pseudo_mv <- function(x, ltarget, pseudo, K = K) {
+
+  lfx0 <- ltarget(x) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x[k])))
+
+  u1 <- runif(K)
+
+  x1 <- sapply(1:K, function(k) pseudo[[k]]$q(u1[k]))
+
+  lfx1 <- ltarget(x1) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x1[k])))
+
+  lprob_accpt <- lfx1 - lfx0
+  lu_accpt <- log(runif(1))
+
+  if (isTRUE(lu_accpt < lprob_accpt)) {
+    out <- list(x = x1, accpt = TRUE)
+  } else {
+    out <- list(x = x, accpt = FALSE)
+  }
+  out
+}
+

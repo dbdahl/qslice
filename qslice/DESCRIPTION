@@ -4,7 +4,7 @@ Version: 0.2.5
 Authors@R: c(
 	person(given="Matthew",family="Heiner",role=c("aut"),email="heiner@stat.byu.edu",comment=c(ORCID="0000-0002-7944-5517")),
     person(given="David B.",family="Dahl",role=c("aut","cre"),email="dahl@stat.byu.edu",comment=c(ORCID="0000-0002-8173-1547")),
-    person(given="Sam",family="Johnson",role=c("aut","cre"),email="dahl@stat.byu.edu")
+    person(given="Sam",family="Johnson",role=c("aut"),email="smbjohnson98@gmail.com")
 	)
 Description: Various verions of the slice samplers are provided for the sake of comparison.
 License: MIT + file LICENSE | Apache License 2.0

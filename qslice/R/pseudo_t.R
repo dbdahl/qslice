@@ -98,9 +98,6 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
 #' @param nbins Positive integer specifying the number of histogram bins if using "samples" or "grid".
 #' Defaults to 100.
-#' @param coeffs Positive numeric vector of length two giving relative weights of
-#' 1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
-#' measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.
 #' @param tol_opt Positive numeric scalar that passes to \code{reltol} in the call
 #' to \code{optim()}. Defaults to \code{1.0e-6}.
 #' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
@@ -124,6 +121,7 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 #'
 #'  Other outputs repeating inputs.
 #' @export
+#' @importFrom stats sd
 #' @examples
 #' (pseu <- opt_t(samples = rnorm(1e3), nbins = 30, coeffs = c(1,0), plot = TRUE,
 #'                verbose = FALSE, use_meanSliceWidth = FALSE))
@@ -139,13 +137,17 @@ opt_t <- function(target = NULL,
                   degf = c(1, 5, 20),
                   lb = -Inf, ub = Inf,
                   nbins = 100,
-                  coeffs = c(1.0, 0.0),
                   tol_opt = 1.0e-6, tol_int = 1.0e-3,
                   plot = TRUE,
                   verbose = FALSE,
                   use_meanSliceWidth = FALSE) {
 
-  if (type %in% c("function", "samples_kde")) {
+  #' @param coeffs Positive numeric vector of length two giving relative weights of
+  #' 1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
+  #' measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.
+  coeffs <- c(1.0, 0.0)
+
+  if (type == "function") {
     x <- NULL
     bins <- NULL
     nbins <- NULL

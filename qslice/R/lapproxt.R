@@ -14,6 +14,7 @@
 #' @param ... See \link[coda]{optim}.
 #'
 #' @export
+#' @importFrom stats optim
 #' @examples
 #' pseu <- lapproxt(function(x) dnorm(x, log = TRUE), init = 0.5, lb = -1.0)
 #' curve(dnorm(x)/(1- pnorm(-1)), from = -1, to = 6, col = "blue")

@@ -57,7 +57,6 @@ auc <- function(x, y, u = NULL, nbins = 30) {
 #' create histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
 #' @param nbins Number of histogram bins to use (defaults to 30).
 #' @param plot Logical, whether to plot a visualization of the result.
-#' @export
 #' @examples
 #' fn <- \(x) 0.5 * dbeta(x, 7, 2) + 0.5 * dbeta(x, 1, 6);
 #' lf <- \(x) log(fn(x))
@@ -155,7 +154,6 @@ water_area <- function(x, y, u = NULL, nbins = 30, plot = FALSE) {
 #'
 #' @importFrom rootSolve uniroot.all
 #' @importFrom numDeriv grad
-#' @export
 #' @examples
 #' f <- function(x) {0.33 * dnorm(x,0,0.5) + 0.33 * dnorm(x,2,1) + 0.33 * dnorm(x,7,2)}
 #' interval <- c(-3,15)

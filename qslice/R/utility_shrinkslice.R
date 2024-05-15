@@ -34,7 +34,6 @@
 #'
 #'  \code{msw}: Mean slice width (if used as the base utility)
 #'
-#' @export
 #' @examples
 #' x <- seq(0.001, 0.999, length = 1000)
 #' y <- dbeta(x, 2.0, 2.0)
@@ -52,10 +51,6 @@ utility_shrinkslice <- function(h = NULL, x = NULL, y = NULL, u = NULL,
   if (type %in% c("function", "samples_kde")) {
 
     ## the supplied function here is the transformed target with support on (0, 1)
-
-    if (type == "samples_kde") {
-      h = beta_kde(u)
-    }
 
     tmp <- water_area_int(h, interval = c(0.0 + 1.0e-9, 1.0 - 1.0e-9),
                           plot = plot, eps = 1.0e-3, tol_int = tol_int,
