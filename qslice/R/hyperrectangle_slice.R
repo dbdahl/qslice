@@ -162,37 +162,46 @@ slice_mv_transform <- function(x, target, pseudo) {
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
+#' See the documentation for \code{slice_mv_transform_seq()} for examples.
+#'
 #' @param x A numeric vector of values between 0 and 1.
-#' @param pseu_init A list output from \code{pseu_t_list()} describing the
-#' marginal pseudo-target for \code{x[1]}.
+#' @param pseudo_init A list output from \code{pseudo_list()} describing the
+#' marginal pseudo-target for \code{x[1]}. All subsequent pseudo-targets will
+#' resemble \code{pseudo_init} with exception of different location and scale parameters.
 #' @param loc_fn A function that specifies the location of a conditional
 #'  pseudo-target given the elements in \code{x} that precede it.
 #' @param sc_fn A function that specifies the scale of a conditional
 #'  pseudo-target given the elements in \code{x} that precede it
-#' @param degf A positive scalar for the degrees of freedom for all conditional
-#' pseudo-targets.
 #' @param lb A numeric vector (same length as \code{x}) specifying the lower
 #'  bound of support for each conditional pseudo-target.
 #' @param ub A numeric vector (same length as \code{x}) specifying the upper
 #'  bound of support for each conditional pseudo-target.
 #'
 #' @return A list containing \code{x} obtained from the sequence of inverse
-#' cdfs, and \code{pseudo_t_seq}, a list output from \code{pseu_t_list()}
+#' cdfs, and \code{pseudo_t_seq}, a list output from \code{pseu_list()}
 #' describing the sequence of conditional pseudo-targets.
 #'
 #' @importFrom stats runif
 #' @export
-pseudo_t_condseq <- function(x, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
+pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
   # lb and ub must have length K (even though first elements will be ignored)
 
   K <- length(x)
   out <- list()
-  out[[1]] <- pseu_init
+  out[[1]] <- pseudo_init
+
+  family <- pseudo_init$family
+  params_now <- pseudo_init$params
 
   for (k in 2:K) {
-    out[[k]] <- pseudo_t_list(loc = loc_fn(x[1:(k-1)]), sc = sc_fn(x[1:(k-1)]),
-                              degf = degf, lb = lb[k], ub = ub[k])
+
+    params_now$loc <- loc_fn(x[1:(k-1)])
+    params_now$sc <- sc_fn(x[1:(k-1)])
+
+    out[[k]] <- pseudo_list(family = family,
+                            params = params_now,
+                            lb = lb[k], ub = ub[k])
   }
 
   out
@@ -206,47 +215,51 @@ pseudo_t_condseq <- function(x, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
+#' See the documentation for \code{slice_mv_transform_seq()} for examples.
+#'
 #' @param u A numeric vector of values between 0 and 1.
-#' @param pseu_init A list output from \code{pseu_t_list()} describing the
+#' @param pseudo_init A list output from \code{pseudo_list()} describing the
 #' marginal pseudo-target for \code{x[1]}.
 #' @param loc_fn A function that specifies the location of a conditional
 #'  pseudo-target given the elements in \code{x} that precede it.
 #' @param sc_fn A function that specifies the scale of a conditional
 #'  pseudo-target given the elements in \code{x} that precede it
-#' @param degf A positive scalar for the degrees of freedom for all conditional
-#' pseudo-targets.
 #' @param lb A numeric vector (same length as \code{x}) specifying the lower
 #'  bound of support for each conditional pseudo-target.
 #' @param ub A numeric vector (same length as \code{x}) specifying the upper
 #'  bound of support for each conditional pseudo-target.
 #'
 #' @return A list containing \code{x} obtained from the sequence of inverse
-#' cdfs, and \code{pseudo_t_seq}, a list output from \code{pseu_t_list()}
+#' cdfs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
 #' describing the sequence of conditional pseudo-targets.
 #'
-#' @importFrom stats runif
 #' @export
-pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
+pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
   # lb and ub must have length K (even though first elements will be ignored)
 
   K <- length(u)
   out <- list()
-  out[[1]] <- pseu_init
+  out[[1]] <- pseudo_init
 
   x <- numeric(K)
-
-  x[1] <- pseu_init$q(u[1])
+  x[1] <- pseudo_init$q(u[1])
+  family <- pseudo_init$family
+  params_now <- pseudo_init$params
 
   for (k in 2:K) {
-    out[[k]] <- pseudo_t_list(loc = loc_fn(x[1:(k-1)]), sc = sc_fn(x[1:(k-1)]),
-                              degf = degf, lb = lb[k], ub = ub[k])
+
+    params_now$loc <- loc_fn(x[1:(k-1)])
+    params_now$sc <- sc_fn(x[1:(k-1)])
+
+    out[[k]] <- pseudo_list(family = family,
+                            params = params_now,
+                            lb = lb[k], ub = ub[k])
     x[k] <- out[[k]]$q(u[k])
   }
 
-  list(x = x, pseudo_t_seq = out)
+  list(x = x, pseudo_seq = out)
 }
-
 
 
 
@@ -256,15 +269,20 @@ pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 #' a sequence of growing conditional distributions.
 #'
 #' @inherit slice_hyperrect
-#' @param pseudo_control A list with \code{pseu_init}, a list output from
-#' \code{pseu_t_list()} describing the marginal pseudo-target for \code{x[1]};
+#' @param pseudo_control A list with
+#'
+#' \code{pseudo_init}, a list output from
+#' \code{pseudo_list()} describing the marginal pseudo-target for \code{x[1]};
+#'
 #' \code{loc_fn}, a function that specifies the location of a conditional
-#'  pseudo-target given the elements in \code{x} that precede it; \code{sc_fn},
-#'  a function that specifies the scale of a conditional
-#'  pseudo-target given the elements in \code{x} that precede it; \code{degf}, a
-#'  positive scalar for the degrees of freedom for all conditional pseudo-targets;
+#'  pseudo-target given the elements in \code{x} that precede it;
+#'
+#'  \code{sc_fn}, a function that specifies the scale of a conditional
+#'  pseudo-target given the elements in \code{x} that precede it;
+#'
 #'  \code{lb}, a numeric vector (same length as \code{x}) specifying the lower
 #'  bound of support for each conditional pseudo-target;
+#'
 #'  \code{ub}, a numeric vector (same length as \code{x}) specifying the upper
 #'  bound of support for each conditional pseudo-target.
 #'
@@ -307,10 +325,10 @@ pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 #'     out
 #'   },
 #'
-#'   pseu_init = pseudo_t_list(loc = 0.0, sc = 3.0, degf = 5.0,
+#'   pseudo_init = pseudo_list(family = "t",
+#'                             params = list(loc = 0.0, sc = 3.0, degf = 20),
 #'                             lb = -Inf, ub = Inf),
 #'
-#'   degf = 5.0,
 #'   lb = rep(-Inf, K),
 #'   ub = rep(Inf, K)
 #' )
@@ -341,17 +359,16 @@ pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 slice_mv_transform_seq <- function(x, target, pseudo_control) {
 
   # target is log target only without pseudo
-  # pseudo_control is a list with: pseu_init, loc_fn, sc_fn, degf, lb, ub
 
   K <- length(x)
 
   # Step 1
-  tmp_seq <- pseudo_t_condseq(x = x, pseu_init = pseudo_control$pseu_init,
-                              loc_fn = pseudo_control$loc_fn,
-                              sc_fn = pseudo_control$sc_fn,
-                              degf = pseudo_control$degf,
-                              lb = pseudo_control$lb,
-                              ub = pseudo_control$ub)
+  tmp_seq <- pseudo_condseq(x = x,
+                            pseudo_init = pseudo_control$pseudo_init,
+                            loc_fn = pseudo_control$loc_fn,
+                            sc_fn = pseudo_control$sc_fn,
+                            lb = pseudo_control$lb,
+                            ub = pseudo_control$ub)
 
   fx <- target(x) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x[k])))
   nEvaluations <- 1
@@ -371,14 +388,14 @@ slice_mv_transform_seq <- function(x, target, pseudo_control) {
   repeat {
 
     u1 <- L + runif(K) * (R - L)
-    tmp <- pseudo_t_condseq_XfromU(u = u1, pseu_init = pseudo_control$pseu_init,
-                                   loc_fn = pseudo_control$loc_fn,
-                                   sc_fn = pseudo_control$sc_fn,
-                                   degf = pseudo_control$degf,
-                                   lb = pseudo_control$lb,
-                                   ub = pseudo_control$ub)
+    tmp <- pseudo_condseq_XfromU(u = u1,
+                                 pseudo_init = pseudo_control$pseudo_init,
+                                 loc_fn = pseudo_control$loc_fn,
+                                 sc_fn = pseudo_control$sc_fn,
+                                 lb = pseudo_control$lb,
+                                 ub = pseudo_control$ub)
     x1 <- tmp$x
-    tmp_seq <- tmp$pseudo_t_seq
+    tmp_seq <- tmp$pseudo_seq
 
     fx1 <- target(x1) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x1[k])))
     nEvaluations <- nEvaluations + 1

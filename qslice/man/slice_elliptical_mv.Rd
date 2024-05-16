@@ -18,7 +18,7 @@ density, returning a numeric scalar.}
 lower-triangular matrix with the Cholesky factor of the covariance matrix
 (for faster computation).}
 
-\item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format?}
+\item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"
@@ -31,9 +31,10 @@ elliptical slice sampler of Murray, Adams, MacKay (2010).
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-draws <- matrix(0.3, nrow = 1000, ncol = 2)
+n_iter <- 10 # set to 1e3 for more complete illustration
+draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 nEvaluations <- 0L
-for (i in seq.int(2, nrow(draws))) {
+for (i in seq.int(2, n_iter)) {
   out <- slice_elliptical_mv(draws[i - 1,], target = lf,
               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2))
   draws[i,] <- out$x

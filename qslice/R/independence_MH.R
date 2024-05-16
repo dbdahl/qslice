@@ -81,4 +81,3 @@ imh_pseudo_mv <- function(x, ltarget, pseudo, K = K) {
   }
   out
 }
-

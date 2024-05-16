@@ -20,7 +20,7 @@ lower-triangular matrix with the Cholesky factor of the covariance matrix
 
 \item{df}{Degrees of freedom of Student t pseudo-target.}
 
-\item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format?}
+\item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"
@@ -32,9 +32,10 @@ General Elliptical Slice Sampler, Algorithm 2 of Nishihara (2014)
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-draws <- matrix(0.3, nrow = 10e3, ncol = 2)
+n_iter <- 10 # set to 1e4 for more complete illustration
+draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 nEvaluations <- 0L
-for (i in seq.int(2, nrow(draws))) {
+for (i in seq.int(2, n_iter)) {
   out <- slice_genelliptical_mv(draws[i - 1,], target = lf,
               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2),
               df = 5)

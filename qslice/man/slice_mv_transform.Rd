@@ -37,11 +37,12 @@ ps <- list(
        p = function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]),
        q = function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]) )
   )
-draws <- matrix(0.2, nrow = 10e3, ncol = 2)
+n_iter <- 10 # set to 1e4 for more complete illustration
+draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 draws_u <- draws
 draws_u[1,] <- sapply(1:length(ps), function(k) ps[[k]]$p(draws[1,k]))
 nEvaluations <- 0L
-for (i in seq.int(2, nrow(draws))) {
+for (i in seq.int(2, n_iter)) {
   out <- slice_mv_transform(draws[i - 1, ], target = lf, pseudo = ps)
   draws[i,] <- out$x
   draws_u[i,] <- out$u

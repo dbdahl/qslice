@@ -26,7 +26,7 @@ n_runs <- 2 # more than 2 if running on Intel machine with MKL
 if (isTRUE(run_info["subtype"] %in% c("MSW_samples", "AUC_samples", "MM_Cauchy"))) {
   set.seed(dte + run_info$rep)
   source("1_pseudo_from_samples.R")  # pseudo-target from samples
-  run_info$algo_descrip = trials[[type]][[subtype]]$algo_descrip
+  run_info$algo_descrip <- trials[[type]][[subtype]]$algo_descrip
 }
 
 set.seed(dte + ii)

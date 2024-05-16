@@ -89,7 +89,7 @@ stepping_out_sampler <- function(n_iter, lf, x_0, w, max) {
   draws[1] <- x_0
 
   for ( i in 2:(n_iter + 1)) {
-    out <- slice_sampler_stepping_out(x = draws[i-1], target = lf, w = w, max = max)
+    out <- slice_stepping_out(x = draws[i-1], target = lf, w = w, max = max)
     draws[i] <- out$x
     counter <- counter + out$nEvaluations
   }
@@ -131,7 +131,7 @@ gess_sampler <- function(n_iter, lf, x_0, mu, sigma, degf) {
   draws[1] <- x_0
 
   for ( i in 2:(n_iter + 1) ) {
-    out <- slice_sampler_generalized_elliptical(x = draws[i-1], target = lf,
+    out <- slice_generalized_elliptical(x = draws[i-1], target = lf,
                                                 mu = mu, sigma = sigma, df = degf)
 
     draws[i] <- out$x
@@ -178,7 +178,7 @@ latent_sampler <- function(n_iter, lf, x_0, s_0, rate) {
   latents[1] <- s_0
 
   for ( i in 2:(n_iter + 1) ) {
-    out <- slice_sampler_latent(draws[i-1], latents[i-1], target = lf, rate = rate)
+    out <- slice_latent(draws[i-1], latents[i-1], target = lf, rate = rate)
     draws[i] <- out$x
     latents[i] <- out$s
     counter <- counter + out$nEvaluations
@@ -224,9 +224,9 @@ transform_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
   Tdraws[1] <- 0
 
   for ( i in 2:(n_iter + 1) ) {
-    out <- slice_sampler_transform(x = draws[i-1],
-                                   target=lf, pseudo_log_pdf = pseudo_lpdf,
-                                   pseudo_inv_cdf = pseudo_inv_cdf)
+    out <- slice_transform(x = draws[i-1],
+                           target=lf, pseudo_log_pdf = pseudo_lpdf,
+                           pseudo_inv_cdf = pseudo_inv_cdf)
     draws[i] <- out$x
     Tdraws[i] <- out$u
     counter <- counter + out$nEvaluations
