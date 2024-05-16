@@ -22,7 +22,7 @@
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4)
-#' draws <- numeric(1000)
+#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
 #'   out <- slice_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
@@ -89,7 +89,7 @@ slice_stepping_out <- function(x, target, w, max = Inf) {
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' pseudoLogPDF <- function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE)
 #' pseudoInvCDF <- function(u) qbeta(u, shape1 = 1, shape2 = 1)
-#' draws <- numeric(1000)
+#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
 #'   out <- slice_transform(draws[i - 1], target = lf, pseudoLogPDF, pseudoInvCDF)
@@ -138,7 +138,7 @@ slice_transform <- function(x, target, pseudo_log_pdf, pseudo_inv_cdf) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' draws <- numeric(1000)
+#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 #' nEvaluations <- 0L
 #' s <- 0.5
 #' for (i in seq.int(2, length(draws))) {
@@ -189,7 +189,7 @@ slice_latent <- function(x, s, target, rate) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' draws <- numeric(1000)
+#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
 #'   out <- slice_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
@@ -242,7 +242,7 @@ slice_elliptical <- function(x, target, mu, sigma) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' draws <- numeric(1000)
+#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
 #'   out <- slice_generalized_elliptical(draws[i - 1], target = lf,

@@ -9,15 +9,16 @@
 #' @param Sig Positive definite covariance matrix. Alternatively, a
 #' lower-triangular matrix with the Cholesky factor of the covariance matrix
 #' (for faster computation).
-#' @param is_chol Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format?
+#' @param is_chol Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.
 #'
 #' @importFrom stats runif rnorm
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-#' draws <- matrix(0.3, nrow = 1000, ncol = 2)
+#' n_iter <- 10 # set to 1e3 for more complete illustration
+#' draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
-#' for (i in seq.int(2, nrow(draws))) {
+#' for (i in seq.int(2, n_iter)) {
 #'   out <- slice_elliptical_mv(draws[i - 1,], target = lf,
 #'               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2))
 #'   draws[i,] <- out$x
@@ -33,7 +34,6 @@ slice_elliptical_mv <- function(x, target, mu, Sig, is_chol = FALSE) {
   stopifnot(length(mu) == k)
   stopifnot(dim(Sig) == c(k, k))
 
-  # is_chol <- all(Sig[upper.tri(Sig, diag = FALSE)] == 0)
   if (isTRUE(is_chol)) {
     SigL <- Sig
   } else {
@@ -84,9 +84,10 @@ slice_elliptical_mv <- function(x, target, mu, Sig, is_chol = FALSE) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-#' draws <- matrix(0.3, nrow = 10e3, ncol = 2)
+#' n_iter <- 10 # set to 1e4 for more complete illustration
+#' draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
-#' for (i in seq.int(2, nrow(draws))) {
+#' for (i in seq.int(2, n_iter)) {
 #'   out <- slice_genelliptical_mv(draws[i - 1,], target = lf,
 #'               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2),
 #'               df = 5)
@@ -104,7 +105,6 @@ slice_genelliptical_mv <- function(x, target, mu, Sig, df, is_chol = FALSE) {
   stopifnot(length(mu) == k)
   stopifnot(dim(Sig) == c(k, k))
 
-  # is_chol <- all(Sig[upper.tri(Sig, diag = FALSE)] == 0)
   if (isTRUE(is_chol)) {
     SigL <- Sig
   } else {

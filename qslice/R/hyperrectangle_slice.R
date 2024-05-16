@@ -23,9 +23,10 @@
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-#' draws <- matrix(0.2, nrow = 10e3, ncol = 2)
+#' n_iter <- 10 # set to 1e4 for more complete illustration
+#' draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
-#' for (i in seq.int(2, nrow(draws))) {
+#' for (i in seq.int(2, n_iter)) {
 #'  out <- slice_hyperrect(draws[i - 1, ], target = lf, w = c(0.5, 0.5))
 #'  draws[i,] <- out$x
 #'  nEvaluations <- nEvaluations + out$nEvaluations
@@ -112,11 +113,12 @@ slice_hyperrect <- function(x, target, w = NULL, L = NULL, R = NULL) {
 #'        p = function(x) pbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]),
 #'        q = function(x) qbeta(x, ps_shsc[[2]][1], ps_shsc[[2]][2]) )
 #'   )
-#' draws <- matrix(0.2, nrow = 10e3, ncol = 2)
+#' n_iter <- 10 # set to 1e4 for more complete illustration
+#' draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 #' draws_u <- draws
 #' draws_u[1,] <- sapply(1:length(ps), function(k) ps[[k]]$p(draws[1,k]))
 #' nEvaluations <- 0L
-#' for (i in seq.int(2, nrow(draws))) {
+#' for (i in seq.int(2, n_iter)) {
 #'   out <- slice_mv_transform(draws[i - 1, ], target = lf, pseudo = ps)
 #'   draws[i,] <- out$x
 #'   draws_u[i,] <- out$u
@@ -277,8 +279,8 @@ pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 #' @examples
 #' # Funnel distribution from Neal (2003).
 #' K <- 10
-#' n_iter <- 10e3 # MCMC iterations
-#' n <- 10e3 # number of iid samples from the target
+#' n_iter <- 50 # MCMC iterations; set to 10e3 for more complete illustration
+#' n <- 100 # number of iid samples from the target; set to 10e3 for more complete illustration
 #' Y <- matrix(NA, nrow = n, ncol = K) # iid samples from the target
 #' Y[,1] <- rnorm(n, 0.0, 3.0)
 #' for (i in 1:n) {
