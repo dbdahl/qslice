@@ -34,9 +34,10 @@ in Algorithm 8 of Neal (2003) using the "shrinkage" procedure.
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-draws <- matrix(0.2, nrow = 10e3, ncol = 2)
+n_iter <- 10 # set to 1e4 for more complete illustration
+draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 nEvaluations <- 0L
-for (i in seq.int(2, nrow(draws))) {
+for (i in seq.int(2, n_iter)) {
  out <- slice_hyperrect(draws[i - 1, ], target = lf, w = c(0.5, 0.5))
  draws[i,] <- out$x
  nEvaluations <- nEvaluations + out$nEvaluations

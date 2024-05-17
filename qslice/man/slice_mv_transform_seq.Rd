@@ -12,15 +12,20 @@ slice_mv_transform_seq(x, target, pseudo_control)
 \item{target}{A function taking numeric vector that evaluates the log-target
 density, returning a numeric scalar.}
 
-\item{pseudo_control}{A list with \code{pseu_init}, a list output from
-\code{pseu_t_list()} describing the marginal pseudo-target for \code{x[1]};
+\item{pseudo_control}{A list with
+
+\code{pseudo_init}, a list output from
+\code{pseudo_list()} describing the marginal pseudo-target for \code{x[1]};
+
 \code{loc_fn}, a function that specifies the location of a conditional
-pseudo-target given the elements in \code{x} that precede it; \code{sc_fn},
-a function that specifies the scale of a conditional
-pseudo-target given the elements in \code{x} that precede it; \code{degf}, a
-positive scalar for the degrees of freedom for all conditional pseudo-targets;
+pseudo-target given the elements in \code{x} that precede it;
+
+\code{sc_fn}, a function that specifies the scale of a conditional
+pseudo-target given the elements in \code{x} that precede it;
+
 \code{lb}, a numeric vector (same length as \code{x}) specifying the lower
 bound of support for each conditional pseudo-target;
+
 \code{ub}, a numeric vector (same length as \code{x}) specifying the upper
 bound of support for each conditional pseudo-target.}
 }
@@ -37,8 +42,8 @@ a sequence of growing conditional distributions.
 \examples{
 # Funnel distribution from Neal (2003).
 K <- 10
-n_iter <- 10e3 # MCMC iterations
-n <- 10e3 # number of iid samples from the target
+n_iter <- 50 # MCMC iterations; set to 10e3 for more complete illustration
+n <- 100 # number of iid samples from the target; set to 10e3 for more complete illustration
 Y <- matrix(NA, nrow = n, ncol = K) # iid samples from the target
 Y[,1] <- rnorm(n, 0.0, 3.0)
 for (i in 1:n) {
@@ -65,10 +70,10 @@ pseudo_control <- list(
     out
   },
 
-  pseu_init = pseudo_t_list(loc = 0.0, sc = 3.0, degf = 5.0,
+  pseudo_init = pseudo_list(family = "t",
+                            params = list(loc = 0.0, sc = 3.0, degf = 20),
                             lb = -Inf, ub = Inf),
 
-  degf = 5.0,
   lb = rep(-Inf, K),
   ub = rep(Inf, K)
 )

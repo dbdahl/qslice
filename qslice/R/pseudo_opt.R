@@ -1,85 +1,3 @@
-#' Specify a Pseudo-Target within the Student-t Class
-#'
-#' Create a list of functions to evaluate a pseudo-target in the Student-t class
-#' with supplied location, scale, and degrees of freedom. The distribution is optionally
-#' truncated to specified bounds (and renormalized).
-#'
-#'
-#' @param loc Numeric scalar giving the location parameter.
-#' @param sc Positive numeric scalar giving the scale parameter.
-#' @param degf Positive numeric scalar giving the degrees of freedom parameter.
-#' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
-#' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
-#' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
-#' @param name String appending optional message to the textual name of the distribution.
-#' @returns A list with named components:
-#'
-#'  \code{d}: function to evaluate the density
-#'
-#'  \code{ld}: function to evaluate the log density
-#'
-#'  \code{q}: function to evaluate the quantile function
-#'
-#'  \code{p}: function to evaluate the distribution function
-#'
-#'  \code{t}: text description of the distribution
-#'
-#'  \code{loc}: location parameter value
-#'
-#'  \code{sc}: scale parameter value
-#'
-#'  \code{degf}: degrees of freedom parameter value
-#'
-#'  \code{lb}: lower boundary of support
-#'
-#'  \code{ub}: upper boundary of support
-#'
-#' @export
-#' @importFrom stats pt qt
-#' @examples
-#' pseu <- pseudo_t_list(loc = 0.0, sc = 1.0, degf = 1.0, lb = 0.0, ub = Inf) # half Cauchy
-#' str(pseu)
-#' pseu$d(1.5)
-#' pseu$ld(1.5)
-#' pseu$p(1.5)
-#' pseu$q(0.6256659)
-pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
-
-  if (!is.null(name)) {
-    t <- paste0("t(loc = ", round(loc,2), ", sc = ", round(sc,2), ", degf = ", round(degf), "), ", name)
-  } else {
-    t <- paste0("t(loc = ", round(loc,2), ", sc = ", round(sc,2), ", degf = ", round(degf), ")")
-  }
-
-  if (lb > -Inf || ub < Inf) {
-    t <- paste0(t, " I(", lb, " < x < ", ub, ")")
-  }
-
-
-  plb <- pt((lb - loc)/sc, df = degf)
-  pub <- pt((ub - loc)/sc, df = degf)
-  normc <- pub - plb
-  lognormc <- log(normc)
-
-  logsc <- log(sc)
-
-  list(d = function(x) {
-         dt((x - loc) / sc, df = degf) / sc * (x > lb & x < ub) / normc
-         },
-       ld = function(x) {
-         dt((x - loc) / sc, df = degf, log = TRUE) - logsc - lognormc + log(x > lb & x < ub)
-         },
-       q = function(u, log.p = FALSE) {
-         qt(plb + u * normc, log.p = log.p, df = degf) * sc + loc
-         },
-       p = function(x) {
-         (pt((x - loc) / sc, df = degf) - plb) / normc * (x > lb)
-         },
-       t = t,
-       loc = loc, sc = sc, degf = degf, lb = lb, ub = ub)
-}
-
-
 #' Find the Optimal Pseudo-Target for a Given Target (Student-t Family)
 #'
 #' Find the optimal pseudo-target in the Student-t family to approximate
@@ -122,7 +40,6 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 #'
 #'  Other outputs repeating inputs.
 #' @export
-#' @importFrom stats sd
 #' @examples
 #' (pseu <- opt_t(samples = rnorm(1e3), nbins = 30, plot = TRUE,
 #'                verbose = FALSE, use_meanSliceWidth = FALSE))
