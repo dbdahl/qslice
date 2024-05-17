@@ -35,6 +35,7 @@
 #'  \code{ub}: upper boundary of support
 #'
 #' @export
+#' @importFrom stats pt qt
 #' @examples
 #' pseu <- pseudo_t_list(loc = 0.0, sc = 1.0, degf = 1.0, lb = 0.0, ub = Inf) # half Cauchy
 #' str(pseu)

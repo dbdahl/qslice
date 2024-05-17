@@ -97,6 +97,3 @@ plot(draws[,1], draws[,2])
 points(Y[,1], Y[,2], col = "blue", cex = 0.5)
 
 }
-\seealso{
-\pkg{\link{coda}}
-}

@@ -20,6 +20,7 @@
 #'   state.
 #'
 #' @importFrom stats runif
+#' @importFrom graphics curve points segments text
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
@@ -272,7 +273,6 @@ pseudo_t_condseq_XfromU <- function(u, pseu_init, loc_fn, sc_fn, degf, lb, ub) {
 #'   target function used to obtain the new state.
 #'
 #' @importFrom stats runif
-#' @seealso \pkg{\link{coda}}
 #' @export
 #' @examples
 #' # Funnel distribution from Neal (2003).

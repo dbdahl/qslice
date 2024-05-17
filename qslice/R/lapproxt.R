@@ -10,8 +10,8 @@
 #' Defaults to \code{-Inf}.
 #' @param ub Numeric scalar giving the value of right truncation of the resulting pseudo-target.
 #' Defaults to \code{Inf}.
-#' @param maxit See \link[coda]{optim}.
-#' @param ... See \link[coda]{optim}.
+#' @param maxit See \link[stats]{optim}.
+#' @param ... See \link[stats]{optim}.
 #'
 #' @export
 #' @importFrom stats optim
