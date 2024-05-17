@@ -40,6 +40,7 @@
 #'
 #'  Other outputs repeating inputs.
 #' @export
+#' @importFrom stats sd
 #' @examples
 #' (pseu <- opt_t(samples = rnorm(1e3), nbins = 30, plot = TRUE,
 #'                verbose = FALSE, use_meanSliceWidth = FALSE))

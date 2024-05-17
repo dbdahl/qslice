@@ -68,6 +68,7 @@ measured as the area of water the density could hold.
 x <- seq(0.001, 0.999, length = 1000)
 y <- dbeta(x, 2.0, 2.0)
 utility_shrinkslice(x = x, y = y, type = "grid", plot = TRUE, use_meanSliceWidth = TRUE)
-utility_shrinkslice(h = \(x) dbeta(x, 2.0, 2.0), type = "function", plot = TRUE, use_meanSliceWidth = TRUE)
+utility_shrinkslice(h = \(x) dbeta(x, 2.0, 2.0), type = "function", plot = TRUE,
+                    use_meanSliceWidth = TRUE)
 utility_shrinkslice(u = rbeta(1e3, 2.0, 2.0), type = "samples")
 }

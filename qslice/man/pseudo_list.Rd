@@ -59,25 +59,29 @@ The supported classes of pseudo-targets include: \code{t}, \code{cauchy},
 \code{normal}, \code{logistic}, and \code{beta}.
 }
 \examples{
-pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, degf = 5), lb = 0.0, ub = Inf) # half t
+pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, degf = 5),
+                    lb = 0.0, ub = Inf) # half t
 str(pseu)
 pseu$d(1.5)
 pseu$ld(1.5)
 pseu$p(1.5)
 pseu$q(0.8060963)
-pseu <- pseudo_list(family = "cauchy", params = list(loc = 0.0, sc = 1.0), lb = 0.0, ub = Inf) # half Cauchy
+pseu <- pseudo_list(family = "cauchy", params = list(loc = 0.0, sc = 1.0),
+                    lb = 0.0, ub = Inf) # half Cauchy
 str(pseu)
 pseu$d(1.5)
 pseu$ld(1.5)
 pseu$p(1.5)
 pseu$q(0.6256659)
-pseu <- pseudo_list(family = "normal", params = list(loc = 0.0, sc = 1.0), lb = 0.0, ub = Inf) # half normal
+pseu <- pseudo_list(family = "normal", params = list(loc = 0.0, sc = 1.0),
+                    lb = 0.0, ub = Inf) # half normal
 str(pseu)
 pseu$d(1.5)
 pseu$ld(1.5)
 pseu$p(1.5)
 pseu$q(0.8663856)
-pseu <- pseudo_list(family = "logistic", params = list(loc = 0.0, sc = 1.0), lb = 0.0, ub = Inf) # half logistic
+pseu <- pseudo_list(family = "logistic", params = list(loc = 0.0, sc = 1.0),
+                    lb = 0.0, ub = Inf) # half logistic
 str(pseu)
 pseu$d(1.5)
 pseu$ld(1.5)
