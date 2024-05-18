@@ -4,7 +4,7 @@
 #' in Algorithm 8 of Neal (2003) using the "shrinkage" procedure.
 #'
 #' @param x The current state (as a numeric vector).
-#' @param target A function taking numeric vector that evaluates the log-target
+#' @param log_target A function taking numeric vector that evaluates the log-target
 #'   density, returning a numeric scalar.
 #' @param w A numeric vector tuning the algorithm which gives the typical slice
 #'   width in each dimension. This is a main tuning parameter of the algorithm.
@@ -28,7 +28,7 @@
 #' draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, n_iter)) {
-#'  out <- slice_hyperrect(draws[i - 1, ], target = lf, w = c(0.5, 0.5))
+#'  out <- slice_hyperrect(draws[i - 1, ], log_target = lf, w = c(0.5, 0.5))
 #'  draws[i,] <- out$x
 #'  nEvaluations <- nEvaluations + out$nEvaluations
 #'  cat(i, '\r')
@@ -38,14 +38,14 @@
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
-slice_hyperrect <- function(x, target, w = NULL, L = NULL, R = NULL) {
+slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 
   k <- length(x)
 
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
-    target(x)
+    log_target(x)
   }
 
   # Step 1
@@ -87,7 +87,7 @@ slice_hyperrect <- function(x, target, w = NULL, L = NULL, R = NULL) {
   }
 }
 
-#' Multivariate Transform Slice Sampler
+#' Multivariate Quantile Slice Sampler
 #'
 #' Quantile slice sampler for a random vector. The pseudo-target is specified
 #' through independent univariate distributions.
@@ -120,7 +120,7 @@ slice_hyperrect <- function(x, target, w = NULL, L = NULL, R = NULL) {
 #' draws_u[1,] <- sapply(1:length(ps), function(k) ps[[k]]$p(draws[1,k]))
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, n_iter)) {
-#'   out <- slice_mv_transform(draws[i - 1, ], target = lf, pseudo = ps)
+#'   out <- slice_quantile_mv(draws[i - 1, ], log_target = lf, pseudo = ps)
 #'   draws[i,] <- out$x
 #'   draws_u[i,] <- out$u
 #'   nEvaluations <- nEvaluations + out$nEvaluations
@@ -135,17 +135,17 @@ slice_hyperrect <- function(x, target, w = NULL, L = NULL, R = NULL) {
 #' hist(draws_u[,2], freq = FALSE)
 #' auc(u = draws_u[,1])
 #' auc(u = draws_u[,2])
-slice_mv_transform <- function(x, target, pseudo) {
+slice_quantile_mv <- function(x, log_target, pseudo) {
 
   K <- length(x)
 
   lhu <- function(u) {
     xx <- sapply(1:K, function(k) pseudo[[k]]$q(u[k]))
-    target(xx) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(xx[k])))
+    log_target(xx) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(xx[k])))
   }
 
   u0 <- sapply(1:K, function(k) pseudo[[k]]$p(x[k]))
-  shyp <- slice_hyperrect(u0, target = lhu, w = NULL, L = NULL, R = NULL)
+  shyp <- slice_hyperrect(u0, log_target = lhu, w = NULL, L = NULL, R = NULL)
   x1 <- sapply(1:K, function(k) pseudo[[k]]$q(shyp$x[k]))
 
   list(x = x1, u = shyp$x, nEvaluations = shyp$nEvaluations)
@@ -156,14 +156,14 @@ slice_mv_transform <- function(x, target, pseudo) {
 
 
 
-#' Sequence of Conditional Pseudo-Targets from a Realization
+#' Sequence of conditional pseudo-targets from a realization
 #'
 #' Given a realization of a random vector, generate a the corresponding
-#' sequence of conditional pseudo-target inverse cdfs.
+#' sequence of conditional pseudo-target inverse CDFs.
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
-#' See the documentation for \code{slice_mv_transform_seq()} for examples.
+#' See the documentation for \code{slice_quantile_mv_seq()} for examples.
 #'
 #' @param x A numeric vector of values between 0 and 1.
 #' @param pseudo_init A list output from \code{pseudo_list()} describing the
@@ -179,7 +179,7 @@ slice_mv_transform <- function(x, target, pseudo) {
 #'  bound of support for each conditional pseudo-target.
 #'
 #' @return A list containing \code{x} obtained from the sequence of inverse
-#' cdfs, and \code{pseudo_t_seq}, a list output from \code{pseu_list()}
+#' CDFs, and \code{pseudo_t_seq}, a list output from \code{pseu_list()}
 #' describing the sequence of conditional pseudo-targets.
 #'
 #' @importFrom stats runif
@@ -209,14 +209,14 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 }
 
 
-#' Inverse Transform from Sequence of Conditional Pseudo-Targets
+#' Inverse transform from sequence of conditional pseudo-targets
 #'
 #' Given a vector of from a unit hypercube, map to the original vector using
-#' a sequence of conditional pseudo-target inverse cdfs.
+#' a sequence of conditional pseudo-target inverse CDFs.
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
-#' See the documentation for \code{slice_mv_transform_seq()} for examples.
+#' See the documentation for \code{slice_quantile_mv_seq()} for examples.
 #'
 #' @param u A numeric vector of values between 0 and 1.
 #' @param pseudo_init A list output from \code{pseudo_list()} describing the
@@ -231,7 +231,7 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #'  bound of support for each conditional pseudo-target.
 #'
 #' @return A list containing \code{x} obtained from the sequence of inverse
-#' cdfs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
+#' CDFs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
 #' describing the sequence of conditional pseudo-targets.
 #'
 #' @export
@@ -264,7 +264,7 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
 
 
-#' Multivariate Transform Slice Sampler from a Sequence of Conditional Pseudo-Targets
+#' Multivariate Quantile Slice Sampler from a sequence of conditional pseudo-targets
 #'
 #' Quantile slice sampler for a random vector. The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
@@ -273,16 +273,18 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' @param pseudo_control A list with
 #'
 #' \code{pseudo_init}, a list output from
-#' \code{pseudo_list()} describing the marginal pseudo-target for \code{x[1]};
+#' \code{pseudo_list()} describing the marginal pseudo-target for \code{x[1]}.
+#' Attributes of \code{pseudo_init} will be used in subsequent pseudo-targets,
+#' except for location and scale parameters.
 #'
 #' \code{loc_fn}, a function that specifies the location of a conditional
-#'  pseudo-target given the elements in \code{x} that precede it;
+#'  pseudo-target given the elements in \code{x} that precede it.
 #'
 #'  \code{sc_fn}, a function that specifies the scale of a conditional
-#'  pseudo-target given the elements in \code{x} that precede it;
+#'  pseudo-target given the elements in \code{x} that precede it.
 #'
 #'  \code{lb}, a numeric vector (same length as \code{x}) specifying the lower
-#'  bound of support for each conditional pseudo-target;
+#'  bound of support for each conditional pseudo-target.
 #'
 #'  \code{ub}, a numeric vector (same length as \code{x}) specifying the upper
 #'  bound of support for each conditional pseudo-target.
@@ -338,8 +340,8 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' draws_u <- matrix(rep(x0, n_iter), nrow = n_iter, byrow = TRUE)
 #' n_eval <- 0
 #' for (i in 2:(n_iter + 1)) {
-#'   tmp <- slice_mv_transform_seq(draws[i-1,],
-#'                                 target = ltarget,
+#'   tmp <- slice_quantile_mv_seq(draws[i-1,],
+#'                                 log_target = ltarget,
 #'                                 pseudo_control = pseudo_control)
 #'   draws[i,] <- tmp$x
 #'   draws_u[i-1,] <- tmp$u
@@ -356,7 +358,7 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' plot(draws[,1], draws[,2])
 #' points(Y[,1], Y[,2], col = "blue", cex = 0.5)
 #'
-slice_mv_transform_seq <- function(x, target, pseudo_control) {
+slice_quantile_mv_seq <- function(x, log_target, pseudo_control) {
 
   # target is log target only without pseudo
 
@@ -370,7 +372,7 @@ slice_mv_transform_seq <- function(x, target, pseudo_control) {
                             lb = pseudo_control$lb,
                             ub = pseudo_control$ub)
 
-  fx <- target(x) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x[k])))
+  fx <- log_target(x) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x[k])))
   nEvaluations <- 1
   stopifnot(fx > -Inf)
 
@@ -397,7 +399,7 @@ slice_mv_transform_seq <- function(x, target, pseudo_control) {
     x1 <- tmp$x
     tmp_seq <- tmp$pseudo_seq
 
-    fx1 <- target(x1) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x1[k])))
+    fx1 <- log_target(x1) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x1[k])))
     nEvaluations <- nEvaluations + 1
 
     if (y < fx1) {

@@ -2,44 +2,47 @@
 % Please edit documentation in R/slice_samplers_univariate.R
 \name{slice_stepping_out}
 \alias{slice_stepping_out}
-\title{Slice Sampler using the Stepping Out and Shrinkage Procedures}
+\title{Slice sampler using the Stepping Out and Shrinkage Procedures}
 \usage{
-slice_stepping_out(x, target, w, max = Inf)
+slice_stepping_out(x, log_target, w, max = Inf)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the log-target
-density, returning a numeric scalar.}
+\item{log_target}{A function taking numeric scalar that evaluates the
+(potentially unnormalized) log-target density, returning a numeric scalar.}
 
 \item{w}{A numeric scalar tuning the algorithm which gives the typical slice
 width. This is a main tuning parameter of the algorithm.}
 
 \item{max}{The maximum number of times to step out. Setting \code{max} to
-zero avoids some evaluations of \code{target}, but may lead to relatively
+zero avoids some evaluations of \code{log_target}, but may lead to relatively
 high autocorrelation if \code{w} is too small.  If \code{w} is too small,
 setting \code{max} to a large value (even \code{Inf}) should lead to low
-autocorrelation at the cost of more evaluations for \code{target}.}
+autocorrelation at the cost of more evaluations for \code{log_target}.}
 }
 \value{
-A list contains two elements: "x" is the new state and "nEvaluations"
-is the number of evaluations of the target function used to obtain the new
+A list with two elements:
+
+\code{x} is the new state.
+
+\code{nEvaluations} is the number of evaluations of the target function used to obtain the new
 state.
 }
 \description{
-Univariate slice sampler of Neal (2003) using the
+Single update for the univariate slice sampler of Neal (2003) using the
 "stepping out" procedure, followed by the "shrinkage" procedure.
 }
 \examples{
-lf <- function(x) dbeta(x, 3, 4)
-draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+lf <- function(x) dbeta(x, 3, 4, log = TRUE)
+draws <- numeric(10) + 0.5 # set to numeric(1e3) for more complete illustration
 nEvaluations <- 0L
 for (i in seq.int(2, length(draws))) {
-  out <- slice_stepping_out(draws[i - 1], target = lf, w = 0.7, max = Inf)
+  out <- slice_stepping_out(draws[i - 1], log_target = lf, w = 0.7, max = Inf)
   draws[i] <- out$x
   nEvaluations <- nEvaluations + out$nEvaluations
 }
-nEvaluations / length(draws)
+nEvaluations / (length(draws) - 1)
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 

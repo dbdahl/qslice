@@ -4,12 +4,12 @@
 \alias{slice_hyperrect}
 \title{Multivariate Slice Sampler with Shrinking Hyperrectangle}
 \usage{
-slice_hyperrect(x, target, w = NULL, L = NULL, R = NULL)
+slice_hyperrect(x, log_target, w = NULL, L = NULL, R = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric vector).}
 
-\item{target}{A function taking numeric vector that evaluates the log-target
+\item{log_target}{A function taking numeric vector that evaluates the log-target
 density, returning a numeric scalar.}
 
 \item{w}{A numeric vector tuning the algorithm which gives the typical slice
@@ -38,7 +38,7 @@ n_iter <- 10 # set to 1e4 for more complete illustration
 draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 nEvaluations <- 0L
 for (i in seq.int(2, n_iter)) {
- out <- slice_hyperrect(draws[i - 1, ], target = lf, w = c(0.5, 0.5))
+ out <- slice_hyperrect(draws[i - 1, ], log_target = lf, w = c(0.5, 0.5))
  draws[i,] <- out$x
  nEvaluations <- nEvaluations + out$nEvaluations
  cat(i, '\r')

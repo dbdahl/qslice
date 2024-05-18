@@ -2,15 +2,15 @@
 % Please edit documentation in R/elliptical_slice_multivariate.R
 \name{slice_genelliptical_mv}
 \alias{slice_genelliptical_mv}
-\title{General Elliptical Slice Sampler (Multivariate)}
+\title{Generalized Elliptical Slice Sampler (Multivariate)}
 \usage{
-slice_genelliptical_mv(x, target, mu, Sig, df, is_chol = FALSE)
+slice_genelliptical_mv(x, log_target, mu, Sig, df, is_chol = FALSE)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the log-target
-density, returning a numeric scalar.}
+\item{log_target}{A function taking numeric scalar that evaluates the
+(potentially unnormalized) log-target density, returning a numeric scalar.}
 
 \item{mu}{Numeric vector with the mean of the normal to be sampled.}
 
@@ -28,7 +28,7 @@ is the number of evaluations of the target function used to obtain the new
 state.
 }
 \description{
-General Elliptical Slice Sampler, Algorithm 2 of Nishihara (2014)
+Generalized Elliptical Slice Sampler, Algorithm 2 of Nishihara et al (2014)
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
@@ -36,13 +36,13 @@ n_iter <- 10 # set to 1e4 for more complete illustration
 draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 nEvaluations <- 0L
 for (i in seq.int(2, n_iter)) {
-  out <- slice_genelliptical_mv(draws[i - 1,], target = lf,
+  out <- slice_genelliptical_mv(draws[i - 1,], log_target = lf,
               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2),
               df = 5)
   draws[i,] <- out$x
   nEvaluations <- nEvaluations + out$nEvaluations
 }
-nEvaluations / nrow(draws)
+nEvaluations / (n_iter - 1)
 plot(draws[,1], draws[,2], xlim = c(0, 1))
 hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)

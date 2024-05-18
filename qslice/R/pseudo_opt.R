@@ -1,18 +1,23 @@
-#' Find the Optimal Pseudo-Target for a Given Target (Student-t Family)
+#' Optimal pseudo-target for a given target
 #'
-#' Find the optimal pseudo-target in the Student-t family to approximate
-#' the given (unnormalized) target. Optimize over a variety of utility functions.
+#' Find an optimal pseudo-target in a specified family to approximate
+#' the given (unnormalized) target. Optimize over the selected utility function.
+#'
 #' Optionally supply samples from the target distribution.
 #'
-#'
-#' @param target List containing functions to evaluate the unnormalized target.
-#' Must contain function \code{ld(x)} that evaluates the log-target.
+#' @inherit utility_pseudo
 #' @param samples Optional numeric vector providing samples from the target distribution
-#' (for use as alternative to \code{target}).
+#' (for use as alternative to \code{log_target}).
 #' @param type String specifying the input type. One of "function", "samples", or "grid".
-#' Use of "function" requires \code{target}. Use of "samples" requires \code{samples}.
-#' Use of "grid" requires \code{target}. Defaults to "samples".
-#' @param degf Numeric vector of degrees of freedom values to try. Defaults to \code{c(1, 5, 20)}.
+#' Default is to use "samples".
+#'
+#' Use of "function" requires \code{log_target}.
+#'
+#' Use of "samples" requires \code{samples}.
+#' @param family String specifying the family of distributions for the pseudo-target.
+#' Can be any of the families accepted by \code{pseudo_list()}.
+#' @param degf Numeric vector of degrees of freedom values to try (only if \code{family = "t"}.
+#' Defaults to \code{c(1, 5, 20)}.
 #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
 #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
 #' @param nbins Positive integer specifying the number of histogram bins if using "samples" or "grid".
@@ -21,59 +26,57 @@
 #' to \code{optim()}. Defaults to \code{1.0e-6}.
 #' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
 #' Defaults to \code{1.0e-3}.
-#' @param plot Logical for whether to plot a visualization of the transformed target.
-#' Defaults to \code{TRUE}.
 #' @param verbose Logical for whether to print intermediate steps of optimization.
 #' Defaults to \code{FALSE}.
-#' @param use_meanSliceWidth Logical for whether the base utility should use
-#' Expected Slice Width (if \code{TRUE}; slower) or Area Under the Curve (AUC) if
-#' \code{FALSE}. Defaults to \code{FALSE}.
 #' @returns A list with named components:
 #'
-#'  \code{pseu}: a list with functions corresponding to the selected pseudo-target;
-#'  output of \code{pseudo_t_list()}.
+#'  \code{pseudo}: a list with functions corresponding to the selected pseudo-target;
+#'  output of \code{pseudo_list()}.
 #'
-#'  \code{util}: a list with information about the calculated utility for the selected pseudo-target;
-#'  output of \code{utility_shrinkslice()}.
+#'  \code{utility}: value of the utility function using the selected pseudo-target;
+#'  output of \code{utility_pseudo()}.
+#'
+#'  \code{utility_type}: repeats the input specifying the utility type.
 #'
 #'  \code{opt}: output of \code{optim()}.
 #'
 #'  Other outputs repeating inputs.
+#'
+#' @importFrom stats sd optim
 #' @export
 #' @importFrom stats sd
 #' @examples
-#' (pseu <- opt_t(samples = rnorm(1e3), nbins = 30, plot = TRUE,
-#'                verbose = FALSE, use_meanSliceWidth = FALSE))
-#' (pseu <- opt_t(target = list(ld = function(x) dnorm(x, log = TRUE)),
-#'                type = "grid", nbins = 100, plot = TRUE, verbose = FALSE,
-#'                use_meanSliceWidth = FALSE, tol_opt = 1e-3))
-#' (pseu <- opt_t(target = list(ld = function(x) dnorm(x, log = TRUE)),
-#'                type = "function", plot = TRUE, verbose = TRUE,
-#'                use_meanSliceWidth = FALSE, tol_opt = 1e-3, tol_int = 1e-2))
-opt_t <- function(target = NULL,
-                  samples = NULL,
-                  type = "samples", # one of "samples", "grid", "function"
-                  degf = c(1, 5, 20),
-                  lb = -Inf, ub = Inf,
-                  nbins = 100,
-                  tol_opt = 1.0e-6, tol_int = 1.0e-3,
-                  plot = TRUE,
-                  verbose = FALSE,
-                  use_meanSliceWidth = FALSE) {
+#' (pseu <- pseudo_opt(samples = rnorm(1e3), type = "samples",
+#'                family = "t", utility_type = "AUC",
+#'                nbins = 10, plot = TRUE,
+#'                verbose = FALSE))
+#' par(mfrow = c(1,2))
+#' (pseu <- pseudo_opt(log_target = function(x) dnorm(x, log = TRUE),
+#'                 type = "function",
+#'                 family = "logistic", utility_type = "AUC",
+#'                 nbins = 100, plot = TRUE,
+#'                 verbose = FALSE))
+#' (pseu <- pseudo_opt(log_target = function(x) dbeta(x, 4, 2, log = TRUE),
+#'                 lb = 0, ub = 1,
+#'                 type = "function",
+#'                 family = "cauchy", utility_type = "AUC",
+#'                 nbins = 30, plot = TRUE,
+#'                 verbose = FALSE))
+pseudo_opt <- function(log_target = NULL,
+                       samples = NULL,
+                       type = "samples", # one of "samples", "function"
+                       family = "t",
+                       degf = c(1, 5, 20),
+                       lb = -Inf, ub = Inf,
+                       utility_type = "AUC",
+                       nbins = 100,
+                       tol_opt = 1.0e-6, tol_int = 1.0e-3,
+                       plot = TRUE,
+                       verbose = FALSE) {
 
-  # @param coeffs Positive numeric vector of length two giving relative weights of
-  # 1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
-  # measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.
-  coeffs <- c(1.0, 0.0)
+  if (family == "beta") stop("Optimazation for beta pseudo-targets not implemented.")
 
-  if (type == "function") {
-    x <- NULL
-    bins <- NULL
-    nbins <- NULL
-  } else if (type %in% c("grid", "samples")) {
-    x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
-    bins <- c(0.0, x[-c(1, nbins)], 1.0)
-  }
+  x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
 
   if (is.null(samples)) {
     inits <- c(loc = 0.5, sc = 2.0)
@@ -81,8 +84,8 @@ opt_t <- function(target = NULL,
     inits <- c(loc = mean(samples), sc = sd(samples))
   }
 
-  get_util <- function(pars, type, x, target, samples, degf, lb, ub, bins, nbins,
-                       coeffs, verbose, use_meanSliceWidth) {
+  get_util <- function(pars, type, x, log_target, samples, family,
+                       degf, lb, ub, utility_type, nbins, verbose) {
 
     loc <- pars[1]
     sc <- pars[2]
@@ -93,65 +96,72 @@ opt_t <- function(target = NULL,
 
     } else {
 
-      pseu <- pseudo_t_list(loc = loc, sc = sc, degf = degf,
-                            lb = lb, ub = ub)
+      pseu <- pseudo_list(family = family,
+                          params = list(loc = loc, sc = sc, degf = degf),
+                          lb = lb, ub = ub)
 
       if (verbose) cat("trying", pseu$t, "\n")
 
       # this function is found in utility_shrinkslice.R; output is the same as utility_shrinkslice()
-      out <- util_pseu(pseu = pseu, target = target, samples = samples,
-                       type = type, x = x,
-                       bins = bins, nbins = nbins,
-                       coeffs = coeffs, plot = FALSE,
-                       use_meanSliceWidth = use_meanSliceWidth,
-                       tol_int = tol_int)
+      out <- utility_pseudo(pseudo = pseu,
+                            log_target = log_target,
+                            samples = samples,
+                            type = type, x = x,
+                            nbins = nbins,
+                            plot = FALSE,
+                            utility_type = utility_type,
+                            tol_int = tol_int)
 
       if (verbose) {
         print(out)
         cat("\n")
       }
 
-      if (out["util"] > 1.0) { # then the result isn't viable. Penalize.
-        out["util"] <- -1.0
+      if (out > 1.0) { # then the result isn't viable. Penalize.
+        out <- -1.0
       }
 
     }
 
-    out["util"]
+    out
   }
 
-
   opt <- list()
+
+  if (family != "t") {
+    degf = NA
+  }
 
   for (i in 1:length(degf)) {
     opt[[i]] <- optim(inits, get_util, control = list(fnscale=-1, reltol = tol_opt),
                       type = type,
-                      x = x, target = target, samples = samples,
+                      x = x, log_target = log_target, samples = samples,
+                      family = family,
                       degf = degf[i],
                       lb = lb, ub = ub,
-                      bins = bins, nbins = nbins,
-                      coeffs = coeffs,
-                      verbose = verbose,
-                      use_meanSliceWidth = use_meanSliceWidth)
-  }
+                      utility_type = utility_type,
+                      nbins = nbins,
+                      verbose = verbose)
+   }
 
   use_indx <- which.max(sapply(opt, function(obj) obj$value))
 
-  pseu <- pseudo_t_list(loc = unname(opt[[use_indx]]$par[1]),
-                        sc = unname(opt[[use_indx]]$par[2]),
-                        degf = degf[use_indx],
-                        lb = lb, ub = ub)
+  pseu <- pseudo_list(family = family,
+                      params = list(loc = unname(opt[[use_indx]]$par[1]),
+                                    sc = unname(opt[[use_indx]]$par[2]),
+                                    degf = degf[use_indx]),
+                      lb = lb, ub = ub)
 
-  util <- util_pseu(pseu = pseu, target = target, samples = samples,
-                    type = type,
-                    x = x,
-                    bins = bins, nbins = nbins,
-                    coeffs = coeffs,
-                    plot = plot,
-                    use_meanSliceWidth = use_meanSliceWidth,
-                    tol_int = tol_int)
+  util <- utility_pseudo(pseudo = pseu,
+                         log_target = log_target,
+                         samples = samples,
+                         type = type, x = x,
+                         nbins = nbins,
+                         plot = plot,
+                         utility_type = utility_type,
+                         tol_int = tol_int)
 
-  list(pseu = pseu, util = util, opt = opt[[use_indx]], nbins = nbins, coeffs = coeffs,
-       tol_int = tol_int, tol_opt = tol_opt)
+  list(pseudo = pseu, utility = util, utility_type = utility_type,
+       opt = opt[[use_indx]],
+       nbins = nbins, tol_int = tol_int, tol_opt = tol_opt)
 }
-

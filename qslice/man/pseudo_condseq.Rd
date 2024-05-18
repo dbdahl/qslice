@@ -2,7 +2,7 @@
 % Please edit documentation in R/hyperrectangle_slice.R
 \name{pseudo_condseq}
 \alias{pseudo_condseq}
-\title{Sequence of Conditional Pseudo-Targets from a Realization}
+\title{Sequence of conditional pseudo-targets from a realization}
 \usage{
 pseudo_condseq(x, pseudo_init, loc_fn, sc_fn, lb, ub)
 }
@@ -27,15 +27,15 @@ bound of support for each conditional pseudo-target.}
 }
 \value{
 A list containing \code{x} obtained from the sequence of inverse
-cdfs, and \code{pseudo_t_seq}, a list output from \code{pseu_list()}
+CDFs, and \code{pseudo_t_seq}, a list output from \code{pseu_list()}
 describing the sequence of conditional pseudo-targets.
 }
 \description{
 Given a realization of a random vector, generate a the corresponding
-sequence of conditional pseudo-target inverse cdfs.
+sequence of conditional pseudo-target inverse CDFs.
 The pseudo-target is specified as
 a sequence of growing conditional distributions.
 }
 \details{
-See the documentation for \code{slice_mv_transform_seq()} for examples.
+See the documentation for \code{slice_quantile_mv_seq()} for examples.
 }

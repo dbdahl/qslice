@@ -2,7 +2,7 @@
 % Please edit documentation in R/pseudo_targets.R
 \name{pseudo_list}
 \alias{pseudo_list}
-\title{Specify a Pseudo-Target within a given class}
+\title{Specify a pseudo-target within a given class}
 \usage{
 pseudo_list(family, params, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL)
 }
@@ -41,7 +41,7 @@ A list with named components:
 
 \code{p}: function to evaluate the distribution function
 
-\code{t}: text description of the distribution
+\code{txt}: text description of the distribution
 
 \code{params}: repeats the \code{params} argument
 

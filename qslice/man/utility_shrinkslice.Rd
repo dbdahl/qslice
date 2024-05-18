@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility_shrinkslice.R
 \name{utility_shrinkslice}
 \alias{utility_shrinkslice}
-\title{Calculate the Utility Function for a Transformed Target}
+\title{Utility for a Transformed Target}
 \usage{
 utility_shrinkslice(
   h = NULL,
@@ -10,15 +10,16 @@ utility_shrinkslice(
   y = NULL,
   u = NULL,
   type = "samples",
-  coeffs = c(1, 0),
   nbins = 30,
   plot = FALSE,
-  use_meanSliceWidth = FALSE,
+  utility_type = "AUC",
   tol_int = 0.001
 )
 }
 \arguments{
-\item{h}{Function to evaluate the unnormalized transformed target \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))} with argument \eqn{\psi \in (0,1)}.}
+\item{h}{Function to evaluate the unnormalized transformed target
+\eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
+with argument \eqn{\psi \in (0,1)}.}
 
 \item{x}{Numeric vector of histogram locations. (Not used if \code{u} is supplied).}
 
@@ -29,40 +30,25 @@ for a given value of \code{u}.(Not used if \code{u} is supplied).}
 create histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).}
 
 \item{type}{String specifying the input type. One of "function", "samples", or "grid".
-Use of "function" requires \code{h}. Use of "samples" requires \code{samples}.
-Use of "grid" requires \code{h}. Defaults to "samples".}
-
-\item{coeffs}{Positive numeric vector of length two giving relative weights of
-1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
-measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.}
+Use of "function" requires \code{h}. Use of "samples" requires \code{u}.
+Use of "grid" requires \code{h} and optionally \code{x}. Default is to use "samples".}
 
 \item{nbins}{Number of histogram bins to use (defaults to 30).}
 
 \item{plot}{Logical for whether to plot a visualization of the transformed target.
-Defaults to \code{TRUE}.}
+Defaults to \code{FALSE}.}
 
-\item{use_meanSliceWidth}{Logical for whether the base utility should use
-Expected Slice Width (if \code{TRUE}; slower) or Area Under the Curve (AUC) if
-\code{FALSE}. Defaults to \code{FALSE}.}
+\item{utility_type}{String identifying utility type, either AUC (default) or MSW}
 
 \item{tol_int}{Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
 Defaults to \code{1.0e-3}.}
 }
 \value{
-Named vector with:
-
-\code{util}: final utility calculated as \code{coeffs[1]*base_util - coeffs[2]*water_area}
-
-\code{auc}: area of the unit square that is under the curve \eqn{h}
-
-\code{water_area}: area of the unit square that could hold water (convex portions of \eqn{h})
-
-\code{msw}: Mean slice width (if used as the base utility)
+Scalar value of the utility function evaluation.
 }
 \description{
-Evaluates the utility function for a transformed target. The base utility can be one of
-Area Under the Curve (AUC) and Expected Slice Width. Optionally adds a penalty for multimodality,
-measured as the area of water the density could hold.
+Evaluates the utility function for a transformed target, which can be one of
+Area Under the Curve (AUC) and Mean Slice Width (MSW).
 }
 \examples{
 x <- seq(0.001, 0.999, length = 1000)

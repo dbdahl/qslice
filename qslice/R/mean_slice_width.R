@@ -14,8 +14,10 @@ meanSliceWidth_int <- function(h, tol = 0.005) {
 
   interval <- c(0.0, 1.0)
 
-  nc <- integrate(h, lower = interval[1], upper = interval[2])$value
-  h_norm <- function(x) h(x) / nc
+  h_vec <- function(x) sapply(x, FUN = h)
+
+  nc <- integrate(h_vec, lower = interval[1], upper = interval[2])$value
+  h_norm <- function(x) h_vec(x) / nc
 
   h_fill <- function(x, hnorm_at_outer) { # x must be able to be a vector
     pmin(h_norm(x), hnorm_at_outer)
@@ -30,7 +32,6 @@ meanSliceWidth_int <- function(h, tol = 0.005) {
 
   integrate(inner_int, lower = interval[1], upper = interval[2], abs.tol = tol)$value
 }
-
 
 
 #' Expected Slice Width (over a grid)

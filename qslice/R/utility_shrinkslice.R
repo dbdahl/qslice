@@ -1,115 +1,68 @@
-#' Calculate the Utility Function for a Transformed Target
+#' Utility for a given target and pseudo-target
 #'
-#' Evaluates the utility function for a transformed target. The base utility can be one of
-#' Area Under the Curve (AUC) and Expected Slice Width. Optionally adds a penalty for multimodality,
-#' measured as the area of water the density could hold.
+#' Takes a pseudo-target and target (or samples from the target) and
+#' evaluates the utility function for the transformed target, which can be one of
+#' Area Under the Curve (AUC) and Mean Slice Width (MSW).
 #'
-#' @param h Function to evaluate the unnormalized transformed target \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))} with argument \eqn{\psi \in (0,1)}.
-#' @param x Numeric vector of histogram locations. (Not used if \code{u} is supplied).
-#' @param y Numeric vector of histogram heights OR function evaluating the curve
-#' for a given value of \code{u}.(Not used if \code{u} is supplied).
-#' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
-#' create histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
+#' Optionally plot the target and pseudo-target densities as well as the
+#' transformed tartet.
+#'
+#' @param pseudo List containing the following functions with scalar input:
+#'
+#'  \code{ld}: function to evaluate the log density
+#'
+#'  \code{q}: function to evaluate the quantile function
+#'
+#'  \code{p}: function to evaluate the distribution function
+#'
+#' @param log_target Function to evaluate the log density of the unnormalized target.
+#'
+#' @param samples Numeric vector of samples from the target distribution.
 #' @param type String specifying the input type. One of "function", "samples", or "grid".
-#' Use of "function" requires \code{h}. Use of "samples" requires \code{samples}.
-#' Use of "grid" requires \code{h}. Defaults to "samples".
-#' @param coeffs Positive numeric vector of length two giving relative weights of
-#' 1-the base utility (one of AUC or mean slice width) and 2-the penalty for multimodality,
-#' measured as the area of water the density could hold. Defaults to \code{c(1.0, 0.0)}.
-#' @param nbins Number of histogram bins to use (defaults to 30).
-#' @param plot Logical for whether to plot a visualization of the transformed target.
+#' Default is to use "samples".
+#'
+#' Use of "function" requires \code{log_target}.
+#'
+#' Use of "samples" requires \code{samples}.
+#'
+#' Use of "grid" requires \code{x}.
+#'
+#' @param x Numeric vector specifying grid (on (0,1)) over which to evaluate
+#' the transformed target. Defaults to \code{NULL}.
+#' @param nbins Number of histogram bins to use (defaults to 30). Must match the length
+#' of \code{x} if \code{x} is supplied.
+#' @param plot Logical for whether to generate two plots:
+#'
+#' 1) direct comparison of the target and pseudo-target densities, and
+#'
+#' 2) transformed target density.
+#'
 #' Defaults to \code{TRUE}.
-#' @param use_meanSliceWidth Logical for whether the base utility should use
-#' Expected Slice Width (if \code{TRUE}; slower) or Area Under the Curve (AUC) if
-#' \code{FALSE}. Defaults to \code{FALSE}.
+#' @param utility_type String identifying utility type, either AUC (default) or MSW.
 #' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
 #' Defaults to \code{1.0e-3}.
-#' @returns Named vector with:
+#' @returns Scalar value of the utility function evaluation.
 #'
-#'  \code{util}: final utility calculated as \code{coeffs[1]*base_util - coeffs[2]*water_area}
-#'
-#'  \code{auc}: area of the unit square that is under the curve \eqn{h}
-#'
-#'  \code{water_area}: area of the unit square that could hold water (convex portions of \eqn{h})
-#'
-#'  \code{msw}: Mean slice width (if used as the base utility)
-#'
+#' @export
 #' @examples
-#' x <- seq(0.001, 0.999, length = 1000)
-#' y <- dbeta(x, 2.0, 2.0)
-#' utility_shrinkslice(x = x, y = y, type = "grid", plot = TRUE, use_meanSliceWidth = TRUE)
-#' utility_shrinkslice(h = \(x) dbeta(x, 2.0, 2.0), type = "function", plot = TRUE,
-#'                     use_meanSliceWidth = TRUE)
-#' utility_shrinkslice(u = rbeta(1e3, 2.0, 2.0), type = "samples")
-utility_shrinkslice <- function(h = NULL, x = NULL, y = NULL, u = NULL,
-                                type = "samples", # supplied with u. Alternatively, type = "samples_kde", type = "function" (supplied with function h) or "grid" (supplied with x, y)
-                                coeffs = c(1.0, 0.0), # default is to have no water penalty
-                                nbins = 30,
-                                plot = FALSE,
-                                use_meanSliceWidth = FALSE,
-                                tol_int = 1.0e-3) {
-
-  if (type %in% c("function", "samples_kde")) {
-
-    ## the supplied function here is the transformed target with support on (0, 1)
-
-    tmp <- water_area_int(h, interval = c(0.0 + 1.0e-9, 1.0 - 1.0e-9),
-                          plot = plot, eps = 1.0e-3, tol_int = tol_int,
-                          title = TRUE)
-    auc <- tmp$AUC / tmp$totalArea
-    wtr <- tmp$totalWaterArea / tmp$totalArea
-
-    if (use_meanSliceWidth) {
-      msw <- meanSliceWidth_int(h, tol = tol_int)
-    }
-
-  } else if (type %in% c("grid", "samples")) {
-
-    if (type == "samples") {
-
-      if (is.null(x)) {
-        x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
-      } else {
-        stopifnot(length(x) == nbins)
-      }
-
-      bins <- c(0.0, x[-c(1, nbins)], 1.0)
-      y <- tabulate( as.numeric(cut(u, breaks = bins)), nbins = nbins )
-
-      stopifnot(sum(y) > 0)
-
-    }
-
-    auc <- auc(x = x, y = y)
-    wtr <- water_area(x = x, y = y, plot = plot)
-
-    if (use_meanSliceWidth) {
-      msw <- meanSliceWidth_grid(x = x, y = y)
-    }
-
-  } # currently no support for histogram method (unless supplied as x and y)
-
-  if (use_meanSliceWidth) {
-    out <- c( util = coeffs %*% c(msw, -wtr), auc = auc, water_area = wtr, msw = msw )
-  } else {
-    out <- c( util = coeffs %*% c(auc, -wtr), auc = auc, water_area = wtr )
-  }
-
-  out
-}
-
-util_pseu <- function(pseu, target = NULL, samples = NULL,
-                      type = "samples",
-                      x = NULL,
-                      bins = NULL, nbins = NULL,
-                      coeffs = c(1.0, 0.0),
-                      plot = FALSE,
-                      use_meanSliceWidth = TRUE,
-                      tol_int = 1.0e-3) {
+#' pseu <- pseudo_list(family = "logistic", params = list(loc = 0.0, sc = 0.66))
+#' ltarg <- list(ld = function(x) dnorm(x, log = TRUE))
+#' par(mfrow = c(1,2))
+#' utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function", nbins = 100, utility_type = "MSW")
+#' samp <- rnorm(10e3)
+#' utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "AUC")
+#' utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "MSW")
+utility_pseudo <- function(pseudo, log_target = NULL, samples = NULL,
+                        type = "samples",
+                        x = NULL,
+                        nbins = 30,
+                        plot = TRUE,
+                        utility_type = "AUC",
+                        tol_int = 1.0e-3) {
 
   if (type == "function") {
 
-    h <- function(psi) exp( target$ld( pseu$q(psi) ) - pseu$ld( pseu$q(psi) ) )
+    h <- function(psi) exp( log_target( pseudo$q(psi) ) - pseudo$ld( pseudo$q(psi) ) )
     x <- NULL
     y <- NULL
     u <- NULL
@@ -120,31 +73,152 @@ util_pseu <- function(pseu, target = NULL, samples = NULL,
 
     if (type == "grid") {
 
-      xx <- pseu$q(x)
-      ly <- target$ld( xx ) - pseu$ld( xx )
+      xx <- pseudo$q(x)
+      ly <- sapply(xx, FUN = function(z) log_target( z ) - pseudo$ld( z ))
       y <- exp(ly - max(ly))
       u <- NULL
 
     } else if (type == "samples") {
 
-      u <- pseu$p(samples)
-      y <- NULL
-
-    } else if (type == "samples_kde") {
-
-      u <- pseu$p(samples)
-      x <- NULL
+      u <- sapply(samples, FUN = pseudo$p)
       y <- NULL
 
     }
 
   }
 
+  if (isTRUE(plot)) {
+
+    if (type == "function") {
+      x_plot <- seq(pseudo$params$loc - 3.5*pseudo$params$sc,
+                    pseudo$params$loc + 3.5*pseudo$params$sc,
+                    length = 100)
+
+      y_targ_plot <- sapply(x_plot, function(z) exp(log_target(z)))
+      y_targ_plot <- y_targ_plot / max(y_targ_plot)
+      y_pseu_plot <- sapply(x_plot, function(z) exp(pseudo$ld(z)))
+      y_pseu_plot <- y_pseu_plot / max(y_pseu_plot)
+
+      plot(x_plot, y_targ_plot, type = "l", lwd = 2,
+           xlab = "x", ylab = "density (unnormalized)",
+           main = paste0("Pseudo-target:\n", pseudo$txt))
+      lines(x_plot, y_pseu_plot, lwd = 2, col = "red")
+      legend("topright", lwd = 2, col = c("black", "red"), bty = "n",
+             legend = c("target", "pseudo-target"))
+    }
+  }
+
   utility_shrinkslice(h = h, x = x, y = y, u = u,
                       type = type,
-                      coeffs = coeffs,
                       nbins = nbins,
                       plot = plot,
-                      use_meanSliceWidth = use_meanSliceWidth,
+                      utility_type = utility_type,
                       tol_int = tol_int)
+}
+
+
+
+#' Utility for a Transformed Target
+#'
+#' Evaluates the utility function for a transformed target, which can be one of
+#' Area Under the Curve (AUC) and Mean Slice Width (MSW).
+#'
+#' @param h Function to evaluate the unnormalized transformed target
+#' \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
+#' with argument \eqn{\psi \in (0,1)}.
+#' @param x Numeric vector of histogram locations. (Not used if \code{u} is supplied).
+#' @param y Numeric vector of histogram heights OR function evaluating the curve
+#' for a given value of \code{u}.(Not used if \code{u} is supplied).
+#' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
+#' create histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
+#' @param type String specifying the input type. One of "function", "samples", or "grid".
+#' Use of "function" requires \code{h}. Use of "samples" requires \code{u}.
+#' Use of "grid" requires \code{h} and optionally \code{x}. Default is to use "samples".
+#' @param nbins Number of histogram bins to use (defaults to 30).
+#' @param plot Logical for whether to plot a visualization of the transformed target.
+#' Defaults to \code{FALSE}.
+#' @param utility_type String identifying utility type, either AUC (default) or MSW
+#' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
+#' Defaults to \code{1.0e-3}.
+#' @returns Scalar value of the utility function evaluation.
+#'
+#' @examples
+#' x <- seq(0.001, 0.999, length = 1000)
+#' y <- dbeta(x, 2.0, 2.0)
+#' utility_shrinkslice(x = x, y = y, type = "grid", plot = TRUE, utility_type = "AUC")
+#' utility_shrinkslice(x = x, y = y, type = "grid", plot = TRUE, utility_type = "MSW")
+#' utility_shrinkslice(h = \(x) dbeta(x, 2.0, 2.0), type = "function", plot = TRUE, utility_type = "AUC")
+#' utility_shrinkslice(u = rbeta(1e3, 2.0, 2.0), type = "samples")
+utility_shrinkslice <- function(h = NULL, x = NULL, y = NULL, u = NULL,
+                                type = "samples", # supplied with u. Alternatively, type = "samples", type = "function" (supplied with function h) or "grid" (supplied with x, y)
+                                nbins = 30,
+                                plot = FALSE,
+                                utility_type = "AUC",
+                                tol_int = 1.0e-3) {
+
+  if (type == "function") {
+
+    ## the supplied function here is the transformed target with support on (0, 1)
+
+    if (utility_type == "AUC") {
+
+      util_out <- auc(y = h, nbins = nbins)
+
+    } else if (utility_type == "MSW") {
+
+      util_out <- meanSliceWidth_int(h = h, tol = tol_int)
+
+    }
+
+    if (isTRUE(plot)) {
+
+      x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
+      y <- sapply(x, FUN = h)
+      y <- y / max(y)
+
+    }
+
+  } else if (type %in% c("grid", "samples")) {
+
+    if (type == "samples") {
+
+      if (is.null(x)) {
+
+        x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
+
+      } else {
+
+        stopifnot(length(x) == nbins)
+
+      }
+
+      bins <- c(0.0, x[-c(1, nbins)], 1.0)
+      y <- tabulate( as.numeric(cut(u, breaks = bins)), nbins = nbins )
+      y <- y / max(y)
+
+      stopifnot(sum(y) > 0)
+
+    }
+
+    if (utility_type == "AUC") {
+
+      util_out <- auc(x = x, y = y)
+
+    } else if (utility_type == "MSW") {
+
+      util_out <- meanSliceWidth_grid(x = x, y = y)
+
+    }
+
+  } # currently no support for histogram method (unless supplied as x and y)
+
+  if (isTRUE(plot)) {
+    plot(x, y, type = "l", lwd = 2,
+         xlab = expression(psi), ylab = expression(h(psi)),
+         main = paste0("Transformed target\n", utility_type, ": ",
+                       round(util_out,3))
+         )
+  }
+
+  util_out
 }

@@ -40,3 +40,4 @@ second_derivative <- function( x, h = 1e-5, f, ... ) {
 
   num/denom
 }
+

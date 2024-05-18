@@ -7,8 +7,9 @@
 *.csv
 *.pdf
 *.DS_store
-cucumber.Rcheck
-cucumber_*.tar.gz
+qslice.Rcheck
+qslice_*.tar.gz
+qslice_*.tgz
 /sam_comparison/cauchyTransformation/NormTarget/data
 /sam_comparison/cauchyTransformation/GammaTarget/data
 /sam_comparison/cauchyTransformation/NormTarget/log

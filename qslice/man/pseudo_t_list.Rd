@@ -32,7 +32,7 @@ A list with named components:
 
 \code{p}: function to evaluate the distribution function
 
-\code{t}: text description of the distribution
+\code{txt}: text description of the distribution
 
 \code{params}: returns the parameters passed to the function
 

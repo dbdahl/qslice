@@ -4,13 +4,13 @@
 \alias{slice_elliptical_mv}
 \title{Multivariate Elliptical Slice Sampler}
 \usage{
-slice_elliptical_mv(x, target, mu, Sig, is_chol = FALSE)
+slice_elliptical_mv(x, log_target, mu, Sig, is_chol = FALSE)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the log-target
-density, returning a numeric scalar.}
+\item{log_target}{A function taking numeric scalar that evaluates the
+(potentially unnormalized) log-target density, returning a numeric scalar.}
 
 \item{mu}{Numeric vector with the mean of the normal to be sampled.}
 
@@ -21,8 +21,11 @@ lower-triangular matrix with the Cholesky factor of the covariance matrix
 \item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.}
 }
 \value{
-A list contains two elements: "x" is the new state and "nEvaluations"
-is the number of evaluations of the target function used to obtain the new
+A list with two elements:
+
+\code{x} is the new state.
+
+\code{nEvaluations} is the number of evaluations of the target function used to obtain the new
 state.
 }
 \description{
@@ -35,12 +38,14 @@ n_iter <- 10 # set to 1e3 for more complete illustration
 draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 nEvaluations <- 0L
 for (i in seq.int(2, n_iter)) {
-  out <- slice_elliptical_mv(draws[i - 1,], target = lf,
+  out <- slice_elliptical_mv(draws[i - 1,], log_target = lf,
               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2))
   draws[i,] <- out$x
   nEvaluations <- nEvaluations + out$nEvaluations
 }
-nEvaluations / nrow(draws)
+nEvaluations / (n_iter - 1)
 plot(draws[,1], draws[,2], xlim = c(0, 1))
+hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
+hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 
 }

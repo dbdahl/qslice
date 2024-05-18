@@ -1,4 +1,4 @@
-#' Specify a Pseudo-Target within a given class
+#' Specify a pseudo-target within a given class
 #'
 #' Create a list of functions to evaluate a pseudo-target in a given class
 #' with supplied parameters (usually location and scale). The distribution is optionally
@@ -35,7 +35,7 @@
 #'
 #'  \code{p}: function to evaluate the distribution function
 #'
-#'  \code{t}: text description of the distribution
+#'  \code{txt}: text description of the distribution
 #'
 #'  \code{params}: repeats the \code{params} argument
 #'
@@ -140,7 +140,7 @@ pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
 #'
 #'  \code{p}: function to evaluate the distribution function
 #'
-#'  \code{t}: text description of the distribution
+#'  \code{txt}: text description of the distribution
 #'
 #'  \code{params}: returns the parameters passed to the function
 #'
@@ -159,13 +159,13 @@ pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
 #' pseu$q(0.8060963)
 pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
-  t <- paste0("t(loc = ", round(loc,2), ", sc = ", round(sc,2), ", degf = ", round(degf), ")")
+  txt <- paste0("t(loc = ", round(loc,2), ", sc = ", round(sc,2), ", degf = ", round(degf), ")")
   if (!is.null(name)) {
-    t <- paste0(t, ", ", name)
+    txt <- paste0(txt, ", ", name)
   }
 
   if (lb > -Inf || ub < Inf) {
-    t <- paste0(t, " I(", lb, " < x < ", ub, ")")
+    txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
 
   plb <- pt((lb - loc)/sc, df = degf)
@@ -205,7 +205,7 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
       }
       out
     },
-    t = t,
+    txt = txt,
     params = list(loc = loc, sc = sc, degf = degf),
     lb = lb, ub = ub
   )
@@ -235,7 +235,7 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 #'
 #'  \code{p}: function to evaluate the distribution function
 #'
-#'  \code{t}: text description of the distribution
+#'  \code{txt}: text description of the distribution
 #'
 #'  \code{params}: returns the parameters passed to the function
 #'
@@ -254,15 +254,14 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 #' pseu$q(0.6256659)
 pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
-  t <- paste0("Cauchy(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
+  txt <- paste0("Cauchy(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
   if (!is.null(name)) {
-    t <- paste0(t, ", ", name)
+    txt <- paste0(txt, ", ", name)
   }
 
   if (lb > -Inf || ub < Inf) {
-    t <- paste0(t, " I(", lb, " < x < ", ub, ")")
+    txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
-
 
   plb <- pcauchy((lb - loc)/sc)
   pub <- pcauchy((ub - loc)/sc)
@@ -301,7 +300,7 @@ pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
       }
       out
     },
-    t = t,
+    txt = txt,
     params = list(loc = loc, sc = sc),
     lb = lb, ub = ub
   )
@@ -330,7 +329,7 @@ pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
 #'
 #'  \code{p}: function to evaluate the distribution function
 #'
-#'  \code{t}: text description of the distribution
+#'  \code{txt}: text description of the distribution
 #'
 #'  \code{params}: returns the parameters passed to the function
 #'
@@ -349,15 +348,14 @@ pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
 #' pseu$q(0.8663856)
 pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
-  t <- paste0("normal(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
+  txt <- paste0("normal(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
   if (!is.null(name)) {
-    t <- paste0(t, ", ", name)
+    txt <- paste0(txt, ", ", name)
   }
 
   if (lb > -Inf || ub < Inf) {
-    t <- paste0(t, " I(", lb, " < x < ", ub, ")")
+    txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
-
 
   plb <- pnorm((lb - loc)/sc)
   pub <- pnorm((ub - loc)/sc)
@@ -396,7 +394,7 @@ pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
       }
       out
     },
-    t = t,
+    txt = txt,
     params = list( loc = loc, sc = sc),
     lb = lb, ub = ub
   )
@@ -426,7 +424,7 @@ pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
 #'
 #'  \code{p}: function to evaluate the distribution function
 #'
-#'  \code{t}: text description of the distribution
+#'  \code{txt}: text description of the distribution
 #'
 #'  \code{params}: returns the parameters passed to the function
 #'
@@ -445,13 +443,13 @@ pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
 #' pseu$q(0.635149)
 pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
-  t <- paste0("logistic(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
+  txt <- paste0("logistic(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
   if (!is.null(name)) {
-    t <- paste0(t, ", ", name)
+    txt <- paste0(txt, ", ", name)
   }
 
   if (lb > -Inf || ub < Inf) {
-    t <- paste0(t, " I(", lb, " < x < ", ub, ")")
+    txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
 
   plb <- plogis((lb - loc)/sc)
@@ -491,7 +489,7 @@ pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, na
       }
       out
     },
-    t = t,
+    txt = txt,
     params = list(loc = loc, sc = sc),
     lb = lb, ub = ub
   )
@@ -533,9 +531,9 @@ pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, na
 #' pseu$q(0.25)
 pseudo_beta_list <- function(shape1, shape2, log_p = FALSE, name = NULL) {
 
-  t <- paste0("beta(shape1 = ", round(shape1,2), ", shape2 = ", round(shape2,2), ")")
+  txt <- paste0("beta(shape1 = ", round(shape1,2), ", shape2 = ", round(shape2,2), ")")
   if (!is.null(name)) {
-    t <- paste0(t, ", ", name)
+    txt <- paste0(txt, ", ", name)
   }
 
   list(
@@ -551,7 +549,7 @@ pseudo_beta_list <- function(shape1, shape2, log_p = FALSE, name = NULL) {
     p = function(x) {
       pbeta(x, shape1 = shape1, shape2 = shape2)
     },
-    t = t,
+    txt = txt,
     params = list(shape1 = shape1, shape2 = shape2),
     lb = 0.0, ub = 1.0
   )

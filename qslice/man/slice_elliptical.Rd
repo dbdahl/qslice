@@ -4,21 +4,24 @@
 \alias{slice_elliptical}
 \title{Univariate Elliptical Slice Sampler}
 \usage{
-slice_elliptical(x, target, mu, sigma)
+slice_elliptical(x, log_target, mu, sigma)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{target}{A function taking numeric scalar that evaluates the log-target
-density, returning a numeric scalar.}
+\item{log_target}{A function taking numeric scalar that evaluates the
+(potentially unnormalized) log-target density, returning a numeric scalar.}
 
 \item{mu}{A numeric scalar with the mean of the normal to be sampled}
 
 \item{sigma}{A numeric scalar with the standard deviation of the normal to be sampled.}
 }
 \value{
-A list contains two elements: "x" is the new state and "nEvaluations"
-is the number of evaluations of the target function used to obtain the new
+A list with two elements:
+
+\code{x} is the new state.
+
+\code{nEvaluations} is the number of evaluations of the target function used to obtain the new
 state.
 }
 \description{
@@ -30,11 +33,11 @@ lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 nEvaluations <- 0L
 for (i in seq.int(2, length(draws))) {
-  out <- slice_elliptical(draws[i - 1], target = lf, mu = 0.5, sigma = 1)
+  out <- slice_elliptical(draws[i - 1], log_target = lf, mu = 0.5, sigma = 1)
   draws[i] <- out$x
   nEvaluations <- nEvaluations + out$nEvaluations
 }
-nEvaluations / length(draws)
+nEvaluations / (length(draws) - 1)
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 

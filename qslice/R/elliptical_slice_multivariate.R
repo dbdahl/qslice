@@ -19,15 +19,17 @@
 #' draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, n_iter)) {
-#'   out <- slice_elliptical_mv(draws[i - 1,], target = lf,
+#'   out <- slice_elliptical_mv(draws[i - 1,], log_target = lf,
 #'               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2))
 #'   draws[i,] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
-#' nEvaluations / nrow(draws)
+#' nEvaluations / (n_iter - 1)
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
+#' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
+#' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
-slice_elliptical_mv <- function(x, target, mu, Sig, is_chol = FALSE) {
+slice_elliptical_mv <- function(x, log_target, mu, Sig, is_chol = FALSE) {
   nEvaluations <- 0
 
   k <- length(x)
@@ -42,7 +44,7 @@ slice_elliptical_mv <- function(x, target, mu, Sig, is_chol = FALSE) {
 
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
-    target(x)
+    log_target(x)
   }
   # Step 1
   fx <- f(x)
@@ -69,9 +71,9 @@ slice_elliptical_mv <- function(x, target, mu, Sig, is_chol = FALSE) {
   }
 }
 
-#' General Elliptical Slice Sampler (Multivariate)
+#' Generalized Elliptical Slice Sampler (Multivariate)
 #'
-#' General Elliptical Slice Sampler, Algorithm 2 of Nishihara (2014)
+#' Generalized Elliptical Slice Sampler, Algorithm 2 of Nishihara et al (2014)
 #'
 #' @inheritParams slice_elliptical_mv
 #' @param df Degrees of freedom of Student t pseudo-target.
@@ -88,18 +90,18 @@ slice_elliptical_mv <- function(x, target, mu, Sig, is_chol = FALSE) {
 #' draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, n_iter)) {
-#'   out <- slice_genelliptical_mv(draws[i - 1,], target = lf,
+#'   out <- slice_genelliptical_mv(draws[i - 1,], log_target = lf,
 #'               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2),
 #'               df = 5)
 #'   draws[i,] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
-#' nEvaluations / nrow(draws)
+#' nEvaluations / (n_iter - 1)
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
-slice_genelliptical_mv <- function(x, target, mu, Sig, df, is_chol = FALSE) {
+slice_genelliptical_mv <- function(x, log_target, mu, Sig, df, is_chol = FALSE) {
 
   k <- length(x)
   stopifnot(length(mu) == k)
@@ -116,9 +118,9 @@ slice_genelliptical_mv <- function(x, target, mu, Sig, df, is_chol = FALSE) {
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
 
   lff <- function(xx) {
-    target(xx) + a*log1p(drop(crossprod(forwardsolve(SigL, (xx - mu))))/df)
+    log_target(xx) + a*log1p(drop(crossprod(forwardsolve(SigL, (xx - mu))))/df)
   }
 
-  slice_elliptical_mv(x = x, target = lff, mu = mu, Sig = sqrt(s) * SigL,
+  slice_elliptical_mv(x = x, log_target = lff, mu = mu, Sig = sqrt(s) * SigL,
                       is_chol = is_chol)
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/hyperrectangle_slice.R
 \name{pseudo_condseq_XfromU}
 \alias{pseudo_condseq_XfromU}
-\title{Inverse Transform from Sequence of Conditional Pseudo-Targets}
+\title{Inverse transform from sequence of conditional pseudo-targets}
 \usage{
 pseudo_condseq_XfromU(u, pseudo_init, loc_fn, sc_fn, lb, ub)
 }
@@ -26,15 +26,15 @@ bound of support for each conditional pseudo-target.}
 }
 \value{
 A list containing \code{x} obtained from the sequence of inverse
-cdfs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
+CDFs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
 describing the sequence of conditional pseudo-targets.
 }
 \description{
 Given a vector of from a unit hypercube, map to the original vector using
-a sequence of conditional pseudo-target inverse cdfs.
+a sequence of conditional pseudo-target inverse CDFs.
 The pseudo-target is specified as
 a sequence of growing conditional distributions.
 }
 \details{
-See the documentation for \code{slice_mv_transform_seq()} for examples.
+See the documentation for \code{slice_quantile_mv_seq()} for examples.
 }

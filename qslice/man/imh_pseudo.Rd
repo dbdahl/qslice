@@ -2,14 +2,14 @@
 % Please edit documentation in R/independence_MH.R
 \name{imh_pseudo}
 \alias{imh_pseudo}
-\title{Independence Metropolis-Hastings Sampler}
+\title{Independence Metropolis-Hastings}
 \usage{
-imh_pseudo(x, ltarget, pseudo)
+imh_pseudo(x, log_target, pseudo)
 }
 \arguments{
 \item{x}{The current state (scalar or numeric vector).}
 
-\item{ltarget}{A function taking a scalar or numeric vector that evaluates the log-target
+\item{log_target}{A function taking a scalar or numeric vector that evaluates the log-target
 density, returning a numeric scalar.}
 
 \item{pseudo}{List of length equal to the number of dimensions in \code{x}. Each element is itself a list that specifies
@@ -21,11 +21,11 @@ one, then supply only the inner list specifying the single pseudo-target.}
 A numeric vector with the new state.
 }
 \description{
-Independence Metropolis-Hastings Sampler
+Independence Metropolis-Hastings
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-n_iter <- 10 # set to 1e3 for more complete illustration
+n_iter <- 100 # set to 1e3 for more complete illustration
 draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 nAccpt <- 0L
 pseudo <- list( list(ld = function(x) dbeta(x, 2, 2, log = TRUE),
@@ -34,7 +34,7 @@ pseudo <- list( list(ld = function(x) dbeta(x, 2, 2, log = TRUE),
                      q = function(u) qbeta(u, 2, 2))
 )
 for (i in seq.int(2, n_iter)) {
- out <- imh_pseudo(draws[i - 1, ], ltarget = lf, pseudo = pseudo)
+ out <- imh_pseudo(draws[i - 1, ], log_target = lf, pseudo = pseudo)
  draws[i,] <- out$x
  nAccpt <- nAccpt + out$accpt
  cat(i, '\r')
