@@ -51,18 +51,14 @@ Y[,1] <- rnorm(n, 0.0, 3.0)
 for (i in 1:n) {
   Y[i, 2:K] <- rnorm(K-1, 0.0, exp(0.5*Y[i,1]))
 }
-
 ltarget <- function(x) {
 dnorm(x[1], 0.0, 3.0, log = TRUE) +
   sum(dnorm(x[2:K], 0.0, exp(0.5*x[1]), log = TRUE))
 }
-
 pseudo_control <- list(
-
   loc_fn = function(x) {
     0.0
   },
-
   sc_fn = function(x) {
     if (is.null(x)) {
       out <- 3.0
@@ -71,15 +67,12 @@ pseudo_control <- list(
     }
     out
   },
-
   pseudo_init = pseudo_list(family = "t",
                             params = list(loc = 0.0, sc = 3.0, degf = 20),
                             lb = -Inf, ub = Inf),
-
   lb = rep(-Inf, K),
   ub = rep(Inf, K)
 )
-
 x0 <- runif(K)
 draws <- matrix(rep(x0, n_iter + 1), nrow = n_iter + 1, byrow = TRUE)
 draws_u <- matrix(rep(x0, n_iter), nrow = n_iter, byrow = TRUE)
@@ -92,15 +85,11 @@ for (i in 2:(n_iter + 1)) {
   draws_u[i-1,] <- tmp$u
   n_eval <- n_eval + tmp$nEvaluations
 }
-
 # (es <- coda::effectiveSize(coda::as.mcmc(draws)))
 # mean(es)
-
 n_eval / n_iter
 sapply(1:K, function (k) auc(u = draws_u[,k]))
-
 hist(draws_u[,1])
 plot(draws[,1], draws[,2])
 points(Y[,1], Y[,2], col = "blue", cex = 0.5)
-
 }

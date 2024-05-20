@@ -41,6 +41,10 @@ Defaults to \code{Inf}.}
 
 \item{...}{See \link[stats]{optim}.}
 }
+\value{
+A list with the same outputs as \code{pseudo_list()}; also includes
+\code{opt}, which gives output of \code{optim()}.
+}
 \description{
 Find the location and scale for an approximating pseudo-target via Laplace
 approximation.

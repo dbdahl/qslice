@@ -73,7 +73,8 @@ transformed tartet.
 pseu <- pseudo_list(family = "logistic", params = list(loc = 0.0, sc = 0.66))
 ltarg <- list(ld = function(x) dnorm(x, log = TRUE))
 par(mfrow = c(1,2))
-utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function", nbins = 100, utility_type = "MSW")
+utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function",
+               nbins = 100, utility_type = "MSW")
 samp <- rnorm(10e3)
 utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "AUC")
 utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "MSW")

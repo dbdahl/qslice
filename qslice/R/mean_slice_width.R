@@ -1,15 +1,17 @@
-#' Expected Slice Width (integration)
-#'
-#' Calculate the expected slice width of a slice sampler for an unnormalized
-#' density supported on the unit interval.
-#'
-#' Uses numeric integration to evaluate a double integral.
-#'
-#'
-#' @param h Function evaluating an unnormalized density supported on the unit interval.
-#' @param tol Numerical scalar passed to \code{abs.tol} in the call to \code{integrate()}.
-#'
-#' @importFrom stats integrate
+# #' Expected Slice Width (integration)
+# #'
+# #' Calculate the expected slice width of a slice sampler for an unnormalized
+# #' density supported on the unit interval.
+# #'
+# #' Uses numeric integration to evaluate a double integral.
+# #'
+# #'
+# #' @param h Function evaluating an unnormalized density supported on the unit interval.
+# #' @param tol Numerical scalar passed to \code{abs.tol} in the call to \code{integrate()}.
+# #'
+# #' @importFrom stats integrate
+# #' @keywords internal
+# #'
 meanSliceWidth_int <- function(h, tol = 0.005) {
 
   interval <- c(0.0, 1.0)
@@ -34,18 +36,20 @@ meanSliceWidth_int <- function(h, tol = 0.005) {
 }
 
 
-#' Expected Slice Width (over a grid)
-#'
-#' Calculate the expected slice width of a slice sampler for an unnormalized
-#' density supported on the unit interval.
-#'
-#' Uses an approximation to the density on a grid of \code{(x, y)} pairs.
-#'
-#'
-#' @param x Numeric vector of ordered values ranging from 0 to 1.
-#' @param y Numeric vector of evaluations of the unnormalized density at the
-#' supplied values of \code{x}.
-#'
+# #' Expected Slice Width (over a grid)
+# #'
+# #' Calculate the expected slice width of a slice sampler for an unnormalized
+# #' density supported on the unit interval.
+# #'
+# #' Uses an approximation to the density on a grid of \code{(x, y)} pairs.
+# #'
+# #'
+# #' @param x Numeric vector of ordered values ranging from 0 to 1.
+# #' @param y Numeric vector of evaluations of the unnormalized density at the
+# #' supplied values of \code{x}.
+# #'
+# #' @keywords internal
+# #'
 meanSliceWidth_grid <- function(x, y) {
   n <- length(x)
 

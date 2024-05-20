@@ -184,6 +184,8 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #'
 #' @importFrom stats runif
 #' @export
+#' @example man/examples/pseudo_sequential.R
+#' 
 pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
   # lb and ub must have length K (even though first elements will be ignored)
@@ -209,32 +211,33 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 }
 
 
-#' Inverse transform from sequence of conditional pseudo-targets
-#'
-#' Given a vector of from a unit hypercube, map to the original vector using
-#' a sequence of conditional pseudo-target inverse CDFs.
-#' The pseudo-target is specified as
-#' a sequence of growing conditional distributions.
-#'
-#' See the documentation for \code{slice_quantile_mv_seq()} for examples.
-#'
-#' @param u A numeric vector of values between 0 and 1.
-#' @param pseudo_init A list output from \code{pseudo_list()} describing the
-#' marginal pseudo-target for \code{x[1]}.
-#' @param loc_fn A function that specifies the location of a conditional
-#'  pseudo-target given the elements in \code{x} that precede it.
-#' @param sc_fn A function that specifies the scale of a conditional
-#'  pseudo-target given the elements in \code{x} that precede it
-#' @param lb A numeric vector (same length as \code{x}) specifying the lower
-#'  bound of support for each conditional pseudo-target.
-#' @param ub A numeric vector (same length as \code{x}) specifying the upper
-#'  bound of support for each conditional pseudo-target.
-#'
-#' @return A list containing \code{x} obtained from the sequence of inverse
-#' CDFs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
-#' describing the sequence of conditional pseudo-targets.
-#'
-#' @export
+# #' Inverse transform from sequence of conditional pseudo-targets
+# #'
+# #' Given a vector of from a unit hypercube, map to the original vector using
+# #' a sequence of conditional pseudo-target inverse CDFs.
+# #' The pseudo-target is specified as
+# #' a sequence of growing conditional distributions.
+# #'
+# #' See the documentation for \code{slice_quantile_mv_seq()} for examples.
+# #'
+# #' @param u A numeric vector of values between 0 and 1.
+# #' @param pseudo_init A list output from \code{pseudo_list()} describing the
+# #' marginal pseudo-target for \code{x[1]}.
+# #' @param loc_fn A function that specifies the location of a conditional
+# #'  pseudo-target given the elements in \code{x} that precede it.
+# #' @param sc_fn A function that specifies the scale of a conditional
+# #'  pseudo-target given the elements in \code{x} that precede it
+# #' @param lb A numeric vector (same length as \code{x}) specifying the lower
+# #'  bound of support for each conditional pseudo-target.
+# #' @param ub A numeric vector (same length as \code{x}) specifying the upper
+# #'  bound of support for each conditional pseudo-target.
+# #'
+# #' @return A list containing \code{x} obtained from the sequence of inverse
+# #' CDFs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
+# #' describing the sequence of conditional pseudo-targets.
+# #' 
+# #' @keywords internal
+# #'
 pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
   # lb and ub must have length K (even though first elements will be ignored)
@@ -296,67 +299,7 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #'
 #' @importFrom stats runif
 #' @export
-#' @examples
-#' # Funnel distribution from Neal (2003).
-#' K <- 10
-#' n_iter <- 50 # MCMC iterations; set to 10e3 for more complete illustration
-#' n <- 100 # number of iid samples from the target; set to 10e3 for more complete illustration
-#' Y <- matrix(NA, nrow = n, ncol = K) # iid samples from the target
-#' Y[,1] <- rnorm(n, 0.0, 3.0)
-#' for (i in 1:n) {
-#'   Y[i, 2:K] <- rnorm(K-1, 0.0, exp(0.5*Y[i,1]))
-#' }
-#'
-#' ltarget <- function(x) {
-#' dnorm(x[1], 0.0, 3.0, log = TRUE) +
-#'   sum(dnorm(x[2:K], 0.0, exp(0.5*x[1]), log = TRUE))
-#' }
-#'
-#' pseudo_control <- list(
-#'
-#'   loc_fn = function(x) {
-#'     0.0
-#'   },
-#'
-#'   sc_fn = function(x) {
-#'     if (is.null(x)) {
-#'       out <- 3.0
-#'     } else {
-#'       out <- exp(0.5*x[1])
-#'     }
-#'     out
-#'   },
-#'
-#'   pseudo_init = pseudo_list(family = "t",
-#'                             params = list(loc = 0.0, sc = 3.0, degf = 20),
-#'                             lb = -Inf, ub = Inf),
-#'
-#'   lb = rep(-Inf, K),
-#'   ub = rep(Inf, K)
-#' )
-#'
-#' x0 <- runif(K)
-#' draws <- matrix(rep(x0, n_iter + 1), nrow = n_iter + 1, byrow = TRUE)
-#' draws_u <- matrix(rep(x0, n_iter), nrow = n_iter, byrow = TRUE)
-#' n_eval <- 0
-#' for (i in 2:(n_iter + 1)) {
-#'   tmp <- slice_quantile_mv_seq(draws[i-1,],
-#'                                 log_target = ltarget,
-#'                                 pseudo_control = pseudo_control)
-#'   draws[i,] <- tmp$x
-#'   draws_u[i-1,] <- tmp$u
-#'   n_eval <- n_eval + tmp$nEvaluations
-#' }
-#'
-#' # (es <- coda::effectiveSize(coda::as.mcmc(draws)))
-#' # mean(es)
-#'
-#' n_eval / n_iter
-#' sapply(1:K, function (k) auc(u = draws_u[,k]))
-#'
-#' hist(draws_u[,1])
-#' plot(draws[,1], draws[,2])
-#' points(Y[,1], Y[,2], col = "blue", cex = 0.5)
+#' @example man/examples/pseudo_sequential.R
 #'
 slice_quantile_mv_seq <- function(x, log_target, pseudo_control) {
 

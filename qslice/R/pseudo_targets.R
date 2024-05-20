@@ -44,6 +44,11 @@
 #'  \code{ub}: upper boundary of support
 #'
 #' @export
+#' @importFrom stats pt qt dt
+#' @importFrom stats pcauchy qcauchy dcauchy
+#' @importFrom stats pnorm qnorm dnorm
+#' @importFrom stats plogis qlogis dlogis
+#' @importFrom stats pbeta qbeta dbeta
 #' @examples
 #' pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, degf = 5),
 #'                     lb = 0.0, ub = Inf) # half t
@@ -126,47 +131,41 @@ pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
 
 
 
-#' Specify a Pseudo-Target within the Student-t Class
-#'
-#' Create a list of functions to evaluate a pseudo-target in the Student-t class
-#' with supplied location, scale, and degrees of freedom. The distribution is optionally
-#' truncated to specified bounds (and renormalized).
-#'
-#'
-#' @param loc Numeric scalar giving the location parameter.
-#' @param sc Positive numeric scalar giving the scale parameter.
-#' @param degf Positive numeric scalar giving the degrees of freedom parameter.
-#' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
-#' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
-#' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
-#' @param name String appending optional message to the textual name of the distribution.
-#' @returns A list with named components:
-#'
-#'  \code{d}: function to evaluate the density
-#'
-#'  \code{ld}: function to evaluate the log density
-#'
-#'  \code{q}: function to evaluate the quantile function
-#'
-#'  \code{p}: function to evaluate the distribution function
-#'
-#'  \code{txt}: text description of the distribution
-#'
-#'  \code{params}: returns the parameters passed to the function
-#'
-#'  \code{lb}: lower boundary of support
-#'
-#'  \code{ub}: upper boundary of support
-#'
-#' @importFrom stats pt qt dt
-# ' @export
-#' @examples
-#' pseu <- pseudo_t_list(loc = 0.0, sc = 1.0, degf = 5.0, lb = 0.0, ub = Inf)
-#' str(pseu)
-#' pseu$d(1.5)
-#' pseu$ld(1.5)
-#' pseu$p(1.5)
-#' pseu$q(0.8060963)
+# #' Specify a Pseudo-Target within the Student-t Class
+# #'
+# #' Create a list of functions to evaluate a pseudo-target in the Student-t class
+# #' with supplied location, scale, and degrees of freedom. The distribution is optionally
+# #' truncated to specified bounds (and renormalized).
+# #'
+# #'
+# #' @param loc Numeric scalar giving the location parameter.
+# #' @param sc Positive numeric scalar giving the scale parameter.
+# #' @param degf Positive numeric scalar giving the degrees of freedom parameter.
+# #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
+# #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
+# #' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
+# #' @param name String appending optional message to the textual name of the distribution.
+# #' @returns A list with named components:
+# #'
+# #'  \code{d}: function to evaluate the density
+# #'
+# #'  \code{ld}: function to evaluate the log density
+# #'
+# #'  \code{q}: function to evaluate the quantile function
+# #'
+# #'  \code{p}: function to evaluate the distribution function
+# #'
+# #'  \code{txt}: text description of the distribution
+# #'
+# #'  \code{params}: returns the parameters passed to the function
+# #'
+# #'  \code{lb}: lower boundary of support
+# #'
+# #'  \code{ub}: upper boundary of support
+# #'
+# #' @importFrom stats pt qt dt
+# #' @keywords internal
+# #'
 pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
   txt <- paste0("t(loc = ", round(loc,2), ", sc = ", round(sc,2), ", degf = ", round(degf), ")")
@@ -222,46 +221,40 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 }
 
 
-#' Specify a Cauchy Pseudo-Target
-#'
-#' Create a list of functions to evaluate a Cauchy (Student-t with one degree of freedom) pseudo-target
-#' with supplied location, scale. The distribution is optionally
-#' truncated to specified bounds (and renormalized).
-#'
-#'
-#' @param loc Numeric scalar giving the location parameter.
-#' @param sc Positive numeric scalar giving the scale parameter.
-#' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
-#' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
-#' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
-#' @param name String appending optional message to the textual name of the distribution.
-#' @returns A list with named components:
-#'
-#'  \code{d}: function to evaluate the density
-#'
-#'  \code{ld}: function to evaluate the log density
-#'
-#'  \code{q}: function to evaluate the quantile function
-#'
-#'  \code{p}: function to evaluate the distribution function
-#'
-#'  \code{txt}: text description of the distribution
-#'
-#'  \code{params}: returns the parameters passed to the function
-#'
-#'  \code{lb}: lower boundary of support
-#'
-#'  \code{ub}: upper boundary of support
-#'
-#' @importFrom stats pcauchy qcauchy dcauchy
-# ' @export
-#' @examples
-#' pseu <- pseudo_cauchy_list(loc = 0.0, sc = 1.0, lb = 0.0, ub = Inf) # half Cauchy
-#' str(pseu)
-#' pseu$d(1.5)
-#' pseu$ld(1.5)
-#' pseu$p(1.5)
-#' pseu$q(0.6256659)
+# #' Specify a Cauchy Pseudo-Target
+# #'
+# #' Create a list of functions to evaluate a Cauchy (Student-t with one degree of freedom) pseudo-target
+# #' with supplied location, scale. The distribution is optionally
+# #' truncated to specified bounds (and renormalized).
+# #'
+# #'
+# #' @param loc Numeric scalar giving the location parameter.
+# #' @param sc Positive numeric scalar giving the scale parameter.
+# #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
+# #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
+# #' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
+# #' @param name String appending optional message to the textual name of the distribution.
+# #' @returns A list with named components:
+# #'
+# #'  \code{d}: function to evaluate the density
+# #'
+# #'  \code{ld}: function to evaluate the log density
+# #'
+# #'  \code{q}: function to evaluate the quantile function
+# #'
+# #'  \code{p}: function to evaluate the distribution function
+# #'
+# #'  \code{txt}: text description of the distribution
+# #'
+# #'  \code{params}: returns the parameters passed to the function
+# #'
+# #'  \code{lb}: lower boundary of support
+# #'
+# #'  \code{ub}: upper boundary of support
+# #'
+# #' @importFrom stats pcauchy qcauchy dcauchy
+# #' @keywords internal
+# #'
 pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
   txt <- paste0("Cauchy(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
@@ -316,46 +309,40 @@ pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
   )
 }
 
-#' Specify a normal Pseudo-Target
-#'
-#' Create a list of functions to evaluate a normal pseudo-target
-#' with supplied location, scale. The distribution is optionally
-#' truncated to specified bounds (and renormalized).
-#'
-#'
-#' @param loc Numeric scalar giving the location parameter.
-#' @param sc Positive numeric scalar giving the scale parameter.
-#' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
-#' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
-#' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
-#' @param name String appending optional message to the textual name of the distribution.
-#' @returns A list with named components:
-#'
-#'  \code{d}: function to evaluate the density
-#'
-#'  \code{ld}: function to evaluate the log density
-#'
-#'  \code{q}: function to evaluate the quantile function
-#'
-#'  \code{p}: function to evaluate the distribution function
-#'
-#'  \code{txt}: text description of the distribution
-#'
-#'  \code{params}: returns the parameters passed to the function
-#'
-#'  \code{lb}: lower boundary of support
-#'
-#'  \code{ub}: upper boundary of support
-#'
-#' @importFrom stats pnorm qnorm dnorm
-# ' @export
-#' @examples
-#' pseu <- pseudo_normal_list(loc = 0.0, sc = 1.0, lb = 0.0, ub = Inf) # half normal
-#' str(pseu)
-#' pseu$d(1.5)
-#' pseu$ld(1.5)
-#' pseu$p(1.5)
-#' pseu$q(0.8663856)
+# #' Specify a normal Pseudo-Target
+# #'
+# #' Create a list of functions to evaluate a normal pseudo-target
+# #' with supplied location, scale. The distribution is optionally
+# #' truncated to specified bounds (and renormalized).
+# #'
+# #'
+# #' @param loc Numeric scalar giving the location parameter.
+# #' @param sc Positive numeric scalar giving the scale parameter.
+# #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
+# #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
+# #' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
+# #' @param name String appending optional message to the textual name of the distribution.
+# #' @returns A list with named components:
+# #'
+# #'  \code{d}: function to evaluate the density
+# #'
+# #'  \code{ld}: function to evaluate the log density
+# #'
+# #'  \code{q}: function to evaluate the quantile function
+# #'
+# #'  \code{p}: function to evaluate the distribution function
+# #'
+# #'  \code{txt}: text description of the distribution
+# #'
+# #'  \code{params}: returns the parameters passed to the function
+# #'
+# #'  \code{lb}: lower boundary of support
+# #'
+# #'  \code{ub}: upper boundary of support
+# #'
+# #' @importFrom stats pnorm qnorm dnorm
+# #' @keywords internal
+# #'
 pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
   txt <- paste0("normal(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
@@ -411,46 +398,40 @@ pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
 }
 
 
-#' Specify a logistic Pseudo-Target
-#'
-#' Create a list of functions to evaluate a logistic pseudo-target
-#' with supplied location, scale. The distribution is optionally
-#' truncated to specified bounds (and renormalized).
-#'
-#'
-#' @param loc Numeric scalar giving the location parameter.
-#' @param sc Positive numeric scalar giving the scale parameter.
-#' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
-#' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
-#' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
-#' @param name String appending optional message to the textual name of the distribution.
-#' @returns A list with named components:
-#'
-#'  \code{d}: function to evaluate the density
-#'
-#'  \code{ld}: function to evaluate the log density
-#'
-#'  \code{q}: function to evaluate the quantile function
-#'
-#'  \code{p}: function to evaluate the distribution function
-#'
-#'  \code{txt}: text description of the distribution
-#'
-#'  \code{params}: returns the parameters passed to the function
-#'
-#'  \code{lb}: lower boundary of support
-#'
-#'  \code{ub}: upper boundary of support
-#'
-#' @importFrom stats plogis qlogis dlogis
-# ' @export
-#' @examples
-#' pseu <- pseudo_logistic_list(loc = 0.0, sc = 1.0, lb = 0.0, ub = Inf)
-#' str(pseu)
-#' pseu$d(1.5)
-#' pseu$ld(1.5)
-#' pseu$p(1.5)
-#' pseu$q(0.635149)
+# #' Specify a logistic Pseudo-Target
+# #'
+# #' Create a list of functions to evaluate a logistic pseudo-target
+# #' with supplied location, scale. The distribution is optionally
+# #' truncated to specified bounds (and renormalized).
+# #'
+# #'
+# #' @param loc Numeric scalar giving the location parameter.
+# #' @param sc Positive numeric scalar giving the scale parameter.
+# #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
+# #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
+# #' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
+# #' @param name String appending optional message to the textual name of the distribution.
+# #' @returns A list with named components:
+# #'
+# #'  \code{d}: function to evaluate the density
+# #'
+# #'  \code{ld}: function to evaluate the log density
+# #'
+# #'  \code{q}: function to evaluate the quantile function
+# #'
+# #'  \code{p}: function to evaluate the distribution function
+# #'
+# #'  \code{txt}: text description of the distribution
+# #'
+# #'  \code{params}: returns the parameters passed to the function
+# #'
+# #'  \code{lb}: lower boundary of support
+# #'
+# #'  \code{ub}: upper boundary of support
+# #'
+# #' @importFrom stats plogis qlogis dlogis
+# #' @keywords internal
+# #'
 pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
 
   txt <- paste0("logistic(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
@@ -506,39 +487,33 @@ pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, na
 }
 
 
-#' Specify a beta Pseudo-Target
-#'
-#' Create a list of functions to evaluate a beta pseudo-target
-#' with supplied shape parameters.
-#'
-#'
-#' @param shape1 Positive numeric scalar giving the first shape parameter.
-#' @param shape2 Positive numeric scalar giving the second shape parameter.
-#' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
-#' @param name String appending optional message to the textual name of the distribution.
-#' @returns A list with named components:
-#'
-#'  \code{d}: function to evaluate the density
-#'
-#'  \code{ld}: function to evaluate the log density
-#'
-#'  \code{q}: function to evaluate the quantile function
-#'
-#'  \code{p}: function to evaluate the distribution function
-#'
-#'  \code{t}: text description of the distribution
-#'
-#'  \code{params}: returns the parameters passed to the function
-#'
-#' @importFrom stats pbeta qbeta dbeta
-# ' @export
-#' @examples
-#' pseu <- pseudo_beta_list(shape1 = 2.0, shape2 = 1.0)
-#' str(pseu)
-#' pseu$d(0.5)
-#' pseu$ld(0.5)
-#' pseu$p(0.5)
-#' pseu$q(0.25)
+# #' Specify a beta Pseudo-Target
+# #'
+# #' Create a list of functions to evaluate a beta pseudo-target
+# #' with supplied shape parameters.
+# #'
+# #'
+# #' @param shape1 Positive numeric scalar giving the first shape parameter.
+# #' @param shape2 Positive numeric scalar giving the second shape parameter.
+# #' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
+# #' @param name String appending optional message to the textual name of the distribution.
+# #' @returns A list with named components:
+# #'
+# #'  \code{d}: function to evaluate the density
+# #'
+# #'  \code{ld}: function to evaluate the log density
+# #'
+# #'  \code{q}: function to evaluate the quantile function
+# #'
+# #'  \code{p}: function to evaluate the distribution function
+# #'
+# #'  \code{t}: text description of the distribution
+# #'
+# #'  \code{params}: returns the parameters passed to the function
+# #'
+# #' @importFrom stats pbeta qbeta dbeta
+# #' @keywords internal
+# #'
 pseudo_beta_list <- function(shape1, shape2, log_p = FALSE, name = NULL) {
 
   txt <- paste0("beta(shape1 = ", round(shape1,2), ", shape2 = ", round(shape2,2), ")")

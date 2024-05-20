@@ -44,11 +44,15 @@
 #' @returns Scalar value of the utility function evaluation.
 #'
 #' @export
+#' @importFrom graphics legend lines
+#' @importFrom graphics curve points segments text
+#' @importFrom stats integrate
 #' @examples
 #' pseu <- pseudo_list(family = "logistic", params = list(loc = 0.0, sc = 0.66))
 #' ltarg <- list(ld = function(x) dnorm(x, log = TRUE))
 #' par(mfrow = c(1,2))
-#' utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function", nbins = 100, utility_type = "MSW")
+#' utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function",
+#'                nbins = 100, utility_type = "MSW")
 #' samp <- rnorm(10e3)
 #' utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "AUC")
 #' utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "MSW")
@@ -118,37 +122,31 @@ utility_pseudo <- function(pseudo, log_target = NULL, samples = NULL,
 
 
 
-#' Utility for a Transformed Target
-#'
-#' Evaluates the utility function for a transformed target, which can be one of
-#' Area Under the Curve (AUC) and Mean Slice Width (MSW).
-#'
-#' @param h Function to evaluate the unnormalized transformed target
-#' \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
-#' with argument \eqn{\psi \in (0,1)}.
-#' @param x Numeric vector of histogram locations. (Not used if \code{u} is supplied).
-#' @param y Numeric vector of histogram heights OR function evaluating the curve
-#' for a given value of \code{u}.(Not used if \code{u} is supplied).
-#' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
-#' create histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
-#' @param type String specifying the input type. One of "function", "samples", or "grid".
-#' Use of "function" requires \code{h}. Use of "samples" requires \code{u}.
-#' Use of "grid" requires \code{h} and optionally \code{x}. Default is to use "samples".
-#' @param nbins Number of histogram bins to use (defaults to 30).
-#' @param plot Logical for whether to plot a visualization of the transformed target.
-#' Defaults to \code{FALSE}.
-#' @param utility_type String identifying utility type, either AUC (default) or MSW
-#' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
-#' Defaults to \code{1.0e-3}.
-#' @returns Scalar value of the utility function evaluation.
-#'
-#' @examples
-#' x <- seq(0.001, 0.999, length = 1000)
-#' y <- dbeta(x, 2.0, 2.0)
-#' utility_shrinkslice(x = x, y = y, type = "grid", plot = TRUE, utility_type = "AUC")
-#' utility_shrinkslice(x = x, y = y, type = "grid", plot = TRUE, utility_type = "MSW")
-#' utility_shrinkslice(h = \(x) dbeta(x, 2.0, 2.0), type = "function", plot = TRUE, utility_type = "AUC")
-#' utility_shrinkslice(u = rbeta(1e3, 2.0, 2.0), type = "samples")
+# #' Utility for a Transformed Target
+# #'
+# #' Evaluates the utility function for a transformed target, which can be one of
+# #' Area Under the Curve (AUC) and Mean Slice Width (MSW).
+# #'
+# #' @param h Function to evaluate the unnormalized transformed target
+# #' \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
+# #' with argument \eqn{\psi \in (0,1)}.
+# #' @param x Numeric vector of histogram locations. (Not used if \code{u} is supplied).
+# #' @param y Numeric vector of histogram heights OR function evaluating the curve
+# #' for a given value of \code{u}.(Not used if \code{u} is supplied).
+# #' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
+# #' create histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
+# #' @param type String specifying the input type. One of "function", "samples", or "grid".
+# #' Use of "function" requires \code{h}. Use of "samples" requires \code{u}.
+# #' Use of "grid" requires \code{h} and optionally \code{x}. Default is to use "samples".
+# #' @param nbins Number of histogram bins to use (defaults to 30).
+# #' @param plot Logical for whether to plot a visualization of the transformed target.
+# #' Defaults to \code{FALSE}.
+# #' @param utility_type String identifying utility type, either AUC (default) or MSW
+# #' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
+# #' Defaults to \code{1.0e-3}.
+# #' @returns Scalar value of the utility function evaluation.
+# #' @keywords internal
+# #'
 utility_shrinkslice <- function(h = NULL, x = NULL, y = NULL, u = NULL,
                                 type = "samples", # supplied with u. Alternatively, type = "samples", type = "function" (supplied with function h) or "grid" (supplied with x, y)
                                 nbins = 30,
