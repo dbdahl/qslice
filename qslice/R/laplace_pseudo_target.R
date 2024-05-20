@@ -18,6 +18,8 @@
 #' Defaults to \code{Inf}.
 #' @param maxit See \link[stats]{optim}.
 #' @param ... See \link[stats]{optim}.
+#' @returns A list with the same outputs as \code{pseudo_list()}; also includes
+#' \code{opt}, which gives output of \code{optim()}.
 #'
 #' @export
 #' @importFrom stats optim
