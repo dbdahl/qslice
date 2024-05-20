@@ -12,13 +12,21 @@ imh_pseudo(x, log_target, pseudo)
 \item{log_target}{A function taking a scalar or numeric vector that evaluates the log-target
 density, returning a numeric scalar.}
 
-\item{pseudo}{List of length equal to the number of dimensions in \code{x}. Each element is itself a list that specifies
-the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density
-and \code{q} that evaluates the quantile (inverse-CDF) function. If the dimension of \code{x} is
-one, then supply only the inner list specifying the single pseudo-target.}
+\item{pseudo}{List specifying the pseudo-target (proposal distribution). If the list length is
+equal to the number of dimensions in \code{x}, each element is itself a list that specifies
+the pseudo-target for the corresponding dimension with functions \code{ld}
+that evaluates the log density for that dimension,
+and \code{q} that evaluates the quantile (inverse-CDF) function for that dimension.
+If the dimension of \code{x} is one, then supply only the inner list
+specifying the single pseudo-target.
+
+If \code{x} is a vector but a single pseudo-target is supplied, the list must
+contain a log-density function \code{ld} that accepts a vector, and a \code{r}
+function that takes no arguments and generates a single multivariate draw from the
+proposal distribution.}
 }
 \value{
-A numeric vector with the new state.
+A list containing the new state, \code{x}, and whether the proposed value was accepted, logical \code{accpt}.
 }
 \description{
 Independence Metropolis-Hastings

@@ -12,7 +12,7 @@ slice_elliptical_mv(x, log_target, mu, Sig, is_chol = FALSE)
 \item{log_target}{A function taking numeric scalar that evaluates the
 (potentially unnormalized) log-target density, returning a numeric scalar.}
 
-\item{mu}{Numeric vector with the mean of the normal to be sampled.}
+\item{mu}{Numeric vector with the mean of the supporting normal distribution.}
 
 \item{Sig}{Positive definite covariance matrix. Alternatively, a
 lower-triangular matrix with the Cholesky factor of the covariance matrix

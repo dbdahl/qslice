@@ -3,10 +3,18 @@
 #' @param x The current state (scalar or numeric vector).
 #' @param log_target A function taking a scalar or numeric vector that evaluates the log-target
 #'   density, returning a numeric scalar.
-#' @param pseudo List of length equal to the number of dimensions in \code{x}. Each element is itself a list that specifies
-#' the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density
-#' and \code{q} that evaluates the quantile (inverse-CDF) function. If the dimension of \code{x} is
-#' one, then supply only the inner list specifying the single pseudo-target.
+#' @param pseudo List specifying the pseudo-target (proposal distribution). If the list length is
+#' equal to the number of dimensions in \code{x}, each element is itself a list that specifies
+#' the pseudo-target for the corresponding dimension with functions \code{ld}
+#' that evaluates the log density for that dimension,
+#' and \code{q} that evaluates the quantile (inverse-CDF) function for that dimension.
+#' If the dimension of \code{x} is one, then supply only the inner list
+#' specifying the single pseudo-target.
+#'
+#' If \code{x} is a vector but a single pseudo-target is supplied, the list must
+#' contain a log-density function \code{ld} that accepts a vector, and a \code{r}
+#' function that takes no arguments and generates a single multivariate draw from the
+#' proposal distribution.
 #' @return A list containing the new state, \code{x}, and whether the proposed value was accepted, logical \code{accpt}.
 #' @importFrom stats runif
 #' @export
@@ -63,13 +71,26 @@ imh_pseudo_univ <- function(x, log_target, pseudo, K = K) {
 
 imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
 
-  lfx0 <- log_target(x) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x[k])))
+  Kpseu <- length(pseudo)
 
-  u1 <- runif(K)
+  if (Kpseu == K) {
 
-  x1 <- sapply(1:K, function(k) pseudo[[k]]$q(u1[k]))
+    lfx0 <- log_target(x) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x[k])))
 
-  lfx1 <- log_target(x1) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x1[k])))
+    u1 <- runif(K)
+    x1 <- sapply(1:K, function(k) pseudo[[k]]$q(u1[k]))
+    lfx1 <- log_target(x1) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x1[k])))
+
+  } else if (Kpseu == 1) {
+
+    lfx0 <- log_target(x) - pseudo$ld(x)
+    x1 <- pseudo$r()
+    lfx1 <- log_target(x1) - pseudo$ld(x1)
+
+  } else {
+    stop("imh_pseudo_mv() requires the pseudo (proposal) list to be of length 1 or
+         length matching that of input vector x.")
+  }
 
   lprob_accpt <- lfx1 - lfx0
   lu_accpt <- log(runif(1))

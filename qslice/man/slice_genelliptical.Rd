@@ -12,9 +12,9 @@ slice_genelliptical(x, log_target, mu, sigma, df)
 \item{log_target}{A function taking numeric scalar that evaluates the
 (potentially unnormalized) log-target density, returning a numeric scalar.}
 
-\item{mu}{A numeric scalar with the mean of the normal to be sampled}
+\item{mu}{A numeric scalar with the mean of the supporting normal distribution.}
 
-\item{sigma}{A numeric scalar with the standard deviation of the normal to be sampled.}
+\item{sigma}{A numeric scalar with the standard deviation of the supporting normal distribution.}
 
 \item{df}{Degrees of freedom of Student t pseudo-target.}
 }

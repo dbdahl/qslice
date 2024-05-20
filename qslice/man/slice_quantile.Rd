@@ -4,7 +4,7 @@
 \alias{slice_quantile}
 \title{Quantile Slice Sampler}
 \usage{
-slice_quantile(x, log_target, pseudo_log_pdf, pseudo_inv_cdf)
+slice_quantile(x, log_target, pseudo)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
@@ -12,9 +12,11 @@ slice_quantile(x, log_target, pseudo_log_pdf, pseudo_inv_cdf)
 \item{log_target}{A function taking numeric scalar that evaluates the
 (potentially unnormalized) log-target density, returning a numeric scalar.}
 
-\item{pseudo_log_pdf}{Function to evaluate the log PDF of the pseudo-target.}
+\item{pseudo}{List containing two functions specifying the pseudo-target distribution:
 
-\item{pseudo_inv_cdf}{Function to evaluate the inverse CDF of the pseudo-target.}
+\code{ld} evaluates the log density for a scalar input, and
+
+\code{q} evaluates the quantile (inverse-CDF) function for an input in (0,1).}
 }
 \value{
 A list containing three elements:
@@ -32,12 +34,12 @@ Single update using a quantile slice sampler of Heiner et al (2024+).
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-pseudoLogPDF <- function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE)
-pseudoInvCDF <- function(u) qbeta(u, shape1 = 1, shape2 = 1)
+pseu <- list(ld = function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE),
+             q = function(u) qbeta(u, shape1 = 1, shape2 = 1))
 draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 nEvaluations <- 0L
 for (i in seq.int(2, length(draws))) {
-  out <- slice_quantile(draws[i - 1], log_target = lf, pseudoLogPDF, pseudoInvCDF)
+  out <- slice_quantile(draws[i - 1], log_target = lf, pseudo = pseu)
   draws[i] <- out$x
   nEvaluations <- nEvaluations + out$nEvaluations
 }
