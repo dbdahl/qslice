@@ -5,7 +5,7 @@
 #' elliptical slice sampler of Murray, Adams, MacKay (2010).
 #'
 #' @inherit slice_stepping_out
-#' @param mu Numeric vector with the mean of the normal to be sampled.
+#' @param mu Numeric vector with the mean of the supporting normal distribution.
 #' @param Sig Positive definite covariance matrix. Alternatively, a
 #' lower-triangular matrix with the Cholesky factor of the covariance matrix
 #' (for faster computation).

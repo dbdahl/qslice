@@ -78,8 +78,11 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #' Single update using a quantile slice sampler of Heiner et al (2024+).
 #'
 #' @inherit slice_stepping_out
-#' @param pseudo_log_pdf Function to evaluate the log PDF of the pseudo-target.
-#' @param pseudo_inv_cdf Function to evaluate the inverse CDF of the pseudo-target.
+#' @param pseudo List containing two functions specifying the pseudo-target distribution:
+#'
+#' \code{ld} evaluates the log density for a scalar input, and
+#'
+#' \code{q} evaluates the quantile (inverse-CDF) function for an input in (0,1).
 #'
 #' @return A list containing three elements:
 #'
@@ -95,12 +98,12 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' pseudoLogPDF <- function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE)
-#' pseudoInvCDF <- function(u) qbeta(u, shape1 = 1, shape2 = 1)
+#' pseu <- list(ld = function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE),
+#'              q = function(u) qbeta(u, shape1 = 1, shape2 = 1))
 #' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
-#'   out <- slice_quantile(draws[i - 1], log_target = lf, pseudoLogPDF, pseudoInvCDF)
+#'   out <- slice_quantile(draws[i - 1], log_target = lf, pseudo = pseu)
 #'   draws[i] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
@@ -108,11 +111,11 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #' plot(density(draws), xlim = c(0, 1))
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
-slice_quantile <- function(x, log_target, pseudo_log_pdf, pseudo_inv_cdf) {
+slice_quantile <- function(x, log_target, pseudo) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
-    log_target(x) - pseudo_log_pdf(x)
+    log_target(x) - pseudo$ld(x)
   }
   # Step 1
   y <- log(runif(1)) + f(x)
@@ -121,7 +124,7 @@ slice_quantile <- function(x, log_target, pseudo_log_pdf, pseudo_inv_cdf) {
   R <- 1
   repeat {
     u1 <- runif(1, L, R)
-    x1 <- pseudo_inv_cdf(u1)
+    x1 <- pseudo$q(u1)
     if (y < f(x1)) {
       return(list(x = x1, u = u1, nEvaluations = nEvaluations))
     }
@@ -193,8 +196,8 @@ slice_latent <- function(x, s, log_target, rate) {
 #' elliptical slice sampler of Murray, Adams, MacKay (2010).
 #'
 #' @inherit slice_stepping_out
-#' @param mu A numeric scalar with the mean of the normal to be sampled
-#' @param sigma A numeric scalar with the standard deviation of the normal to be sampled.
+#' @param mu A numeric scalar with the mean of the supporting normal distribution.
+#' @param sigma A numeric scalar with the standard deviation of the supporting normal distribution.
 #'
 #' @importFrom stats runif rnorm
 #' @export

@@ -1,27 +1,4 @@
 
-############## Independence Metropolis Hastings ################
-
-IMH_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
-  draws <- numeric(n_iter + 1)
-  draws[1] <- x_0
-  int.x <- x_0
-  n.accept <- 0
-  for(i in 2:(n_iter + 1)){
-    ## proposed draw
-    x.dot <- pseudo_inv_cdf(runif(1, 0, 1))
-    logr <- lf(x.dot) - lf(int.x) + pseudo_lpdf(int.x) - pseudo_lpdf(x.dot)
-
-    u <- runif(1, 0, 1)
-    if(log(u) < logr){
-      int.x <- x.dot
-      n.accept <- n.accept + 1
-    }
-    draws[i] <- int.x
-  }
-  list(draws = draws[-1], counter = 2*n_iter, n.accept = n.accept, n_samp = n_iter)
-}
-
-
 ############## Random Walk ################
 
 random_walk_sampler <- function(n_iter, lf, support, x_0, c) {
@@ -31,12 +8,13 @@ random_walk_sampler <- function(n_iter, lf, support, x_0, c) {
   n.accept <- 0
   for(i in 2:(n_iter + 1)){
     ## proposed draw
-    x.dot <- rnorm(1, int.x, c)
-    if(x.dot >= support[1] && x.dot <= support[2]){
+    x.dot <- rnorm(1, mean = int.x, sd = c)
+    if (x.dot >= support[1] && x.dot <= support[2]) {
 
       logr <- lf(x.dot) - lf(int.x)
 
       u <- runif(1, 0, 1)
+
       if(log(u) < logr){
         int.x <- x.dot
         n.accept <- n.accept + 1
@@ -46,36 +24,6 @@ random_walk_sampler <- function(n_iter, lf, support, x_0, c) {
   }
   list(draws = draws[-1], counter = 2*n_iter, n.accept = n.accept, n_samp = n_iter)
 }
-
-
-# function to evaluate Random Walk
-# random_walk_time_eval <- function(n_iter,
-#                                   lf_func,
-#                                   support,
-#                                   x_0,
-#                                   c) {
-#
-#   print(paste0(x_0, "|", c))
-#
-#   time <- system.time({
-#     mcmc_out <- random_walk_sampler(n_iter = n_iter,
-#                                     lf = lf,
-#                                     support = support,
-#                                     x_0 = x_0,
-#                                     c = c)
-#   })
-#
-#   ESS <- min(n_iter, coda::effectiveSize(coda::as.mcmc(mcmc_out$draws)))
-#   temp_tbl <- data.frame(nEval = mcmc_out$counter, EffSamp = ESS,
-#                          acceptanceRate = mcmc_out$n.accept/n_iter,
-#                          userTime = time['user.self'],
-#                          sysTime = time['sys.self'],
-#                          elapsedTime = time['elapsed'])
-#
-#   temp_tbl$Draws <- list(mcmc_out$draws)
-#   temp_tbl
-# }
-
 
 
 ############ Stepping Out Eval #############
@@ -89,36 +37,13 @@ stepping_out_sampler <- function(n_iter, lf, x_0, w, max) {
   draws[1] <- x_0
 
   for ( i in 2:(n_iter + 1)) {
-    out <- slice_stepping_out(x = draws[i-1], target = lf, w = w, max = max)
+    out <- slice_stepping_out(x = draws[i-1], log_target = lf, w = w, max = max)
     draws[i] <- out$x
     counter <- counter + out$nEvaluations
   }
 
   list(draws = draws[-1], counter = counter, n_samp = n_iter)
 }
-
-
-# stepping_out_time_eval <- function(n_iter,
-#                                    lf_func,
-#                                    x_0,
-#                                    w,
-#                                    max = Inf) {
-#   print(paste0(x_0, "|", w))
-#
-#   time <- system.time({
-#     mcmc_out <- stepping_out_sampler(n_iter = n_iter, lf = lf_func, x_0 = x_0,
-#                                      w = w, max = max)
-#   })
-#
-#   ESS <- min(n_iter, coda::effectiveSize(coda::as.mcmc(mcmc_out$draws)))
-#   temp_tbl <- data.frame(nEval = mcmc_out$counter, EffSamp = ESS,
-#                          userTime = time['user.self'],
-#                          sysTime = time['sys.self'],
-#                          elapsedTime = time['elapsed'])
-#   temp_tbl$Draws <- list(mcmc_out$draws)
-#   temp_tbl
-# }
-
 
 
 ################ GESS ##############
@@ -131,8 +56,8 @@ gess_sampler <- function(n_iter, lf, x_0, mu, sigma, degf) {
   draws[1] <- x_0
 
   for ( i in 2:(n_iter + 1) ) {
-    out <- slice_generalized_elliptical(x = draws[i-1], target = lf,
-                                                mu = mu, sigma = sigma, df = degf)
+    out <- slice_genelliptical(x = draws[i-1], log_target = lf,
+                               mu = mu, sigma = sigma, df = degf)
 
     draws[i] <- out$x
     counter <- counter + out$nEvaluations
@@ -142,32 +67,7 @@ gess_sampler <- function(n_iter, lf, x_0, mu, sigma, degf) {
 }
 
 
-# gess_time_eval <- function(n_iter,
-#                            lf_func,
-#                            x_0,
-#                            mu_value,
-#                            sigma_value,
-#                            df_value) {
-#
-#   print(paste0(x_0, "|", mu_value, "|", sigma_value, "|", df_value))
-#   time <- system.time({
-#     mcmc_out <- gess_sampler(n_iter = n_iter, lf = lf_func, x_0 = x_0,
-#                              mu = mu_value, sigma = sigma_value, degf = df_value)
-#   })
-#
-#   ESS <- min(n_iter, coda::effectiveSize(coda::as.mcmc(mcmc_out$draws)))
-#   temp_tbl <- data.frame(nEval = mcmc_out$counter, EffSamp = ESS,
-#                          userTime = time['user.self'],
-#                          sysTime = time['sys.self'],
-#                          elapsedTime = time['elapsed'])
-#   temp_tbl$Draws <- list(mcmc_out$draws)
-#   temp_tbl
-# }
-
-
-
 ############ Latent Eval ############
-
 
 # creating a function to evaluate the latent slice sampler
 
@@ -178,7 +78,8 @@ latent_sampler <- function(n_iter, lf, x_0, s_0, rate) {
   latents[1] <- s_0
 
   for ( i in 2:(n_iter + 1) ) {
-    out <- slice_latent(draws[i-1], latents[i-1], target = lf, rate = rate)
+    out <- slice_latent(x = draws[i-1], s = latents[i-1],
+                        log_target = lf, rate = rate)
     draws[i] <- out$x
     latents[i] <- out$s
     counter <- counter + out$nEvaluations
@@ -188,34 +89,10 @@ latent_sampler <- function(n_iter, lf, x_0, s_0, rate) {
 }
 
 
-# latent_time_eval <- function(n_iter,
-#                              lf_func,
-#                              x_0,
-#                              s_0,
-#                              rate_value) {
-#
-#   print(paste0(x_0, "|", s_0, "|", rate_value))
-#
-#   time <- system.time({
-#     mcmc_out <- latent_sampler(n_iter = n_iter, lf = lf_func,
-#                                x_0 = x_0, s_0 = s_0, rate = rate_value)
-#   })
-#
-#   ESS <- min(n_iter, coda::effectiveSize(coda::as.mcmc(mcmc_out$draws)))
-#   temp_tbl <- data.frame(nEval = mcmc_out$counter, EffSamp = ESS,
-#                          userTime = time['user.self'],
-#                          sysTime = time['sys.self'],
-#                          elapsedTime = time['elapsed'])
-#   temp_tbl$Draws <- list(mcmc_out$draws)
-#   temp_tbl
-# }
 
+############## Quantile Slice Eval ################
 
-############## Transform Eval ################
-
-# function to evaluate transform procedure
-
-transform_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
+quantile_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
 
   counter <- 0
   draws <- numeric(n_iter + 1)
@@ -224,9 +101,9 @@ transform_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
   Tdraws[1] <- 0
 
   for ( i in 2:(n_iter + 1) ) {
-    out <- slice_transform(x = draws[i-1],
-                           target=lf, pseudo_log_pdf = pseudo_lpdf,
-                           pseudo_inv_cdf = pseudo_inv_cdf)
+    out <- slice_quantile(x = draws[i-1],
+                          log_target = lf, pseudo_log_pdf = pseudo_lpdf,
+                          pseudo_inv_cdf = pseudo_inv_cdf)
     draws[i] <- out$x
     Tdraws[i] <- out$u
     counter <- counter + out$nEvaluations
@@ -236,29 +113,19 @@ transform_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
 }
 
 
-# transform_time_eval <- function(n_iter,
-#                                 lf_func,
-#                                 x_0,
-#                                 pseudo_pdf_log,
-#                                 pseudo_cdf_inv) {
-#
-#   print(paste0(x_0, "|", deparse1(pseudo_cdf_inv)))
-#
-#   time <- system.time({
-#     mcmc_out <- transform_sampler(n_iter = n_iter, lf = lf_func, x_0 = x_0,
-#                                   pseudo_lpdf = pseudo_pdf_log,
-#                                   pseudo_inv_cdf = pseudo_cdf_inv)
-#   })
-#
-#   ESS <- min(n_iter, coda::effectiveSize(coda::as.mcmc(mcmc_out$draws)))
-#   temp_tbl <- data.frame(nEval = mcmc_out$counter, EffSamp = ESS,
-#                          userTime = time['user.self'],
-#                          sysTime = time['sys.self'],
-#                          elapsedTime = time['elapsed'])
-#   temp_tbl$Draws <- list(mcmc_out$draws)
-#   temp_tbl$TDraws <- list(mcmc_out$Tdraws)
-#   temp_tbl
-# }
+############## Independence Metropolis Hastings ################
+
+IMH_sampler <- function(n_iter, lf, x_0, pseudo) {
+  draws <- numeric(n_iter + 1)
+  draws[1] <- x_0
+  n.accept <- 0
+  for(i in 2:(n_iter + 1)){
+    tmp <- imh_pseudo(x = draws[i-1], log_target = lf, pseudo = pseudo)
+    draws[i] <- tmp$x
+    n.accept <- tmp$accpt
+  }
+  list(draws = draws[-1], counter = 2*n_iter, n.accept = n.accept, n_samp = n_iter)
+}
 
 
 
@@ -327,11 +194,11 @@ sampler_time_eval <- function(type,
   } else if (type == "Qslice") {
 
     time <- system.time({
-      mcmc_out <- transform_sampler(n_iter = n_iter,
-                                    lf = lf_func,
-                                    x_0 = x_0,
-                                    pseudo_lpdf = settings$ld,
-                                    pseudo_inv_cdf = settings$q)
+      mcmc_out <- quantile_sampler(n_iter = n_iter,
+                                   lf = lf_func,
+                                   x_0 = x_0,
+                                   pseudo_lpdf = settings$ld,
+                                   pseudo_inv_cdf = settings$q)
     })
 
   } else if (type == "imh") {
@@ -340,8 +207,7 @@ sampler_time_eval <- function(type,
       mcmc_out <- IMH_sampler(n_iter = n_iter,
                               lf = lf_func,
                               x_0 = x_0,
-                              pseudo_lpdf = settings$ld,
-                              pseudo_inv_cdf = settings$q)
+                              pseudo = pseudo)
     })
 
   }

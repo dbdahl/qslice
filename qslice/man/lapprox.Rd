@@ -37,9 +37,9 @@ Defaults to \code{-Inf}.}
 \item{ub}{Numeric scalar giving the value of right truncation of the resulting pseudo-target.
 Defaults to \code{Inf}.}
 
-\item{maxit}{See \link[coda]{optim}.}
+\item{maxit}{See \link[stats]{optim}.}
 
-\item{...}{See \link[coda]{optim}.}
+\item{...}{See \link[stats]{optim}.}
 }
 \description{
 Find the location and scale for an approximating pseudo-target via Laplace

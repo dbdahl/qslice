@@ -7,7 +7,7 @@
 #' the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density
 #' and \code{q} that evaluates the quantile (inverse-CDF) function. If the dimension of \code{x} is
 #' one, then supply only the inner list specifying the single pseudo-target.
-#' @return A numeric vector with the new state.
+#' @return A list containing the new state, \code{x}, and whether the proposed value was accepted, logical \code{accpt}.
 #' @importFrom stats runif
 #' @export
 #' @examples
