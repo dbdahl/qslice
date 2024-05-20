@@ -112,6 +112,8 @@ pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
     out <- pseudo_beta_list(shape1 = params$shape1, shape2 = params$shape2,
                             log_p = log_p, name = name)
 
+  } else {
+    stop("Pseudo-target family supplied to pseudo_list() is not supported.")
   }
 
   out$family <- family
