@@ -84,8 +84,13 @@ pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
 
   if (family == "t") {
 
-    out <- pseudo_t_list(loc = params$loc, sc = params$sc, degf = params$degf,
-                         lb = lb, ub = ub, log_p = log_p, name = name)
+    if (params$degf == 1) {
+      out <- pseudo_cauchy_list(loc = params$loc, sc = params$sc,
+                                lb = lb, ub = ub, log_p = log_p, name = name)
+    } else {
+      out <- pseudo_t_list(loc = params$loc, sc = params$sc, degf = params$degf,
+                           lb = lb, ub = ub, log_p = log_p, name = name)
+    }
 
   } else if (family == "cauchy") {
 
