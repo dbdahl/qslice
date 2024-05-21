@@ -185,7 +185,7 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' @importFrom stats runif
 #' @export
 #' @example man/examples/pseudo_sequential.R
-#' 
+#'
 pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
   # lb and ub must have length K (even though first elements will be ignored)
@@ -211,33 +211,34 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 }
 
 
-# #' Inverse transform from sequence of conditional pseudo-targets
-# #'
-# #' Given a vector of from a unit hypercube, map to the original vector using
-# #' a sequence of conditional pseudo-target inverse CDFs.
-# #' The pseudo-target is specified as
-# #' a sequence of growing conditional distributions.
-# #'
-# #' See the documentation for \code{slice_quantile_mv_seq()} for examples.
-# #'
-# #' @param u A numeric vector of values between 0 and 1.
-# #' @param pseudo_init A list output from \code{pseudo_list()} describing the
-# #' marginal pseudo-target for \code{x[1]}.
-# #' @param loc_fn A function that specifies the location of a conditional
-# #'  pseudo-target given the elements in \code{x} that precede it.
-# #' @param sc_fn A function that specifies the scale of a conditional
-# #'  pseudo-target given the elements in \code{x} that precede it
-# #' @param lb A numeric vector (same length as \code{x}) specifying the lower
-# #'  bound of support for each conditional pseudo-target.
-# #' @param ub A numeric vector (same length as \code{x}) specifying the upper
-# #'  bound of support for each conditional pseudo-target.
-# #'
-# #' @return A list containing \code{x} obtained from the sequence of inverse
-# #' CDFs, and \code{pseudo_seq}, a list output from \code{pseu_list()}
-# #' describing the sequence of conditional pseudo-targets.
-# #' 
-# #' @keywords internal
-# #'
+#' Inverse transform from sequence of conditional pseudo-targets
+#'
+#' Given a vector of from a unit hypercube, map to the original (back-transformed)
+#' vector using a sequence of conditional pseudo-target inverse CDFs.
+#' The pseudo-target is specified as
+#' a sequence of growing conditional distributions.
+#'
+#' See the documentation for \code{slice_quantile_mv_seq()} for examples.
+#'
+#' @param u A numeric vector of values between 0 and 1.
+#' @param pseudo_init A list output from \code{pseudo_list()} describing the
+#' marginal pseudo-target for \code{x[1]}.
+#' @param loc_fn A function that specifies the location of a conditional
+#'  pseudo-target given the elements in \code{x} that precede it.
+#' @param sc_fn A function that specifies the scale of a conditional
+#'  pseudo-target given the elements in \code{x} that precede it
+#' @param lb A numeric vector (same length as \code{x}) specifying the lower
+#'  bound of support for each conditional pseudo-target.
+#' @param ub A numeric vector (same length as \code{x}) specifying the upper
+#'  bound of support for each conditional pseudo-target.
+#'
+#' @return A list containing \code{x} obtained from the sequence of inverse
+#' CDFs, and \code{pseudo_seq}, a list output from \code{pseudo_list()}
+#' describing the sequence of conditional pseudo-targets.
+#'
+#' @export
+#' @example man/examples/pseudo_sequential.R
+#'
 pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
   # lb and ub must have length K (even though first elements will be ignored)
