@@ -30,7 +30,7 @@ returned value (also referred to as psi).
 target function used to obtain the new state.
 }
 \description{
-Single update using a quantile slice sampler of Heiner et al (2024+).
+Single update using a quantile slice sampler of Heiner et al. (2024+).
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
@@ -47,4 +47,7 @@ nEvaluations / (length(draws) - 1)
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 
+}
+\references{
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}.
 }

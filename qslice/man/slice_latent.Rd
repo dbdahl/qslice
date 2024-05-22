@@ -45,3 +45,6 @@ plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 
 }
+\references{
+Li, Y. and Walker, S. G. (2023), "A latent slice sampling algorithm," \emph{Computational Statistics and Data Analysis}, 179, 107652. \doi{https://doi.org/10.1016/j.csda.2022.107652}
+}

@@ -82,7 +82,7 @@ Other outputs repeating inputs.
 }
 \description{
 Find an optimal pseudo-target in a specified family to approximate
-the given (unnormalized) target. Optimize over the selected utility function.
+the given (unnormalized) target (Heiner et al., 2024+). Optimize over the selected utility function.
 }
 \details{
 Optionally supply samples from the target distribution.
@@ -104,4 +104,7 @@ par(mfrow = c(1,2))
                 family = "cauchy", utility_type = "AUC",
                 nbins = 30, plot = TRUE,
                 verbose = FALSE))
+}
+\references{
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
 }

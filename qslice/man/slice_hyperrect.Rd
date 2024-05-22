@@ -49,3 +49,6 @@ hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 
 }
+\references{
+Neal, R. M. (2003), "Slice sampling," \emph{The Annals of Statistics}, 31, 705-767. \doi{https://doi.org/10.1214/aos/1056562461}
+}

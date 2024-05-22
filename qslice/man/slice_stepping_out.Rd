@@ -47,3 +47,6 @@ plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 
 }
+\references{
+Neal, R. M. (2003), "Slice sampling," \emph{The Annals of Statistics}, 31, 705-767. \doi{https://doi.org/10.1214/aos/1056562461}
+}

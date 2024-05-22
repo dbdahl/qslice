@@ -27,7 +27,7 @@ A list contains two elements:
 state.
 }
 \description{
-Single update using the generalized elliptical slice sampler of Nishihara et al (2014).
+Single update using the generalized elliptical slice sampler of Nishihara et al. (2014).
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
@@ -43,4 +43,7 @@ nEvaluations / (length(draws) - 1)
 plot(density(draws), xlim = c(0, 1))
 curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 
+}
+\references{
+Nishihara, R., Murray, I., and Adams, R. P. (2014), "Parallel MCMC with Generalized Elliptical Slice Sampling," \emph{Journal of Machine Learning Research}, 15, 2087-2112. \url{https://jmlr.org/papers/v15/nishihara14a.html}
 }

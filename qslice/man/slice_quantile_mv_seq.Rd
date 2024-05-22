@@ -38,7 +38,7 @@ with the returned value, and "nEvaluations is the number of evaluations of the
 target function used to obtain the new state.
 }
 \description{
-Quantile slice sampler for a random vector. The pseudo-target is specified as
+Quantile slice sampler for a random vector (Heiner et al., 2024+). The pseudo-target is specified as
 a sequence of growing conditional distributions.
 }
 \examples{
@@ -92,4 +92,7 @@ sapply(1:K, function (k) auc(u = draws_u[,k]))
 hist(draws_u[,1])
 plot(draws[,1], draws[,2])
 points(Y[,1], Y[,2], col = "blue", cex = 0.5)
+}
+\references{
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
 }

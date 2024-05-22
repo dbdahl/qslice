@@ -23,7 +23,7 @@ inverse CDF method, and "nEvaluations is the number of evaluations of the
 target function used to obtain the new state.
 }
 \description{
-Quantile slice sampler for a random vector. The pseudo-target is specified
+Quantile slice sampler for a random vector (Heiner et al., 2024+). The pseudo-target is specified
 through independent univariate distributions.
 }
 \examples{
@@ -58,4 +58,7 @@ hist(draws_u[,1], freq = FALSE)
 hist(draws_u[,2], freq = FALSE)
 auc(u = draws_u[,1])
 auc(u = draws_u[,2])
+}
+\references{
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
 }

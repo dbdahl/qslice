@@ -21,7 +21,11 @@
 #' \code{nEvaluations} is the number of evaluations of the target function used to obtain the new
 #'   state.
 #'
+#' @references
+#' Neal, R. M. (2003), "Slice sampling," *The Annals of Statistics*, 31, 705-767. \doi{https://doi.org/10.1214/aos/1056562461}
+#'
 #' @importFrom stats runif
+#'
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
@@ -75,7 +79,7 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 
 #' Quantile Slice Sampler
 #'
-#' Single update using a quantile slice sampler of Heiner et al (2024+).
+#' Single update using a quantile slice sampler of Heiner et al. (2024+).
 #'
 #' @inherit slice_stepping_out
 #' @param pseudo List containing two functions specifying the pseudo-target distribution:
@@ -94,7 +98,11 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #' \code{nEvaluations} is the number of evaluations of the
 #'   target function used to obtain the new state.
 #'
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
+#'
 #' @importFrom stats runif
+#'
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
@@ -148,7 +156,12 @@ slice_quantile <- function(x, log_target, pseudo) {
 #'
 #' \code{nEvaluations} is the number of evaluations of the
 #'   target function used to obtain the new state.
+#'
+#' @references
+#' Li, Y. and Walker, S. G. (2023), "A latent slice sampling algorithm," *Computational Statistics and Data Analysis*, 179, 107652. \doi{https://doi.org/10.1016/j.csda.2022.107652}
+#'
 #' @importFrom stats runif
+#'
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
@@ -192,14 +205,20 @@ slice_latent <- function(x, s, log_target, rate) {
 
 #' Univariate Elliptical Slice Sampler
 #'
-#' Algorithm 1 of Nishihara et al (2014) of the
-#' elliptical slice sampler of Murray, Adams, MacKay (2010).
+#' Algorithm 1 of Nishihara et al. (2014) of the
+#' elliptical slice sampler of Murray et al. (2010).
 #'
 #' @inherit slice_stepping_out
 #' @param mu A numeric scalar with the mean of the supporting normal distribution.
 #' @param sigma A numeric scalar with the standard deviation of the supporting normal distribution.
 #'
+#' @references
+#' Murray, I., Adams, R., and MacKay, D., (2010), "Elliptical Slice Sampling," in *Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics*, JMLR Workshop and Conference Proceedings. \url{https://proceedings.mlr.press/v9/murray10a}
+#'
+#' Nishihara, R., Murray, I., and Adams, R. P. (2014), "Parallel MCMC with Generalized Elliptical Slice Sampling," *Journal of Machine Learning Research*, 15, 2087-2112. \url{https://jmlr.org/papers/v15/nishihara14a.html}
+#'
 #' @importFrom stats runif rnorm
+#'
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
@@ -242,7 +261,7 @@ slice_elliptical <- function(x, log_target, mu, sigma) {
 
 #' Generalized Elliptical Slice Sampler (univariate)
 #'
-#' Single update using the generalized elliptical slice sampler of Nishihara et al (2014).
+#' Single update using the generalized elliptical slice sampler of Nishihara et al. (2014).
 #'
 #' @inheritParams slice_stepping_out
 #' @inheritParams slice_elliptical
@@ -255,7 +274,11 @@ slice_elliptical <- function(x, log_target, mu, sigma) {
 #' \code{nEvaluations} is the number of evaluations of the target function used to obtain the new
 #'   state.
 #'
+#' @references
+#' Nishihara, R., Murray, I., and Adams, R. P. (2014), "Parallel MCMC with Generalized Elliptical Slice Sampling," *Journal of Machine Learning Research*, 15, 2087-2112. \url{https://jmlr.org/papers/v15/nishihara14a.html}
+#'
 #' @importFrom stats dt rgamma
+#'
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)

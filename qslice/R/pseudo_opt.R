@@ -1,7 +1,7 @@
 #' Optimal pseudo-target for a given target
 #'
 #' Find an optimal pseudo-target in a specified family to approximate
-#' the given (unnormalized) target. Optimize over the selected utility function.
+#' the given (unnormalized) target (Heiner et al., 2024+). Optimize over the selected utility function.
 #'
 #' Optionally supply samples from the target distribution.
 #'
@@ -42,9 +42,13 @@
 #'
 #'  Other outputs repeating inputs.
 #'
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#'
 #' @importFrom stats sd optim
-#' @export
 #' @importFrom stats sd
+#'
+#' @export
 #' @examples
 #' (pseu <- pseudo_opt(samples = rnorm(1e3), type = "samples",
 #'                family = "t", utility_type = "AUC",

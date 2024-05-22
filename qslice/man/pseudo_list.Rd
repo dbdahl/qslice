@@ -52,7 +52,7 @@ A list with named components:
 \description{
 Create a list of functions to evaluate a pseudo-target in a given class
 with supplied parameters (usually location and scale). The distribution is optionally
-truncated to specified bounds (and renormalized).
+truncated to specified bounds (and renormalized). See Heiner et al. (2024+).
 }
 \details{
 The supported classes of pseudo-targets include: \code{t}, \code{cauchy},
@@ -93,4 +93,7 @@ pseu$d(0.5)
 pseu$ld(0.5)
 pseu$p(0.5)
 pseu$q(0.25)
+}
+\references{
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
 }

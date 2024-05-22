@@ -2,7 +2,7 @@
 #'
 #' Create a list of functions to evaluate a pseudo-target in a given class
 #' with supplied parameters (usually location and scale). The distribution is optionally
-#' truncated to specified bounds (and renormalized).
+#' truncated to specified bounds (and renormalized). See Heiner et al. (2024+).
 #'
 #' The supported classes of pseudo-targets include: \code{t}, \code{cauchy},
 #' \code{normal}, \code{logistic}, and \code{beta}.
@@ -43,12 +43,16 @@
 #'
 #'  \code{ub}: upper boundary of support
 #'
-#' @export
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#'
 #' @importFrom stats pt qt dt
 #' @importFrom stats pcauchy qcauchy dcauchy
 #' @importFrom stats pnorm qnorm dnorm
 #' @importFrom stats plogis qlogis dlogis
 #' @importFrom stats pbeta qbeta dbeta
+#'
+#' @export
 #' @examples
 #' pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, degf = 5),
 #'                     lb = 0.0, ub = Inf) # half t

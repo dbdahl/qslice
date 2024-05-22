@@ -21,8 +21,9 @@
 #' @returns A list with the same outputs as \code{pseudo_list()}; also includes
 #' \code{opt}, which gives output of \code{optim()}.
 #'
-#' @export
 #' @importFrom stats optim
+#'
+#' @export
 #' @examples
 #' pseu <- lapprox(function(x) dnorm(x, log = TRUE),
 #'   family = "t",

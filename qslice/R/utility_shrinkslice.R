@@ -2,7 +2,7 @@
 #'
 #' Takes a pseudo-target and target (or samples from the target) and
 #' evaluates the utility function for the transformed target, which can be one of
-#' Area Under the Curve (AUC) and Mean Slice Width (MSW).
+#' Area Under the Curve (AUC) and Mean Slice Width (MSW). See Heiner et al. (2024+).
 #'
 #' Optionally plot the target and pseudo-target densities as well as the
 #' transformed tartet.
@@ -43,10 +43,13 @@
 #' Defaults to \code{1.0e-3}.
 #' @returns Scalar value of the utility function evaluation.
 #'
-#' @export
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
+#'
 #' @importFrom graphics legend lines
 #' @importFrom graphics curve points segments text
 #' @importFrom stats integrate
+#' @export
 #' @examples
 #' pseu <- pseudo_list(family = "logistic", params = list(loc = 0.0, sc = 0.66))
 #' ltarg <- list(ld = function(x) dnorm(x, log = TRUE))
@@ -107,7 +110,7 @@ utility_pseudo <- function(pseudo, log_target = NULL, samples = NULL,
            xlab = "x", ylab = "density (unnormalized)",
            main = paste0("Pseudo-target:\n", pseudo$txt))
       lines(x_plot, y_pseu_plot, lwd = 2, col = "red")
-      legend("topright", lwd = 2, col = c("black", "red"), bty = "n",
+      legend("topleft", lwd = 2, col = c("black", "red"), bty = "n",
              legend = c("target", "pseudo-target"))
     }
   }

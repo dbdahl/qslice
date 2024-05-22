@@ -63,7 +63,7 @@ Scalar value of the utility function evaluation.
 \description{
 Takes a pseudo-target and target (or samples from the target) and
 evaluates the utility function for the transformed target, which can be one of
-Area Under the Curve (AUC) and Mean Slice Width (MSW).
+Area Under the Curve (AUC) and Mean Slice Width (MSW). See Heiner et al. (2024+).
 }
 \details{
 Optionally plot the target and pseudo-target densities as well as the
@@ -78,4 +78,7 @@ utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function",
 samp <- rnorm(10e3)
 utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "AUC")
 utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "MSW")
+}
+\references{
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}.
 }

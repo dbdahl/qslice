@@ -23,12 +23,12 @@ lower-triangular matrix with the Cholesky factor of the covariance matrix
 \item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.}
 }
 \value{
-A list contains two elements: "x" is the new state and "nEvaluations"
+A list contains two elements: \code{x} is the new state and \code{nEvaluations}
 is the number of evaluations of the target function used to obtain the new
 state.
 }
 \description{
-Generalized Elliptical Slice Sampler, Algorithm 2 of Nishihara et al (2014)
+Generalized Elliptical Slice Sampler, Algorithm 2 of Nishihara et al. (2014)
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
@@ -47,4 +47,7 @@ plot(draws[,1], draws[,2], xlim = c(0, 1))
 hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 
+}
+\references{
+Nishihara, R., Murray, I., and Adams, R. P. (2014), "Parallel MCMC with Generalized Elliptical Slice Sampling," \emph{Journal of Machine Learning Research}, 15, 2087-2112. \url{https://jmlr.org/papers/v15/nishihara14a.html}
 }

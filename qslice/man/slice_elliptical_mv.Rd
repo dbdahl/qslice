@@ -29,8 +29,8 @@ A list with two elements:
 state.
 }
 \description{
-Algorithm 1 of Nishihara et al (2014) of the
-elliptical slice sampler of Murray, Adams, MacKay (2010).
+Algorithm 1 of Nishihara et al. (2014) of the
+elliptical slice sampler of Murray et al. (2010).
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
@@ -48,4 +48,9 @@ plot(draws[,1], draws[,2], xlim = c(0, 1))
 hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 
+}
+\references{
+Murray, I., Adams, R., and MacKay, D., (2010), "Elliptical Slice Sampling," in \emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics}, JMLR Workshop and Conference Proceedings. \url{https://proceedings.mlr.press/v9/murray10a}
+
+Nishihara, R., Murray, I., and Adams, R. P. (2014), "Parallel MCMC with Generalized Elliptical Slice Sampling," \emph{Journal of Machine Learning Research}, 15, 2087-2112. \url{https://jmlr.org/papers/v15/nishihara14a.html}
 }

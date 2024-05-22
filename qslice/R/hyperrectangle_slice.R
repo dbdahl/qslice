@@ -19,8 +19,12 @@
 #'   is the number of evaluations of the target function used to obtain the new
 #'   state.
 #'
+#' @references
+#' Neal, R. M. (2003), "Slice sampling," *The Annals of Statistics*, 31, 705-767. \doi{https://doi.org/10.1214/aos/1056562461}
+#'
 #' @importFrom stats runif
 #' @importFrom graphics curve points segments text
+#'
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
@@ -89,7 +93,7 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 
 #' Multivariate Quantile Slice Sampler
 #'
-#' Quantile slice sampler for a random vector. The pseudo-target is specified
+#' Quantile slice sampler for a random vector (Heiner et al., 2024+). The pseudo-target is specified
 #' through independent univariate distributions.
 #'
 #' @inherit slice_hyperrect
@@ -101,7 +105,11 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 #'   inverse CDF method, and "nEvaluations is the number of evaluations of the
 #'   target function used to obtain the new state.
 #'
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#'
 #' @importFrom stats runif
+#'
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
@@ -159,7 +167,7 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' Sequence of conditional pseudo-targets from a realization
 #'
 #' Given a realization of a random vector, generate a the corresponding
-#' sequence of conditional pseudo-target inverse CDFs.
+#' sequence of conditional pseudo-target inverse CDFs (Heiner et al., 2024+).
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
@@ -182,7 +190,11 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' CDFs, and \code{pseudo_t_seq}, a list output from \code{pseu_list()}
 #' describing the sequence of conditional pseudo-targets.
 #'
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#'
 #' @importFrom stats runif
+#'
 #' @export
 #' @example man/examples/pseudo_sequential.R
 #'
@@ -270,7 +282,7 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
 #' Multivariate Quantile Slice Sampler from a sequence of conditional pseudo-targets
 #'
-#' Quantile slice sampler for a random vector. The pseudo-target is specified as
+#' Quantile slice sampler for a random vector (Heiner et al., 2024+). The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
 #' @inherit slice_hyperrect
@@ -298,7 +310,11 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #'   with the returned value, and "nEvaluations is the number of evaluations of the
 #'   target function used to obtain the new state.
 #'
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#'
 #' @importFrom stats runif
+#'
 #' @export
 #' @example man/examples/pseudo_sequential.R
 #'
