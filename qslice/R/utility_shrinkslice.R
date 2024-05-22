@@ -21,11 +21,11 @@
 #' @param type String specifying the input type. One of "function", "samples", or "grid".
 #' Default is to use "samples".
 #'
-#' Use of "function" requires \code{log_target}.
+#' Use of "function" requires specification of \code{log_target}.
 #'
-#' Use of "samples" requires \code{samples}.
+#' Use of "samples" requires specification of \code{samples}.
 #'
-#' Use of "grid" requires \code{x}.
+#' Use of "grid" requires specification of \code{x}.
 #'
 #' @param x Numeric vector specifying grid (on (0,1)) over which to evaluate
 #' the transformed target. Defaults to \code{NULL}.
@@ -39,7 +39,7 @@
 #'
 #' Defaults to \code{TRUE}.
 #' @param utility_type String identifying utility type, either AUC (default) or MSW.
-#' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
+#' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate}.
 #' Defaults to \code{1.0e-3}.
 #' @returns Scalar value of the utility function evaluation.
 #'

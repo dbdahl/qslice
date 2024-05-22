@@ -22,7 +22,7 @@ lapprox(
 \item{init}{Numeric scalar for an initial value (used in optimization).}
 
 \item{family}{String specifying the family of distributions for the pseudo-target.
-Can be any of the families accepted by \code{pseudo_list()}.}
+Can be any of the families accepted by \link[qslice]{pseudo_list}.}
 
 \item{params}{List specifying the parameters for the pseudo-target to be used.
 The location and scale parameters will be replaced with the Laplace approximation and
@@ -42,8 +42,8 @@ Defaults to \code{Inf}.}
 \item{...}{See \link[stats]{optim}.}
 }
 \value{
-A list with the same outputs as \code{pseudo_list()}; also includes
-\code{opt}, which gives output of \code{optim()}.
+A list with the same outputs as \link[qslice]{pseudo_list}; also includes
+\code{opt}, which gives output of \link[stats]{optim}.
 }
 \description{
 Find the location and scale for an approximating pseudo-target via Laplace

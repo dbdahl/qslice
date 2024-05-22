@@ -11,11 +11,11 @@
 #' @param type String specifying the input type. One of "function", "samples", or "grid".
 #' Default is to use "samples".
 #'
-#' Use of "function" requires \code{log_target}.
+#' Use of "function" requires specification of \code{log_target}.
 #'
-#' Use of "samples" requires \code{samples}.
+#' Use of "samples" requires specification of \code{samples}.
 #' @param family String specifying the family of distributions for the pseudo-target.
-#' Can be any of the families accepted by \code{pseudo_list()}.
+#' Can be any of the families accepted by \link[qslice]{pseudo_list}.
 #' @param degf Numeric vector of degrees of freedom values to try (only if \code{family = "t"}.
 #' Defaults to \code{c(1, 5, 20)}.
 #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
@@ -23,22 +23,22 @@
 #' @param nbins Positive integer specifying the number of histogram bins if using "samples" or "grid".
 #' Defaults to 100.
 #' @param tol_opt Positive numeric scalar that passes to \code{reltol} in the call
-#' to \code{optim()}. Defaults to \code{1.0e-6}.
-#' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()}.
+#' to \link[stats]{optim}. Defaults to \code{1.0e-6}.
+#' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate}.
 #' Defaults to \code{1.0e-3}.
 #' @param verbose Logical for whether to print intermediate steps of optimization.
 #' Defaults to \code{FALSE}.
 #' @returns A list with named components:
 #'
 #'  \code{pseudo}: a list with functions corresponding to the selected pseudo-target;
-#'  output of \code{pseudo_list()}.
+#'  output of \link[qslice]{pseudo_list}.
 #'
 #'  \code{utility}: value of the utility function using the selected pseudo-target;
-#'  output of \code{utility_pseudo()}.
+#'  output of \link[qslice]{utility_pseudo}.
 #'
 #'  \code{utility_type}: repeats the input specifying the utility type.
 #'
-#'  \code{opt}: output of \code{optim()}.
+#'  \code{opt}: output of \link[stats]{optim}.
 #'
 #'  Other outputs repeating inputs.
 #'

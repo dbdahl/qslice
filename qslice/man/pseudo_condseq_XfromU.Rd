@@ -9,7 +9,7 @@ pseudo_condseq_XfromU(u, pseudo_init, loc_fn, sc_fn, lb, ub)
 \arguments{
 \item{u}{A numeric vector of values between 0 and 1.}
 
-\item{pseudo_init}{A list output from \code{pseudo_list()} describing the
+\item{pseudo_init}{A list output from \link[qslice]{pseudo_list} describing the
 marginal pseudo-target for \code{x[1]}.}
 
 \item{loc_fn}{A function that specifies the location of a conditional
@@ -26,8 +26,8 @@ bound of support for each conditional pseudo-target.}
 }
 \value{
 A list containing \code{x} obtained from the sequence of inverse
-CDFs, and \code{pseudo_seq}, a list output from \code{pseudo_list()}
-describing the sequence of conditional pseudo-targets.
+CDFs, and \code{pseudo_seq}, a list of the corresponding sequential
+pseudo-targets output from \link[qslice]{pseudo_list}.
 }
 \description{
 Given a vector of from a unit hypercube, map to the original (back-transformed)
@@ -36,7 +36,7 @@ The pseudo-target is specified as
 a sequence of growing conditional distributions.
 }
 \details{
-See the documentation for \code{slice_quantile_mv_seq()} for examples.
+See the documentation for \link[qslice]{slice_quantile_mv_seq} for examples.
 }
 \examples{
 # Funnel distribution from Neal (2003).

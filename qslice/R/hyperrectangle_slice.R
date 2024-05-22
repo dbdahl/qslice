@@ -171,10 +171,10 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
-#' See the documentation for \code{slice_quantile_mv_seq()} for examples.
+#' See the documentation for \link[qslice]{slice_quantile_mv_seq} for examples.
 #'
 #' @param x A numeric vector of values between 0 and 1.
-#' @param pseudo_init A list output from \code{pseudo_list()} describing the
+#' @param pseudo_init A list output from \link[qslice]{pseudo_list} describing the
 #' marginal pseudo-target for \code{x[1]}. All subsequent pseudo-targets will
 #' resemble \code{pseudo_init} with exception of different location and scale parameters.
 #' @param loc_fn A function that specifies the location of a conditional
@@ -186,9 +186,7 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' @param ub A numeric vector (same length as \code{x}) specifying the upper
 #'  bound of support for each conditional pseudo-target.
 #'
-#' @return A list containing \code{x} obtained from the sequence of inverse
-#' CDFs, and \code{pseudo_t_seq}, a list output from \code{pseu_list()}
-#' describing the sequence of conditional pseudo-targets.
+#' @return A list containing a sequence of pseudo-targets, each from \link[qslice]{pseudo_list}.
 #'
 #' @references
 #' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
@@ -230,10 +228,10 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
-#' See the documentation for \code{slice_quantile_mv_seq()} for examples.
+#' See the documentation for \link[qslice]{slice_quantile_mv_seq} for examples.
 #'
 #' @param u A numeric vector of values between 0 and 1.
-#' @param pseudo_init A list output from \code{pseudo_list()} describing the
+#' @param pseudo_init A list output from \link[qslice]{pseudo_list} describing the
 #' marginal pseudo-target for \code{x[1]}.
 #' @param loc_fn A function that specifies the location of a conditional
 #'  pseudo-target given the elements in \code{x} that precede it.
@@ -245,8 +243,8 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #'  bound of support for each conditional pseudo-target.
 #'
 #' @return A list containing \code{x} obtained from the sequence of inverse
-#' CDFs, and \code{pseudo_seq}, a list output from \code{pseudo_list()}
-#' describing the sequence of conditional pseudo-targets.
+#' CDFs, and \code{pseudo_seq}, a list of the corresponding sequential
+#' pseudo-targets output from \link[qslice]{pseudo_list}.
 #'
 #' @export
 #' @example man/examples/pseudo_sequential.R
@@ -289,7 +287,7 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' @param pseudo_control A list with
 #'
 #' \code{pseudo_init}, a list output from
-#' \code{pseudo_list()} describing the marginal pseudo-target for \code{x[1]}.
+#' \link[qslice]{pseudo_list} describing the marginal pseudo-target for \code{x[1]}.
 #' Attributes of \code{pseudo_init} will be used in subsequent pseudo-targets,
 #' except for location and scale parameters.
 #'

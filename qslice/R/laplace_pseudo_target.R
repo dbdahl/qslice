@@ -6,7 +6,7 @@
 #' @param log_target Univariate function evaluating the unnormalized log density to approximate.
 #' @param init Numeric scalar for an initial value (used in optimization).
 #' @param family String specifying the family of distributions for the pseudo-target.
-#' Can be any of the families accepted by \code{pseudo_list()}.
+#' Can be any of the families accepted by \link[qslice]{pseudo_list}.
 #' @param params List specifying the parameters for the pseudo-target to be used.
 #' The location and scale parameters will be replaced with the Laplace approximation and
 #' others (e.g., degrees of freedom) will be retained.
@@ -18,8 +18,8 @@
 #' Defaults to \code{Inf}.
 #' @param maxit See \link[stats]{optim}.
 #' @param ... See \link[stats]{optim}.
-#' @returns A list with the same outputs as \code{pseudo_list()}; also includes
-#' \code{opt}, which gives output of \code{optim()}.
+#' @returns A list with the same outputs as \link[qslice]{pseudo_list}; also includes
+#' \code{opt}, which gives output of \link[stats]{optim}.
 #'
 #' @importFrom stats optim
 #'

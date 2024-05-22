@@ -15,7 +15,7 @@ density, returning a numeric scalar.}
 \item{pseudo_control}{A list with
 
 \code{pseudo_init}, a list output from
-\code{pseudo_list()} describing the marginal pseudo-target for \code{x[1]}.
+\link[qslice]{pseudo_list} describing the marginal pseudo-target for \code{x[1]}.
 Attributes of \code{pseudo_init} will be used in subsequent pseudo-targets,
 except for location and scale parameters.
 
