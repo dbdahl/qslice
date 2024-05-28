@@ -10,6 +10,8 @@
 qslice.Rcheck
 qslice_*.tar.gz
 qslice_*.tgz
+qslice/vignettes/*.md
+qslice/vignettes/figure
 qslice/vignettes/*.html
 qslice/vignettes/*.pdf
 /sam_comparison/cauchyTransformation/NormTarget/data

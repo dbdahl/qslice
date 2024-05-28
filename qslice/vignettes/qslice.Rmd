@@ -18,44 +18,49 @@ knitr::opts_chunk$set(
 library("qslice")
 ```
 
-The `qslice` package implements the quantile slice sampler of Heiner et al., (2024+) as well as other popular slice samplers. It also includes several utility functions for specifying psueudo-target distributions, for diagnostics, and for tuning.
+The `qslice` package implements the quantile slice sampler of Heiner et al., (2024+) as well as other popular slice samplers. It also includes several utility functions for specifying pseudo-target distributions, for diagnostics, and for tuning.
 
-Other implemented methods include the generalized elliptical (Nishihara et al., 2014), latent (Li and Walker, 2023), and stepping-out (Neal, 2003) slice samplers, and independence Metropolis-Hastings.
+Other implemented methods include the generalized elliptical (Nishihara et al., 2014), latent (Li and Walker, 2023), and stepping-out (Neal, 2003) slice samplers, and independence Metropolis-Hastings sampler.
 
-All sampling functions in `qslice` perform a single scan that can be iteratively called as part of an MCMC routine.
+All sampling functions in the `qslice` package perform a single scan that can be iteratively called as part of an MCMC routine.
 
 # Slice sampling
 
-Let $g(x)$ represent an unnormalized target density. Augment the target with a latent random variable $(V \mid X = x) \sim \text{Uniform}(0, g(x))$, yielding a joint density for $X$ and $V$ that is constant.
+Let $g(x)$ represent an unnormalized target density. Augment the target with a latent random variable $V \mid X = x \sim \text{Uniform}(0, g(x))$, yielding a joint density for $X$ and $V$ that is proportional to a constant.
 
 Simple slice samplers first draw from the conditional distribution of $V$ given above, and then from the conditional of $X \mid V = v$, which is uniform on the set $A = \{ x : v < g(x) \}$ known as the slice region. If $A$ is available analytically, a custom slice sampler can be implemented. The slice samplers available in this package repeatedly sample until a draw on the slice region is found. All use the shrinking method in Neal (2003), which we demonstrate below.
 
-A Gibbs sampler drawing $V_t \mid X_{t-1}$ followed by $X_t \mid V_t$ will produce a sequence of draws $\{X_t\}$ whose distribution converges to the marginal density proportional to $g(x)$.
+A Gibbs sampler drawing $V_t \mid X_{t-1}$ followed by $X_t \mid V_t$ produces a sequence of draws $\{X_t\}$ whose distribution converges to the marginal density proportional to $g(x)$.
 
 ## Example
 
-Each sampling method requires a function to evaluate the natural logarithm of a (typically unnormalized) target density. We will use a target that is proportional to a gamma density
+Each sampling method requires a function to evaluate the natural logarithm of a (typically unnormalized) target density. For the sake of illustration, we use a target that is proportional to a gamma density (with shape $\alpha$ and rate 1):
+
 $$ g(x) = x^{\alpha - 1} \exp(-x) \, 1_{(x>0)} \, .$$
 
 ```{r target}
-## use gamma(shape = alpha) as a target
+## Target is a Gamma(shape = alpha, rate = 1) distribution
 alpha <- 2.5
 ltarget <- function(x) ifelse(x > 0.0, (alpha - 1.0) * log(x) - x, -Inf)
 ```
 
-Note that log-target functions in `qslice` rely on lexical scoping. That is, parameter `alpha` is NOT passed as an argument to function `ltarget`. If the target distribution changes at each iteration of MCMC, the function will need to be redefined.
+Note that log-target functions in `qslice` rely on lexical scoping. For example,
+the parameter `alpha` is **not** passed as an argument to function `ltarget`. If the
+target represents a full conditional distribution that changes at each iteration
+of an MCMC algorithm, the user must either: 1. change the value of $\alpha$ within the
+environment in which `ltarget` is defined or 2. redefine the `ltarget` function.
 
-We will first demonstrate the step-and-shrink sampler of Neal (2003), an excellent general tool that is robust to the choice of its tuning parameter `w`. 
+We first demonstrate the stepping-out-and-shrinkage sampler of Neal (2003), a general tool that is robust to the choice of its tuning parameter `w`. 
 The sampling function `slice_stepping_out` performs a single draw, so we embed it within an MCMC algorithm.
 
 ```{r step}
-## set up MCMC
+## Set up MCMC
 n_iter <- 1e3
 x_sample <- numeric(n_iter + 1)
 x_sample[1] <- 0.5  # initialize
 n_eval <- 0  # count target evaluations
 
-## run step-and-shrink slice sampler
+## Run step-and-shrink slice sampler
 for (i in 2:(n_iter+1)) {
   state <- slice_stepping_out(x = x_sample[i-1], 
                               log_target = ltarget,
@@ -64,19 +69,19 @@ for (i in 2:(n_iter+1)) {
   x_sample[i] <- state$x
 }
 
-## check samples
-n_eval / n_iter  # target evaluations per iteration of MCMC
+## Check samples
+n_eval / n_iter  # target evaluations per MCMC iteration
 hist(x_sample, freq = FALSE, n = 30)
 curve(dgamma(x, shape = alpha), col = "blue", lwd = 2, add = TRUE)
 
-## null hypothesis: x_sample ~iid gamma(alpha)
+## Null hypothesis: Samples are iid Gamma(alpha, 1)
 ks.test(x_sample[seq(1, n_iter, by = 5)], pgamma, shape = alpha)
 ```
 
 
 # Quantile slice sampler
 
-The quantile slice sampler uses an approximation to the target density, called a pseudo-target. Let $\hat{G}(\cdot)$ represent the distribution function (CDF) of the pseudo-target with inverse (quantile) function $\hat{G}^{-1}(\cdot)$ and density $\hat{g}(\cdot)$. We use the probability integral transform to define a new random variable $\psi = \hat{G}(X) \in [0,1]$. The original target can be written as
+The quantile slice sampler uses an approximation to the target density, called a pseudo-target. Let $\hat{G}(\cdot)$ represent the distribution function (CDF) of the pseudo-target with inverse (i.e., quantile) function $\hat{G}^{-1}(\cdot)$ and density $\hat{g}(\cdot)$. We use the probability integral transform to define a new random variable $\psi = \hat{G}(X) \in [0,1]$. The original target can be written as
 $$g(x) = \frac{g(x)}{\hat{g}(x)}\hat{g}(x) \, ,$$
 which after transformation becomes
 $$h(\psi) = \frac{g(\hat{G}^{-1}(\psi))}{\hat{g}(\hat{G}^{-1}(\psi))} \, 1_{(0 \le \psi \le 1)}  \, .$$
@@ -85,7 +90,7 @@ If the pseudo-target approximates the target well, $h(\psi)$ will be close to a 
 
 ## Example
 
-The quantile slice sampler requires a pseudo-target. This is specified in `qslice` with a list containing two functions: the log-density `ld` and inverse-CDF (quantile) `q` functions. `qslice` offers pseudo-target constructor functions with options for several distribution families. See `help(pseudo_list)`. Here we will use a truncated $t$ distribution:
+The quantile slice sampler requires a pseudo-target. This is specified in the `qslice` package with a list containing two functions: the log-density `ld` and inverse-CDF (quantile) `q` functions. `qslice` offers pseudo-target constructor functions with options for several distribution families. See `help(pseudo_list)`. Here we use a truncated $t$ distribution:
 
 ```{r pseudo1}
 pseu <- pseudo_list(family = "t", 
@@ -93,12 +98,12 @@ pseu <- pseudo_list(family = "t",
                     lb = 0)
 ```
 
-When specifying a pseudo-target, remember: 
+When specifying a pseudo-target, please keep in mind that: 
 
-1. The support of the pseudo-target should match that of the original target (note the use of `lb = 0` to set the pseudo-target's lower bound in the call to `pseudo_list`).
-2. The pseudo-target should have tails that are at least as heavy as the original target (we recommend Student-$t$ for this reason).
+1. The support of the pseudo-target should match (or exceed) that of the original target. Note the use of `lb = 0` to set the pseudo-target's lower bound in the call to `pseudo_list`.
+2. The pseudo-target should have tails that are at least as heavy as the original target. For this reason, we recommend the Student-$t$ distribution.
 
-We can visualize $g(x)$, $\hat{g}(x)$ and $h(\psi)$.
+We visualize $g(x)$, $\hat{g}(x)$ and $h(\psi)$ below.
 
 ```{r vis_pseudo1, fig.width=4.5, fig.height=3}
 utility_pseudo(pseudo = pseu, log_target = ltarget, 
@@ -111,13 +116,13 @@ The function `utility_pseudo` measures how close $h(\cdot)$ is to a constant fun
 The function `slice_quantile` performs a single draw using the quantile slice sampler. It also outputs draws of $\psi$ (called `u` in the output), which can be used as a diagnostic for pseudo-target fitness.
 
 ```{r qslice1, fig.show='hold'}
-## set up MCMC
+## Set up MCMC
 n_iter <- 1e3
 x_sample <- psi_sample <- numeric(n_iter + 1)
 x_sample[1] <- psi_sample[1] <- 0.5  # initialize
 n_eval <- 0  # count target evaluations
 
-## run step-and-shrink slice sampler
+## Run step-and-shrink slice sampler
 for (i in 2:(n_iter+1)) {
   state <- slice_quantile(x = x_sample[i-1], 
                           log_target = ltarget,
@@ -127,7 +132,7 @@ for (i in 2:(n_iter+1)) {
   psi_sample[i] <- state$u
 }
 
-## check samples
+## Check samples
 n_eval / n_iter  # target evaluations per iteration of MCMC
 
 hist(x_sample, freq = FALSE, n = 30)
@@ -137,7 +142,7 @@ hist(psi_sample, freq = FALSE, n = 30)
 
 auc(u = psi_sample) # calculate AUC from transformed samples
 
-## null hypothesis: x_sample ~iid gamma(alpha)
+## Null hypothesis: Samples are iid Gamma(alpha, 1)
 ks.test(x_sample[seq(1, n_iter, by = 10)], pgamma, shape = alpha)
 ```
 
@@ -171,13 +176,13 @@ pseu_opt$pseudo$txt
 We conclude by running the quantile slice sampler again with an optimized pseudo-target.
 
 ```{r qslice2, fig.show='hold'}
-## set up MCMC
+## Set up MCMC
 n_iter <- 1e3
 x_sample <- psi_sample <- numeric(n_iter + 1)
 x_sample[1] <- psi_sample[1] <- 0.5  # initialize
 n_eval <- 0  # count target evaluations
 
-## run step-and-shrink slice sampler
+## Run step-and-shrink slice sampler
 for (i in 2:(n_iter+1)) {
   state <- slice_quantile(x = x_sample[i-1], 
                           log_target = ltarget,
@@ -187,7 +192,7 @@ for (i in 2:(n_iter+1)) {
   psi_sample[i] <- state$u
 }
 
-## check samples
+## Check samples
 n_eval / n_iter  # target evaluations per iteration of MCMC
 
 hist(x_sample, freq = FALSE, n = 30)
@@ -197,7 +202,7 @@ hist(psi_sample, freq = FALSE, n = 30)
 
 auc(u = psi_sample) # calculate AUC from transformed samples
 
-## null hypothesis: x_sample ~iid gamma(alpha)
+## Null hypothesis: Samples are iid Gamma(alpha, 1)
 ks.test(x_sample[seq(1, n_iter, by = 10)], pgamma, shape = alpha)
 ```
 
