@@ -1,4 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^cucumber_.*\.tar\.gz$
+^qslice_.*\.tar\.gz$
 ^justfile$
+^vignettes/figure$
+^vignettes/.*\.md$
+^vignettes/.*\.html$

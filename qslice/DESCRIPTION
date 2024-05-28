@@ -6,11 +6,11 @@ Authors@R: c(
     person(given="David B.",family="Dahl",role=c("aut","cre"),email="dahl@stat.byu.edu",comment=c(ORCID="0000-0002-8173-1547")),
     person(given="Sam",family="Johnson",role=c("aut"),email="smbjohnson98@gmail.com")
 	)
-Description: Various verions of the slice samplers are provided for the sake of comparison.
+Description: Various slice samplers are provided for Markov chain Monte Carlo.
 License: MIT + file LICENSE | Apache License 2.0
 Depends: R (>= 4.1.0)
 Encoding: UTF-8
-Suggests: knitr
+Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
