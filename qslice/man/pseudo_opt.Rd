@@ -92,7 +92,7 @@ Optionally supply samples from the target distribution.
                family = "t", utility_type = "AUC",
                nbins = 10, plot = TRUE,
                verbose = FALSE))
-par(mfrow = c(1,2))
+oldpar <- par(mfrow = c(1,2))
 (pseu <- pseudo_opt(log_target = function(x) dnorm(x, log = TRUE),
                 type = "function",
                 family = "logistic", utility_type = "AUC",
@@ -104,6 +104,8 @@ par(mfrow = c(1,2))
                 family = "cauchy", utility_type = "AUC",
                 nbins = 30, plot = TRUE,
                 verbose = FALSE))
+par(oldpar)
+
 }
 \references{
 Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}

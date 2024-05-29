@@ -54,7 +54,7 @@
 #'                family = "t", utility_type = "AUC",
 #'                nbins = 10, plot = TRUE,
 #'                verbose = FALSE))
-#' par(mfrow = c(1,2))
+#' oldpar <- par(mfrow = c(1,2))
 #' (pseu <- pseudo_opt(log_target = function(x) dnorm(x, log = TRUE),
 #'                 type = "function",
 #'                 family = "logistic", utility_type = "AUC",
@@ -66,6 +66,8 @@
 #'                 family = "cauchy", utility_type = "AUC",
 #'                 nbins = 30, plot = TRUE,
 #'                 verbose = FALSE))
+#' par(oldpar)
+#'
 pseudo_opt <- function(log_target = NULL,
                        samples = NULL,
                        type = "samples", # one of "samples", "function"

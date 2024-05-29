@@ -17,6 +17,9 @@ for a given value of \code{u} supported on (0,1). (Not used if \code{u} is suppl
 
 \item{nbins}{Number of histogram bins to use (defaults to 30).}
 }
+\value{
+The (approximate) area under the curve as a numeric value of length one.
+}
 \description{
 Calculate the histogram approximation to the area under the curve after restricting
 the curve to fit within the unit square. Specifically, the highest histogram bar reaches 1 and

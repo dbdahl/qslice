@@ -39,7 +39,7 @@ lapprox <- function(log_target, init, family = "t", params = NULL, sc_adj = 1.0,
   loc <- fit$par
   hessian <- second_derivative( x = loc, h = 1e-5, f = log_target, ...)
 
-  if (hessian > 0.0) cat("WARNING: Hessian =", hessian, "; optim iters: ", fit$counts, "\n")
+  if (hessian > 0.0) warning(paste0("Hessian =", hessian, "; optim iters: ", fit$counts))
 
   sc <- sc_adj / sqrt(-hessian)
 

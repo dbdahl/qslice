@@ -7,13 +7,14 @@
 #' Accepts either samples \code{u} or a function \code{y} representing a (possibly
 #' unnormalized) probability density supported on the unit interval.
 #'
-#'
 #' @param u Numeric vector of samples supported on unit interval with which to
 #' create a histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
 #' @param x Numeric vector of histogram locations. (Not used if \code{u} is supplied).
 #' @param y Numeric vector of histogram heights OR function evaluating the curve
 #' for a given value of \code{u} supported on (0,1). (Not used if \code{u} is supplied).
 #' @param nbins Number of histogram bins to use (defaults to 30).
+#'
+#' @returns The (approximate) area under the curve as a numeric value of length one.
 #'
 #' @references
 #' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
