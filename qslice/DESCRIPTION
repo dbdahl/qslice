@@ -6,7 +6,21 @@ Authors@R: c(
     person(given="David B.",family="Dahl",role=c("aut","cre"),email="dahl@stat.byu.edu",comment=c(ORCID="0000-0002-8173-1547")),
     person(given="Sam",family="Johnson",role=c("aut"),email="smbjohnson98@gmail.com")
 	)
-Description: Various slice samplers are provided for Markov chain Monte Carlo.
+Description: Implementations of the quantile slice sampler of Heiner et al. (2024+) as well as other popular slice samplers. 
+Includes helper functions for specifying pseudo-target distributions, for diagnostics, and for tuning the quantile slice sampler. 
+Other implemented methods include the generalized elliptical (Nishihara et al., 2014), latent (Li and Walker, 2023), 
+and stepping-out (Neal, 2003) slice samplers, and independence Metropolis-Hastings sampler.
+
+References
+
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling"
+
+Li, Y. and Walker, S. G. (2023), "A latent slice sampling algorithm" <https://doi.org/10.1016/j.csda.2022.107652>
+
+Neal, R. M. (2003), "Slice sampling" <https://doi.org/10.1214/aos/1056562461>
+
+Nishihara, R., Murray, I., and Adams, R. P. (2014), "Parallel MCMC with Generalized Elliptical Slice Sampling" <https://jmlr.org/papers/v15/nishihara14a.html>
+
 License: MIT + file LICENSE | Apache License 2.0
 Depends: R (>= 4.1.0)
 Encoding: UTF-8
