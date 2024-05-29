@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 library("qslice")
 ```
 
-The `qslice` package implements the quantile slice sampler of Heiner et al., (2024+) as well as other popular slice samplers. It also includes several utility functions for specifying pseudo-target distributions, for diagnostics, and for tuning.
+The `qslice` package implements the quantile slice sampler of Heiner et al. (2024+) as well as other popular slice samplers. It also includes several utility functions for specifying pseudo-target distributions, for diagnostics, and for tuning.
 
 Other implemented methods include the generalized elliptical (Nishihara et al., 2014), latent (Li and Walker, 2023), and stepping-out (Neal, 2003) slice samplers, and independence Metropolis-Hastings sampler.
 
