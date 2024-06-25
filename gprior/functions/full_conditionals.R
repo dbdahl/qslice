@@ -1,7 +1,5 @@
 ## Authors: Matt Heiner, Sam Johnson
 
-# source("./MH_samplers.R")
-
 update_beta <- function(state, prior, data) {
 
   ## state is a list with: g, psi
@@ -48,7 +46,6 @@ update_g <- function(state, prior, data, sampler) {
 
       if (lgg <= log(prior$g_max)) {
         qq <- state$psi * qq1 / exp(lgg)
-        # logdet <- (data$p * log(gg)) - data$logdet_XtX - (data$p * log(state$psi))
         logdet <- data$p * lgg # only this part is a fn of g
         lpri <- prior$a_g * log1p(exp(lgg))
         out <- -0.5 * (logdet + lpri + qq) + lgg
@@ -67,7 +64,6 @@ update_g <- function(state, prior, data, sampler) {
 
       if ((gg > 0.0) & (gg <= prior$g_max)) {
         qq <- state$psi * qq1 / gg
-        # logdet <- (data$p * log(gg)) - data$logdet_XtX - (data$p * log(state$psi))
         logdet <- data$p * log(gg) # only this part is a fn of g
         lpri <- prior$a_g * log(gg + 1.0)
         out <- -0.5 * (logdet + lpri + qq)
@@ -87,17 +83,18 @@ update_g <- function(state, prior, data, sampler) {
 
   if (sampler$subtype %in% c("Laplace", "Laplace_wide")) {
 
-    tmp_pseu <- lapproxt(lf = ltarget, init = g_old,
-                         sc_adj = sampler$sc_adj,
-                         lb = support[1], ub = support[2],
-                         maxit = sampler$maxit)
+    tmp_pseu <- lapprox(log_target = ltarget,
+                        init = g_old,
+                        family = "cauchy",
+                        sc_adj = sampler$sc_adj,
+                        lb = support[1], ub = support[2],
+                        maxit = sampler$maxit)
 
-    sampler[["loc"]] <- tmp_pseu$loc
-    sampler[["sc"]] <- tmp_pseu$sc
-    sampler[["degf"]] <- tmp_pseu$degf
+    sampler[["loc"]] <- tmp_pseu$params$loc
+    sampler[["sc"]] <- tmp_pseu$params$sc
+    sampler[["degf"]] <- 1
 
-    sampler[["pseudo_lpdf"]] <- tmp_pseu$ld
-    sampler[["pseudo_inv_cdf"]] <- tmp_pseu$q
+    sampler[["pseudo"]] <- tmp_pseu
 
   } else if (sampler$subtype %in% c("Laplace_analytic", "Laplace_analytic_wide")) {
 
@@ -106,11 +103,10 @@ update_g <- function(state, prior, data, sampler) {
                         lb = support[1], ub = support[2],
                         logG = sampler$logG)
 
-    sampler[["loc"]] <- tmp_pseu$loc
-    sampler[["sc"]] <- tmp_pseu$sc
+    sampler[["loc"]] <- tmp_pseu$params$loc
+    sampler[["sc"]] <- tmp_pseu$params$sc
 
-    sampler[["pseudo_lpdf"]] <- tmp_pseu$ld
-    sampler[["pseudo_inv_cdf"]] <- tmp_pseu$q
+    sampler[["pseudo"]] <- tmp_pseu
 
   } else if (sampler$subtype %in% c("MM", "MM_wide")) {
 
@@ -123,12 +119,13 @@ update_g <- function(state, prior, data, sampler) {
     sampler[["sc"]] <- sampler$sc_adj * B / ((A - 1.0) * sqrt(A - 2.0))
     sampler[["degf"]] <- sampler$degf
 
-    tmp_pseu <- pseudo_t_list(loc = sampler$loc, sc = sampler$sc, degf = sampler$degf,
+    tmp_pseu <- pseudo_list(family = "t",
+                            params = list(loc = sampler$loc,
+                                          sc = sampler$sc,
+                                          degf = sampler$degf),
                               lb = support[1], ub = support[2])
 
-    sampler[["pseudo_lpdf"]] <- tmp_pseu$ld
-    sampler[["pseudo_inv_cdf"]] <- tmp_pseu$q
-
+    sampler[["pseudo"]] <- tmp_pseu
   }
 
   if (sampler$type == "Gibbs") {
@@ -151,39 +148,38 @@ update_g <- function(state, prior, data, sampler) {
 
   } else if (sampler$type == "stepping") {
 
-    tmp <- slice_sampler_stepping_out(x = g_old,
-                                      target = ltarget,
-                                      w = sampler$w)
+    tmp <- slice_stepping_out(x = g_old,
+                              log_target = ltarget,
+                              w = sampler$w)
 
   } else if (sampler$type == "gess") {
 
-    tmp <- slice_sampler_generalized_elliptical(x = g_old,
-                                                target = ltarget,
-                                                mu = sampler$loc,
-                                                sigma = sampler$sc,
-                                                df = sampler$degf)
+    tmp <- slice_genelliptical(x = g_old,
+                               log_target = ltarget,
+                               mu = sampler$loc,
+                               sigma = sampler$sc,
+                               df = sampler$degf)
 
   } else if (sampler$type == "latent") {
 
-    tmp <- slice_sampler_latent(x = g_old, s = state$latent_s,
-                                target = ltarget,
-                                rate = sampler$rate)
+    tmp <- slice_latent(x = g_old, s = state$latent_s,
+                        log_target = ltarget,
+                        rate = sampler$rate)
     state$latent_s <- tmp$s
 
   } else if (sampler$type == "imh") {
 
-    tmp <- IMH_sampler(lf = ltarget, x_0 = g_old,
-                       pseudo_lpdf = sampler$pseudo_lpdf,
-                       pseudo_inv_cdf = sampler$pseudo_inv_cdf)
+    tmp <- imh_pseudo(x = g_old,
+                      log_target = ltarget,
+                      pseudo = sampler$pseudo)
 
     tmp$nEvaluations <- 2
 
   } else if (sampler$type == "Qslice") {
 
-    tmp <- slice_sampler_transform(x = g_old,
-                                   target = ltarget,
-                                   pseudo_log_pdf = sampler$pseudo_lpdf,
-                                   pseudo_inv_cdf = sampler$pseudo_inv_cdf)
+    tmp <- slice_quantile(x = g_old,
+                          log_target = ltarget,
+                          pseudo = sampler$pseudo)
   }
 
   state$g <- ifelse(sampler$logG, exp(tmp$x), tmp$x)

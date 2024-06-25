@@ -5,8 +5,10 @@ target <- "igamma"
 target <- "igammalog"
 
 rnd <- 2
+
 dte <- 240308
 dte <- 240309
+dte <- 240520 # using package "qslice"
 
 files_all <- list.files("output")
 # files_use <- files_all[grep(paste0("round", rnd, "_target", target, ".*_dte", dte), x = files_all)]

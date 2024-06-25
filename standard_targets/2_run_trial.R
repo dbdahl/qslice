@@ -5,10 +5,10 @@ ii <- as.numeric(args[3])  # job id
 dte <- as.numeric(args[4])
 
 ##### for testing
-# target <- "gamma"
-# rnd <- 2
-# ii <- 28
-# dte <- 240308
+target <- "normal"
+rnd <- 2
+ii <- 19
+dte <- 240308
 #####
 
 source("0_setup.R")
@@ -51,6 +51,13 @@ for (jj in 1:n_runs) {
     settings = settings
   )
 }
+
+# settings$txt
+# mcmc_time_out$EffSamp / mcmc_time_out$userTime
+#
+# settings <- pseudo_list(family = "normal", params = list(loc = 0, sc = 1))
+# settings <- pseudo_list(family = "logistic", params = list(loc = 0, sc = 0.65))
+# settings <- pseudo_list(family = "t", params = list(loc = 0, sc = 1.0, degf = 20))
 
 thin <- min(10 * n_iter / mcmc_time_out$EffSamp, 100)
 thinDraws <- LaplacesDemon::Thin(mcmc_time_out$Draws[[1]], thin)

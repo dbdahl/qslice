@@ -3,11 +3,11 @@ ii <- as.numeric(args[1])  # job id
 dte <- as.numeric(args[2])
 
 ##### for testing
-# ii <- 1995
-# dte <- 240329
+# ii <- 1944
+# dte <- 240520
 #####
 
-library("cucumber")
+library("qslice")
 library("coda")
 source("0_data.R")
 source("0_prior.R")
@@ -98,22 +98,22 @@ if (type %in% c("rw", "stepping", "latent")) { # will require tuning
     g_samples <- log(g_samples)
   }
 
-  tmp_pseu <- opt_t(samples = g_samples,
-                    type = "samples",
-                    lb = ifelse(logG, -Inf, 0.0),
-                    ub = ifelse(logG, log(prior$g_max), prior$g_max),
-                    coeffs = c(1, 0),
-                    degf = c(1, 5),
-                    plot = FALSE)
+  tmp_pseu <- pseudo_opt(samples = g_samples,
+                         type = "samples",
+                         family = "t",
+                         degf = c(1, 5),
+                         lb = ifelse(logG, -Inf, 0.0),
+                         ub = ifelse(logG, log(prior$g_max), prior$g_max),
+                         utility_type = "AUC",
+                         plot = FALSE)
 
   sampler$g$type <- type
   sampler$g$subtype <- subtype
-  sampler$g$pseudo_lpdf <- tmp_pseu$pseu$ld
-  sampler$g$pseudo_inv_cdf <- tmp_pseu$pseu$q
-  sampler$g$loc <- tmp_pseu$pseu$loc
-  sampler$g$sc <- tmp_pseu$pseu$sc
-  sampler$g$degf <- tmp_pseu$pseu$degf
-  sampler$g$t <- tmp_pseu$pseu$t
+  sampler$g$pseudo <- tmp_pseu$pseudo
+  sampler$g$loc <- tmp_pseu$pseudo$params$loc
+  sampler$g$sc <- tmp_pseu$pseudo$params$sc
+  sampler$g$degf <- tmp_pseu$pseudo$params$degf
+  sampler$g$txt <- tmp_pseu$pseudo$txt
 
 } else if (grepl("Laplace_analytic", subtype)) {
 
@@ -170,10 +170,6 @@ if (type == "Qslice") {
 } else {
   AUC <- NA
 }
-
-# sched %>% group_by(target, type, subtype) %>% summarize(n = n()) %>% print(n = 30)
-# head(sched, n = 30)
-# which(job_order == 24)
 
 tempDf <- data.frame(target = target,
                      type = type,

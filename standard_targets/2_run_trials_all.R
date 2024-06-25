@@ -5,8 +5,8 @@ dte <- as.numeric(args[3])
 
 ##### for testing
 # rnd <- 2
-# ii <- 1998
-# dte <- 240309
+# ii <- 1935
+# dte <- 240520
 #####
 
 source("0_setup.R")

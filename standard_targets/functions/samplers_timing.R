@@ -92,7 +92,7 @@ latent_sampler <- function(n_iter, lf, x_0, s_0, rate) {
 
 ############## Quantile Slice Eval ################
 
-quantile_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
+quantile_sampler <- function(n_iter, lf, x_0, pseudo) {
 
   counter <- 0
   draws <- numeric(n_iter + 1)
@@ -102,8 +102,8 @@ quantile_sampler <- function(n_iter, lf, x_0, pseudo_lpdf, pseudo_inv_cdf) {
 
   for ( i in 2:(n_iter + 1) ) {
     out <- slice_quantile(x = draws[i-1],
-                          log_target = lf, pseudo_log_pdf = pseudo_lpdf,
-                          pseudo_inv_cdf = pseudo_inv_cdf)
+                          log_target = lf,
+                          pseudo = pseudo)
     draws[i] <- out$x
     Tdraws[i] <- out$u
     counter <- counter + out$nEvaluations
@@ -197,8 +197,7 @@ sampler_time_eval <- function(type,
       mcmc_out <- quantile_sampler(n_iter = n_iter,
                                    lf = lf_func,
                                    x_0 = x_0,
-                                   pseudo_lpdf = settings$ld,
-                                   pseudo_inv_cdf = settings$q)
+                                   pseudo = settings)
     })
 
   } else if (type == "imh") {
@@ -207,7 +206,7 @@ sampler_time_eval <- function(type,
       mcmc_out <- IMH_sampler(n_iter = n_iter,
                               lf = lf_func,
                               x_0 = x_0,
-                              pseudo = pseudo)
+                              pseudo = settings)
     })
 
   }

@@ -10,7 +10,6 @@ detach(mtcars)
 (dat$n <- length(dat$y))
 (dat$p <- ncol(dat$X))
 
-# beta ~ mvn(beta_0, g / psi * inv(XtX)), using the covariance parametrization
 dat$XtX <- crossprod(dat$X)
 (dat$logdet_XtX <- determinant(dat$XtX, log = TRUE)$modulus)
 dat$chol_XtX <- chol(dat$XtX)

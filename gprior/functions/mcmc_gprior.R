@@ -1,4 +1,3 @@
-# source("full_conditionals.R")
 
 mcmc_gprior <- function(state, prior, data, sampler, n_iter, save = TRUE, prog = 0) {
 

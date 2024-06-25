@@ -15,4 +15,3 @@ prior$g_max <- 3 * dat$p^2
 prior$a_g <- 3
 
 prior
-

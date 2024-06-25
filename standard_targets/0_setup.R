@@ -1,6 +1,4 @@
 # library(tidyverse)
 library("qslice")
-library("LaplacesDemon")  # thin function, KLD, JSD
-# library(rootSolve)  # necessary?
-
+library("LaplacesDemon")
 source("./functions/samplers_timing.R")

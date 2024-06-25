@@ -2,7 +2,7 @@ rm(list=ls()); dev.off()
 
 set.seed(1)
 
-library("cucumber")
+library("qslice")
 source("0_data.R")
 source("0_prior.R")
 source("functions/MH_samplers.R")
@@ -29,16 +29,13 @@ sampler$g <- list(type = "stepping", subtype = NA, logG = F, w = 70.0) # 30-1300
 sampler$g <- list(type = "gess", subtype = NA, logG = F, loc = 40.0, sc = 30, degf = 3)
 sampler$g <- list(type = "latent", subtype = NA, logG = F, rate = 0.001); state$latent_s <- 5.0 # bnds_init = c(0.001, 0.2); 4 rounds ok
 
-sampler$pseu <- pseudo_t_list(loc = 30, sc = 20, degf = 1, lb = 0.0, ub = prior$g_max)
+sampler$pseu <- pseudo_list(family = "t", params = list(loc = 30, sc = 20, degf = 5),
+                            lb = 0.0, ub = prior$g_max)
 sampler$g <- list(type = "imh", subtype = NA, logG = F,
-                 pseudo_lpdf = sampler$g$pseudo_lpdf,
-                 # pseudo_lpdf = sampler$pseu$ld,
-                 pseudo_inv_cdf = sampler$g$pseudo_inv_cdf)
-                 # pseudo_inv_cdf = sampler$pseu$q)
+                  pseudo = sampler$pseu)
 sampler$g <- list(type = "Qslice", subtype = "manual",
                   logG = F,
-                 pseudo_lpdf = sampler$pseu$ld,
-                 pseudo_inv_cdf = sampler$pseu$q)
+                  pseudo = sampler$pseu)
 
 ## I think we'll drop these
 sampler$g <- list(type = "Qslice", subtype = "Laplace", sc_adj = 1.0, logG = F)
@@ -56,7 +53,6 @@ sampler$g <- list(type = "Qslice", subtype = "MM_wide", sc_adj = 1.5, degf = 1, 
 
 sampler$g <- list(type = "imh", subtype = "MM", sc_adj = 1.0, degf = 1, logG = F)
 sampler$g <- list(type = "imh", subtype = "MM_wide", sc_adj = 1.5, degf = 1, logG = F)
-
 
 
 sampler$g <- list(type = "rw", subtype = NA, logG = T, c = 1.5) # bnds_init = c(0.5, 5.0)
@@ -81,35 +77,37 @@ mc_out <- mcmc_gprior(state = state, prior = prior, data = dat,
 
 (state <- mc_out$state)
 
-mc_tune <- tune(state = state, prior = prior, data = dat,
-                sampler = sampler,
-                bnds_init = c(5.0, 100.0),
-                n_iter = 1000, n_grid = 5, n_rep = 3,
-                n_rounds = 5, range_frac = 0.5,
-                verbose = TRUE)
+if (sampler$g$type %in% c("rw", "stepping", "latent")) {
+  mc_tune <- tune(state = state, prior = prior, data = dat,
+                  sampler = sampler,
+                  bnds_init = c(5.0, 100.0),
+                  n_iter = 1000, n_grid = 5, n_rep = 3,
+                  n_rounds = 5, range_frac = 0.5,
+                  verbose = TRUE)
+  (sampler$g <- mc_tune$sampler$g)
+}
 
-(sampler$g <- mc_tune$sampler$g)
-
-tmp_pseu <- opt_t(samples = sapply(mc_out$sims, function(x) x$g),
-                  type = "samples",
-                  lb = 0.0,
-                  ub = prior$g_max,
-                  coeffs = c(1, 0),
-                  degf = c(1, 5),
-                  plot = TRUE)
+tmp_pseu <- pseudo_opt(samples = sapply(mc_out$sims, function(x) x$g),
+                       type = "samples",
+                       family = "t",
+                       degf = c(1, 5),
+                       lb = 0.0,
+                       ub = prior$g_max,
+                       plot = TRUE,
+                       nbins = 20)
 
 sampler$g <- list(type = "Qslice",
                   subtype = "AUC_samples",
                   logG = sampler$g$logG,
-                  pseudo_lpdf = tmp_pseu$pseu$ld,
-                  pseudo_inv_cdf = tmp_pseu$pseu$q,
+                  pseudo = tmp_pseu$pseudo,
                   t = tmp_pseu$pseu$t)
 
 mc_time <- time_gprior(state = state, prior = prior, data = dat,
                        sampler = sampler, n_iter = n_iter)
-# hist(mc_time$draws, breaks = 50)
 mc_time$timing
 mc_time$timing$EffSamp / mc_time$timing$userTime
+
+hist(mc_time$draws, breaks = 50)
 
 library("coda")
 library("ggplot2")
@@ -127,7 +125,7 @@ ggplot(data.frame(u = draws_u), aes(x = u)) +
   geom_histogram(fill = "gray", aes(y = ..density..)) +
   xlab(expression(psi)) + theme_bw() + ggtitle(label = paste0("Laplace analytic - wide\n", "AUC: ", round(auc(u = draws_u), 2)))
 
-ggsave(file = "plots/histU_LaplaceAnalyticWide.pdf", height = 2.5, width = 3)
+# ggsave(file = "plots/histU_LaplaceAnalyticWide.pdf", height = 2.5, width = 3)
 
 hist(draws_g, breaks = 50, freq = FALSE); curve(exp(sampler$g$pseudo_lpdf(x)),
                                                 from = 0, to = prior$g_max,
@@ -135,7 +133,6 @@ hist(draws_g, breaks = 50, freq = FALSE); curve(exp(sampler$g$pseudo_lpdf(x)),
 
 
 sapply(mc_out$extras, function(x) x$accept) |> mean()
-
 
 draws_psi <- sapply(mc_out$sims, function(x) x$psi)
 plot(as.mcmc(draws_psi))

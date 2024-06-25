@@ -11,7 +11,7 @@ dte <- 240229 # 10 parallel jobs
 # dte <- 240301 # 20 parallel jobs
 dte <- 240308 # 10 parallel jobs
 dte <- 240309 # 10 parallel jobs, all targets randomized together
-
+dte <- 240520 # 10 parallel jobs, all targets randomized together; qslice package
 
 if (targets == "all") {
   dat <- read.csv(paste0("output/combined_round", rnd, "_all_", dte, ".csv"))
@@ -29,7 +29,8 @@ hist(dat$ks_pval)
 ## summarize Kolmogorov-Smirnov test statistics
 dat$type_sub <- paste(dat$type, dat$subtype)
 ks_rej <- dat %>% group_by(type_sub, target) %>% summarize(ks_rej = mean(ks_pval < 0.05), n = n())
-ggplot(ks_rej, aes(x = ks_rej, y = type_sub, col = target)) + geom_point()
+ggplot(ks_rej, aes(x = jitter(ks_rej), y = type_sub, col = target)) + geom_point()
+
 summary(ks_rej)
 
 
@@ -83,7 +84,7 @@ dat$target_tx_alpha <- ifelse(dat$target_tx == "Log transform", 0.5, 1.0)
 plt <- ggplot(dat %>% filter(target %in% c("normal", "gamma", "igamma")),
               aes(x = sampPsec / 1e3, y = algoF, fill = typeF), color = "gray") +
   # geom_boxplot() +
-  geom_violin(draw_quantiles = 0.5) + # , scale = "width") +
+  geom_violin(draw_quantiles = 0.5, scale = "width") +
   theme_bw() + scale_alpha(guide = "none") +
   xlab("Effective samples per second\n(thousands)") + ylab("") + labs(color = "", fill = "") +
   facet_wrap(~ target_base, scales = "free_x")
@@ -107,5 +108,7 @@ plt
 
 ggsave(plot = plt, width = 9, height = 8,
        filename = paste0("plots/ESPS_gammas_w_tnx_round", rnd, "_", dte, ".pdf"))
+
+
 
 

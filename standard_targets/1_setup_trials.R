@@ -16,7 +16,7 @@ wide_factor <- 4.0
 
 #########
 
-library("cucumber")
+library("qslice")
 
 source(paste0("0_setup_", target, ".R"))
 source("1_algo_params.R")

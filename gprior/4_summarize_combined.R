@@ -5,6 +5,7 @@ targets <- "all"
 
 dte <- 240330
 dte <- 240405 # extra computation in full conditional
+dte <- 240520 # using package "qslice"
 
 
 if (targets == "all") {
@@ -48,6 +49,14 @@ dat$target_tx <- ifelse(grepl("log", dat$target), "Log transform", "Original") %
 dat$target_tx_alpha <- ifelse(dat$target_tx == "Log transform", 0.5, 1.0)
 
 
+## evaluations per iteration
+eval_tab <- dat %>% group_by(target, type, subtype) %>% summarize(eval_per_iter_mean = mean(nEval / n_iter),
+                                                      eval_per_iter_sd = sd(nEval / n_iter))
+
+print(eval_tab, n = 30)
+
+
+## timing results
 plt <- ggplot(dat %>% filter(target %in% c("hyper-g")),
               aes(x = sampPsec / 1e3, y = algoF, fill = typeF), color = "gray") +
   geom_violin(draw_quantiles = 0.5 , scale = "width") +
