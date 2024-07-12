@@ -1,6 +1,6 @@
 export OMP_NUM_THREADS=1
 
-dte=240520
+dte=240626
 
 num_of_trials=$(Rscript functions/num_of_trials.R)
 echo $num_of_trials

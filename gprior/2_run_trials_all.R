@@ -165,7 +165,6 @@ if (type == "Qslice") {
                         save = TRUE, prog = 0) # samples for pseudo-target
 
   draws_u <- sapply(mc_out$extras, function(x) x$u)
-  # hist(draws_u, breaks = 30)
   (AUC <- auc(u = draws_u))
 } else {
   AUC <- NA

@@ -3,9 +3,8 @@ library("tidyverse")
 
 targets <- "all"
 
-dte <- 240330
-dte <- 240405 # extra computation in full conditional
-dte <- 240520 # using package "qslice"
+dte <- 240520
+dte <- 240627 # using package "qslice"
 
 
 if (targets == "all") {
@@ -26,15 +25,27 @@ dat <- dat %>% mutate(algo = paste(type, subtype))
 dat$algo <- gsub(" NA", "", x = dat$algo)
 unique(dat$algo)
 
+# dat$algoF <- factor(dat$algo, levels = rev(c("rw", "stepping", "latent",
+#                                              "imh AUC_samples", "imh Laplace_analytic", "imh Laplace_analytic_wide",
+#                                              "gess AUC_samples", "gess Laplace_analytic", "gess Laplace_analytic_wide",
+#                                              "Qslice AUC_samples", "Qslice Laplace_analytic", "Qslice Laplace_analytic_wide")),
+#                     labels = rev(c("Random walk", "Step & shrink", "Latent",
+#                                    "Pseudo: AUC", "Pseudo: Laplace", "Pseudo: Laplace (wide)",
+#                                    "Pseudo: AUC", "Pseudo: Laplace", "Pseudo: Laplace (wide)",
+#                                    "Pseudo: AUC", "Pseudo: Laplace", "Pseudo: Laplace (wide)"))
+# )
+
 dat$algoF <- factor(dat$algo, levels = rev(c("rw", "stepping", "latent",
                                              "imh AUC_samples", "imh Laplace_analytic", "imh Laplace_analytic_wide",
                                              "gess AUC_samples", "gess Laplace_analytic", "gess Laplace_analytic_wide",
                                              "Qslice AUC_samples", "Qslice Laplace_analytic", "Qslice Laplace_analytic_wide")),
-                    labels = rev(c("Random walk", "Step & shrink", "Latent",
-                                   "Pseudo: AUC", "Pseudo: Laplace", "Pseudo: Laplace (wide)",
-                                   "Pseudo: AUC", "Pseudo: Laplace", "Pseudo: Laplace (wide)",
-                                   "Pseudo: AUC", "Pseudo: Laplace", "Pseudo: Laplace (wide)"))
+                    labels = rev(c("Random walk", "Steping out & shrinkage", "Latent slice",
+                                   "Independence M-H: AUC", "Independence M-H: Laplace", "Independence M-H: Laplace (wide)",
+                                   "Generalized elliptical slice: AUC", "Generalized elliptical slice: Laplace", "Generalized elliptical slice: Laplace (wide)",
+                                   "Quantile slice: AUC", "Quantile slice: Laplace", "Quantile slice: Laplace (wide)"))
 )
+
+
 
 dat$typeF <- case_match(dat$type, c("gess", "latent", "stepping") ~ "Slice",
                         "imh" ~ "IMH", "Qslice" ~ "Quantile slice",
@@ -60,8 +71,9 @@ print(eval_tab, n = 30)
 plt <- ggplot(dat %>% filter(target %in% c("hyper-g")),
               aes(x = sampPsec / 1e3, y = algoF, fill = typeF), color = "gray") +
   geom_violin(draw_quantiles = 0.5 , scale = "width") +
-  theme_bw() + scale_alpha(guide = "none") +
-  xlab("Effective samples per second\n(thousands)") + ylab("") + labs(color = "", fill = "")
+  theme_bw() + theme(legend.position = "none") +
+  scale_alpha(guide = "none") +
+  xlab("Effective samples (in thousands) per second") + ylab("") + labs(color = "", fill = "")
 
 plt
 
@@ -73,8 +85,9 @@ plt <- ggplot(dat %>% filter(target %in% c("hyper-g", "hyper-g-log")),
               aes(x = sampPsec / 1e3, y = algoF, fill = typeF, color = target_tx, alpha = target_tx_alpha)) +
   # geom_boxplot() +
   geom_violin(draw_quantiles = 0.5, scale = "width") +
-  theme_bw() + scale_alpha(guide = "none") +
-  xlab("Effective samples per second\n(thousands)") + ylab("") + labs(color = "", fill = "") +
+  theme_bw() + theme(legend.position = "none") +
+  scale_alpha(guide = "none") +
+  xlab("Effective samples (in thousands) per second") + ylab("") + labs(color = "", fill = "") +
   scale_color_manual(values = c("gray", "black"))
 
 plt
