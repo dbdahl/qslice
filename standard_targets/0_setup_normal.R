@@ -8,7 +8,6 @@ truth <- list(d = function(x) dnorm(x),
              lb = -Inf, ub = Inf,
              t = "normal(0,1)"
              )
-truth$dld <- function(x) numDeriv::grad(truth$ld, x=x)
 
 xlim_range <- c(-4, 4)
 ylim_range <- c(0, 0.42)

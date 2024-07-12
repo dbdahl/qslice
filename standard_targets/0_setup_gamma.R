@@ -11,7 +11,6 @@ truth = list(d = function(x) {dgamma(x, shape = gshape, scale = 1.0) * (x > 0.0)
              t = paste0("gamma(shape = ", gshape, ")"),
              lb = 0.0,
              ub = Inf)
-truth$dld = function(x) numDeriv::grad(truth$ld, x=x)
 
 xlim_range <- c(-4, 15)
 ylim_range <- c(0, 0.42)

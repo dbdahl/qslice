@@ -11,6 +11,8 @@ dte <- as.numeric(args[3])
 
 source("0_setup.R")
 
+sessionInfo()
+
 load(paste0("input/schedule_all_round", rnd, ".rda"))
 
 run_id <- job_order[ii]
@@ -53,8 +55,10 @@ for (jj in 1:n_runs) {
   )
 }
 
-thin <- min(10 * n_iter / mcmc_time_out$EffSamp, 100)
-thinDraws <- LaplacesDemon::Thin(mcmc_time_out$Draws[[1]], thin)
+thin <- min(10 * n_iter / mcmc_time_out$EffSamp, 100) |> round()
+indx_thin <- seq(thin, n_iter, by = thin)
+thinDraws <- mcmc_time_out$Draws[[1]][indx_thin]
+
 
 tempDf <- data.frame(round = rnd,
                      target = target,
@@ -75,7 +79,7 @@ tempDf <- data.frame(round = rnd,
                      sampPsec = mcmc_time_out$EffSamp / mcmc_time_out$userTime,
                      ks_pval = ks.test(thinDraws, truth$p)$p.value)
 
-# saving samples
+# save summary
 write.table(tempDf, file = paste0("output/round", rnd,
                                   "_target", target,
                                   "_type", type,

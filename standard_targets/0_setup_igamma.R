@@ -12,4 +12,3 @@ truth = list(d = function(x) {dinvgamma(x, shape = gshape, scale = 1.0)},
              t = paste0("inv-gamma(shape = ", gshape, ")"),
              lb = 0.0,
              ub = Inf)
-truth$dld = function(x) numDeriv::grad(truth$ld, x=x)

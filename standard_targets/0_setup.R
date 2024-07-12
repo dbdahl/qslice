@@ -1,4 +1,3 @@
-# library(tidyverse)
 library("qslice")
-library("LaplacesDemon")
+library("coda")
 source("./functions/samplers_timing.R")

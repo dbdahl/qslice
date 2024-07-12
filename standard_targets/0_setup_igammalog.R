@@ -7,4 +7,3 @@ truth <- list(d = function(x) {dgamma(exp(-x), shape = gshape) * exp(-x)},
               lb = -Inf, ub = Inf,
               t = paste("inv-gamma_log(shape = ", gshape, ")")
               )
-truth$dld = function(x) numDeriv::grad(truth$ld, x=x)

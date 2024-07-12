@@ -2,13 +2,14 @@ rm(list=ls())
 
 set.seed(230308)
 
+targets <- c("normal", "gamma", "igamma")
 targets <- c("normal", "gamma", "igamma", "gammalog", "igammalog")
 
-rnd <- 2 # only applies to round 2
+rnd <- 2
 
 sched_list <- list()
 
-for (tg in targets) {
+for (tg in targets) { # requires 1_setup_trials.R be run for each target first
   load(paste0("input/schedule_target", tg, "_round", rnd, ".rda"))
   sched_list[[tg]] <- sched
 }

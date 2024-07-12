@@ -8,11 +8,11 @@ target <- "gammalog"
 target <- "igamma"
 target <- "igammalog"
 
-rnd <- 2
-n_rep <- 100
+rnd <- 1 # round (1 for exploring settings; 2 for final comparisons at selected settings)
+n_rep <- 5 # number of replicate runs for each sampler/setting
 
 x0 <- 0.2  # same initial value for all samplers
-wide_factor <- 4.0
+wide_factor <- 4.0 # scale inflation for methods using a "diffuse" pseudo-target
 
 #########
 
@@ -41,7 +41,7 @@ sched0 <- list()
 
 
 if (rnd > 1) {
-  source("1_setup_trials_pseudo.R")
+  source("1_setup_trials_pseudo.R") # methods with pseudo-targets won't require initial calibration
 }
 
 
