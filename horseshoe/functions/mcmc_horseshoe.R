@@ -2,7 +2,6 @@
 mcmc_hs <- function(state, prior, data, sampler, n_iter,
                     n_thin = 1, save = TRUE, prog = 0,
                     upper_tau2 = 1.0e9) {
-                    # , appx_threshold = 0.0) {
 
   ## state is a list with: beta, sig2, lam2, tau2, and latent_s (latent slice for tau2), and iter
   ## prior is a list with: n0, s20
@@ -27,7 +26,6 @@ mcmc_hs <- function(state, prior, data, sampler, n_iter,
       tmp <- update_tau2(state = state, prior = prior, data = data,
                          sampler = sampler[["tau2"]],
                          upper = upper_tau2)
-                         # appx_threshold = appx_threshold)
       state <- tmp$state # includes update of s in latent sampler
 
       state$sig2 <- upd_sig2(y = data$y, X = data$X, n0 = prior$n0, s02 = prior$s02,
@@ -35,7 +33,6 @@ mcmc_hs <- function(state, prior, data, sampler, n_iter,
 
       state$beta <- upd_beta(y = data$y, X = data$X,
                              tau2 = state$tau2, lam2 = state$lam2, sig2 = state$sig2)
-                             # appx_threshold = appx_threshold)
 
 
       state$iter <- state$iter + 1
@@ -63,7 +60,6 @@ mcmc_hs <- function(state, prior, data, sampler, n_iter,
 
 time_hs <- function(state, prior, data, sampler, n_iter, param,
                     upper_tau2 = 1.0e9) {
-                    # appx_threshold = 0.0) {
 
   require("coda")
 
@@ -76,7 +72,6 @@ time_hs <- function(state, prior, data, sampler, n_iter, param,
                         n_thin = 1,
                         save = TRUE, prog = 0,
                         upper_tau2 = upper_tau2)
-                        # appx_theshold = appx_threshold)
   })
 
   draws <- sapply(mcmc_out$sims, function(x) x[[param]])

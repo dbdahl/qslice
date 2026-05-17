@@ -3,10 +3,10 @@ ii <- as.numeric(args[1])  # job id
 dte <- as.numeric(args[2])
 
 ##### for testing
-ii <- 2
+ii <- 12
 dte <- 260511
 # data_use <- "mtcars"
-data_use <- "diabetes"
+data_use <- "diabetes" # just stick with diabetes n = 40 and n = 442
 # data_use <- "riboflavin"
 #####
 
@@ -21,7 +21,7 @@ source("functions/tune.R")
 
 load("schedule_all.rda")
 
-n_iter <- 10e3
+n_iter <- 30e3
 
 run_id <- job_order[ii]
 (run_info <- sched[run_id,])
@@ -42,27 +42,26 @@ state
 sampler <- list()
 
 sampler$tau2 <- list(type = "stepping", subtype = NA, logscale = logscale_tau2,
-                     w = ifelse(logscale_tau2, 1.0, 0.5)) # always do initial with a stepping-out slice sampler; CHANGE THIS BASED ON data set
+                     w = ifelse(logscale_tau2, 4.0, 0.005)) # always do initial with a stepping-out slice sampler; dependent on data
+
+## diabetes ltau2 w = 4 always; tau2 w = .003 for full data and .02 (or .003 is just as good...) for n = 40
 
 
 ### initial burn-in
 mc_out <- mcmc_hs(state = state, prior = prior, data = dat,
                   sampler = sampler,
-                  n_iter = 1e3,
-                  save = FALSE, prog = 100,
+                  n_iter = 2e3,
+                  save = FALSE, prog = 500,
                   upper_tau2 = 1.0e9)
-                  # appx_threshold = 0.0)
 
 (state <- mc_out$state)
 
-### continue the chain and save samples
+### continue the chain and save samples for tuning
 mc_out <- mcmc_hs(state = state, prior = prior, data = dat,
                   sampler = sampler,
-                  # n_iter = 5e3, n_thin = 5,
-                  n_iter = 1e3, n_thin = 5,
-                  save = TRUE, prog = 100,
+                  n_iter = 2e3, n_thin = 5,
+                  save = TRUE, prog = 500,
                   upper_tau2 = 1.0e9) # samples for pseudo-target
-                  # appx_threshold = 0.0) # samples for pseudo-target
 
 (state <- mc_out$state)
 
@@ -75,7 +74,7 @@ coda::effectiveSize(log(tau2_samples))
 
 beta_samples <- sapply(mc_out$sims, function(x) x$beta) |> t()
 indx_check <- 1:4
-(indx_check <- which(colMeans(abs(beta_samples) > 0.05) > 0.25))
+(indx_check <- which(colMeans(abs(beta_samples) > 0.01) > 0.5))
 plot(as.mcmc(beta_samples[,indx_check]))
 
 llam2_samples <- sapply(mc_out$sims, function(x) log(x$lam2)) |> t()
@@ -93,7 +92,7 @@ if (isTRUE(logscale_tau2)) {
 
 if (type %in% c("rw", "stepping", "latent")) { # will require tuning
 
-  tune_bnds_init <- c(0.2 * sd(samples_use), 0.8*diff(range(samples_use)))
+  tune_bnds_init <- c(0.2 * sd(samples_use), 0.8 * diff(range(samples_use)))
 
   if (type == "latent") {
     state$latent_s <- mean(tune_bnds_init)
@@ -107,9 +106,12 @@ if (type %in% c("rw", "stepping", "latent")) { # will require tuning
                   sampler = sampler,
                   param = "tau2",
                   bnds_init = tune_bnds_init,
-                  n_iter = 1e3, n_grid = 5, n_rep = 3,
-                  n_rounds = 5, range_frac = 0.5,
+                  n_iter = 1e3, n_grid = 3, n_rep = 2,
+                  n_rounds = 5, range_frac = 0.67,
                   verbose = TRUE)
+
+  plot(mc_tune$lvals, mc_tune$lesps)
+  abline(v = log(mc_tune$val_opt), lty = 2)
 
   sampler$tau2 <- mc_tune$sampler$tau2
 
@@ -138,42 +140,12 @@ if (type %in% c("rw", "stepping", "latent")) { # will require tuning
   sampler$tau2$degf <- tmp_pseu$pseudo$params$degf
   sampler$tau2$txt <- tmp_pseu$pseudo$txt
 
-} else if (grepl("Laplace_analytic", subtype)) {
-
-  sampler$tau2$type <- type
-  sampler$tau2$subtype <- subtype
-
-  if (isTRUE(logscale_tau2)) {
-
-    sampler$tau2$degf = 5
-
-    if (grepl("wide", subtype)) {
-      sampler$tau2$sc_adj <- 1.2
-    } else {
-      sampler$tau2$sc_adj <- 1.0
-    }
-
-  } else {
-
-    sampler$tau2$degf = 1
-
-    if (grepl("wide", subtype)) {
-      sampler$tau2$sc_adj <- 1.5
-    } else {
-      sampler$tau2$sc_adj <- 1.0
-    }
-
-  }
-
 }
-
-(state <- mc_out$state)
 
 ### timing run
 mc_time <- time_hs(state = state, prior = prior, data = dat,
                    sampler = sampler, n_iter = n_iter, param = "tau2",
                    upper_tau2 = 1.0e9)
-                 # , appx_threshold = 0.0)
 
 mc_time$timing
 (samp_p_sec <- mc_time$timing$EffSamp / mc_time$timing$userTime)
@@ -194,7 +166,6 @@ if (type == "Qslice") {
                         n_iter = 2e3,
                         save = TRUE, prog = 0,
                         upper_tau2 = 1.0e9)
-                        # , appx_threshold = 0.0) # samples for pseudo-target
 
   draws_u <- sapply(mc_out$extras, function(x) x$u)
   (AUC <- auc(u = draws_u))

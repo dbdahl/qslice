@@ -23,7 +23,8 @@ if (data_use == "mtcars") {
   # ?diabetes
 
   set.seed(1)
-  indx_obs <- sort(sample.int(length(diabetes$y), replace = FALSE, size = 442))
+  # indx_obs <- sort(sample.int(length(diabetes$y), replace = FALSE, size = 442))
+  indx_obs <- sort(sample.int(length(diabetes$y), replace = FALSE, size = 40))
 
   dat$y <- scale(diabetes$y[indx_obs])
   dat$X <- scale(diabetes$x2[indx_obs,])

@@ -1,9 +1,9 @@
 tune <- function(state, prior, data, sampler, param, bnds_init,
                  n_iter = 1000,
-                 n_grid = 5,
-                 n_rep = 3,
-                 n_rounds = 3,
-                 range_frac = 0.5,
+                 n_grid = 3,
+                 n_rep = 2,
+                 n_rounds = 5,
+                 range_frac = 0.67,
                  verbose = TRUE) {
 
   require("coda")
@@ -13,6 +13,11 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
   hstry <- list()
   bnds_now <- bnds_init
   range_now <- diff(bnds_now)
+
+  esps_means_running <- numeric(0)
+  vals_running <- numeric(0)
+  lxx <- numeric(0)
+  lyy <- numeric(0)
 
   for (rr in 1:n_rounds) {
 
@@ -48,37 +53,66 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
       }
     }
 
-    ## find max
+    ## collect running results
     esps_means <- rowMeans(esps)
-    indx_max <- which.max(esps_means)
+    esps_means_running <- c(esps_means_running, esps_means)
+    vals_running <- c(vals_running, vals)
+
+    ## find max
+
+    # first, try a quadratic regression on all results so far
+
+    lxx <- c(lxx, rep(log(vals), each = n_rep))
+    lyy <- c(lyy, c(t(log(esps))))
+
+    mod <- lm(lyy ~ lxx + I(lxx^2))
+    betas <- coef(mod)
+
+    if (betas[3] < 0.0) { # proceed with quadratic
+
+      lx_max <- -0.5 * betas[2] / betas[3]
+      opt <- exp(lx_max)
+
+    } else {
+
+      opt <- vals_running[which.max(esps_means_running)]
+
+    }
 
     ## collect history
     hstry[[rr]] <- list(vals = vals, esps = esps, means = esps_means,
-                        opt = vals[indx_max])
+                        opt = opt, lvals = lxx, lesps = lyy)
 
     if (isTRUE(verbose)) {
       cat("Round", rr, "\n", "values/ESPS:",
-          paste(vals, round(esps_means), collapse = "; "),
+          paste(vals, round(esps_means, 2), collapse = "; "),
           "\n", "Selection:",
-          vals[indx_max], "at", round(esps_means[indx_max]),
+          opt,
           "\n")
     }
 
     ## set up subsequent grid
     if (rr <= n_rounds) {
-      bnds_now[1] <- vals[indx_max] - range_now * range_frac / 2.0
-      bnds_now[2] <- vals[indx_max] + range_now * range_frac / 2.0
+      bnds_now[1] <- opt - range_now * range_frac / 2.0
+      bnds_now[2] <- opt + range_now * range_frac / 2.0
       range_now <- diff(bnds_now)
     }
 
   }
 
   ## final selection
-  val_opt <- vals[indx_max]
+
+  if (opt < min(vals_running)) {
+    val_opt <- min(vals_running)
+  } else if (opt > max(vals_running)) {
+    val_opt <- max(vals_running)
+  } else {
+    val_opt <- opt
+  }
 
   if (isTRUE(verbose)) {
     cat("Final selection:",
-        val_opt, "at", round(esps_means[indx_max]),
+        val_opt,
         "\n")
   }
 
@@ -90,6 +124,7 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
     sampler[[param]]$rate = val_opt
   }
 
-  list(val_opt = val_opt, hstry = hstry, state = state,
+  list(val_opt = val_opt, lvals = lxx, lesps = lyy,
+       hstry = hstry, state = state,
        sampler = sampler, n_iter = n_iter)
 }
