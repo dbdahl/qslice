@@ -15,16 +15,19 @@ if (data_use == "mtcars") {
   dat$XtX <- crossprod(dat$X)
   (dat$beta_hat <- solve(dat$XtX, crossprod(dat$X, dat$y)) |> drop())
 
-} else if (data_use == "diabetes") {
+} else if (grep("db", data_use)) {
 
   library("lars")
   data(diabetes)
   str(diabetes)
   # ?diabetes
 
-  set.seed(1)
-  # indx_obs <- sort(sample.int(length(diabetes$y), replace = FALSE, size = 442))
-  indx_obs <- sort(sample.int(length(diabetes$y), replace = FALSE, size = 40))
+  if (data_use == "db40") {
+    set.seed(1)
+    indx_obs <- sort(sample.int(length(diabetes$y), replace = FALSE, size = 40))
+  } else {
+    indx_obs <- 1:length(diabetes$y)
+  }
 
   dat$y <- scale(diabetes$y[indx_obs])
   dat$X <- scale(diabetes$x2[indx_obs,])

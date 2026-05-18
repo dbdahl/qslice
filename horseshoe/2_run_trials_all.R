@@ -3,25 +3,26 @@ ii <- as.numeric(args[1])  # job id
 dte <- as.numeric(args[2])
 
 ##### for testing
-ii <- 12
-dte <- 260511
+# ii <- 250
+# dte <- 260518
 # data_use <- "mtcars"
-data_use <- "diabetes" # just stick with diabetes n = 40 and n = 442
+# data_use <- "db" # diabetes n = 442
+# data_use <- "db40" # diabetes n = 40
 # data_use <- "riboflavin"
 #####
 
 library("qslice")
 library("coda")
-source("0_data.R")
-source("0_prior.R")
 source("functions/MH_samplers.R")
 source("functions/full_conditionals.R")
 source("functions/mcmc_horseshoe.R")
 source("functions/tune.R")
 
-load("schedule_all.rda")
+load(paste0("schedule_all_", data_use, ".rda"))
+source("0_data.R")
+source("0_prior.R")
 
-n_iter <- 30e3
+n_iter <- 20e3
 
 run_id <- job_order[ii]
 (run_info <- sched[run_id,])
@@ -32,23 +33,22 @@ subtype <- as.character(run_info$subtype)
 
 set.seed(dte + ii)
 
-state <- list(iter = 0)
-state$sig2 <- prior$s02
-state$beta <- rnorm(dat$p, mean = dat$beta_hat, sd = 0.2)
-state$lam2 <- runif(dat$p, min = 0.0, max = 1.0)
-state$tau2 <- runif(1, min = 0.0, max = 1.0)
-state
+state0 <- list(iter = 0)
+state0$sig2 <- prior$s02
+state0$beta <- rnorm(dat$p, mean = dat$beta_hat, sd = 0.2)
+state0$lam2 <- runif(dat$p, min = 0.0, max = 1.0)
+state0$tau2 <- runif(1, min = 0.0, max = 1.0)
+state0
 
 sampler <- list()
 
 sampler$tau2 <- list(type = "stepping", subtype = NA, logscale = logscale_tau2,
                      w = ifelse(logscale_tau2, 4.0, 0.005)) # always do initial with a stepping-out slice sampler; dependent on data
-
 ## diabetes ltau2 w = 4 always; tau2 w = .003 for full data and .02 (or .003 is just as good...) for n = 40
 
 
 ### initial burn-in
-mc_out <- mcmc_hs(state = state, prior = prior, data = dat,
+mc_out <- mcmc_hs(state = state0, prior = prior, data = dat,
                   sampler = sampler,
                   n_iter = 2e3,
                   save = FALSE, prog = 500,
@@ -59,7 +59,7 @@ mc_out <- mcmc_hs(state = state, prior = prior, data = dat,
 ### continue the chain and save samples for tuning
 mc_out <- mcmc_hs(state = state, prior = prior, data = dat,
                   sampler = sampler,
-                  n_iter = 2e3, n_thin = 5,
+                  n_iter = 2e3, n_thin = 4,
                   save = TRUE, prog = 500,
                   upper_tau2 = 1.0e9) # samples for pseudo-target
 
@@ -68,20 +68,20 @@ mc_out <- mcmc_hs(state = state, prior = prior, data = dat,
 ### Additional prep
 
 tau2_samples <- sapply(mc_out$sims, function(x) x$tau2)
-plot(as.mcmc(tau2_samples))
-plot(as.mcmc(log(tau2_samples)))
-coda::effectiveSize(log(tau2_samples))
+# plot(as.mcmc(tau2_samples))
+# plot(as.mcmc(log(tau2_samples)))
+# coda::effectiveSize(log(tau2_samples))
 
-beta_samples <- sapply(mc_out$sims, function(x) x$beta) |> t()
-indx_check <- 1:4
-(indx_check <- which(colMeans(abs(beta_samples) > 0.01) > 0.5))
-plot(as.mcmc(beta_samples[,indx_check]))
+# beta_samples <- sapply(mc_out$sims, function(x) x$beta) |> t()
+# indx_check <- 1:4
+# (indx_check <- which(colMeans(abs(beta_samples) > 0.01) > 0.5))
+# plot(as.mcmc(beta_samples[,indx_check]))
 
-llam2_samples <- sapply(mc_out$sims, function(x) log(x$lam2)) |> t()
-plot(as.mcmc(llam2_samples[,indx_check]))
+# llam2_samples <- sapply(mc_out$sims, function(x) log(x$lam2)) |> t()
+# plot(as.mcmc(llam2_samples[,indx_check]))
 
-sig2_samples <- sapply(mc_out$sims, function(x) x$sig2)
-plot(as.mcmc(sig2_samples))
+# sig2_samples <- sapply(mc_out$sims, function(x) x$sig2)
+# plot(as.mcmc(sig2_samples))
 
 
 if (isTRUE(logscale_tau2)) {
@@ -110,14 +110,23 @@ if (type %in% c("rw", "stepping", "latent")) { # will require tuning
                   n_rounds = 5, range_frac = 0.67,
                   verbose = TRUE)
 
-  plot(mc_tune$lvals, mc_tune$lesps)
-  abline(v = log(mc_tune$val_opt), lty = 2)
+  # plot(mc_tune$lvals, mc_tune$lesps)
+  # abline(v = log(mc_tune$val_opt), lty = 2)
 
   sampler$tau2 <- mc_tune$sampler$tau2
 
   if (type == "latent") {
     state <- mc_tune$state # since latent_s was burned in during tuning
   }
+
+  ### burn-in again with new sampler (so all timing runs begin after iter 10,000)
+  mc_out <- mcmc_hs(state = state0, prior = prior, data = dat,
+                    sampler = sampler,
+                    n_iter = 10e3,
+                    save = FALSE, prog = 1000,
+                    upper_tau2 = 1.0e9)
+
+  (state <- mc_out$state)
 
 } else if (grepl("samples", subtype)) { # tune with samples
 
@@ -160,6 +169,12 @@ draws_tau2 <- mc_time$draws
 # plot(as.mcmc(draws_tau2))
 # plot(as.mcmc(log(draws_tau2)))
 
+if (type %in% c("rw", "stepping", "latent")) {
+  tune_param <- mc_tune$val_opt
+} else {
+  tune_param <- NA
+}
+
 if (type == "Qslice") {
   mc_out <- mcmc_hs(state = state, prior = prior, data = dat,
                         sampler = sampler,
@@ -189,6 +204,7 @@ tempDf <- data.frame(target = target,
                      sysTime = mc_time$timing$sysTime,
                      elapsedTime = mc_time$timing$elapsedTime,
                      sampPsec = samp_p_sec,
+                     tuneParam = tune_param,
                      auc = AUC)
 
 write.table(tempDf, file = paste0("output/",

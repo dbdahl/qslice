@@ -102,10 +102,8 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
 
   ## final selection
 
-  if (opt < min(vals_running)) {
-    val_opt <- min(vals_running)
-  } else if (opt > max(vals_running)) {
-    val_opt <- max(vals_running)
+  if ( (opt < min(vals_running)) || (opt > max(vals_running)) ) { # if solution out of bounds, don't extrapolate
+    val_opt <- vals_running[which.max(esps_means_running)]
   } else {
     val_opt <- opt
   }

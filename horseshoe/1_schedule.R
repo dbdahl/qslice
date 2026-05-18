@@ -1,11 +1,14 @@
 rm(list=ls())
 library("tidyverse")
 
-set.seed(260511)
+set.seed(260518)
 
-n_reps <- 2
+n_reps <- 50
 
-targets <- c("hs_tau2_marg", "hs_tau2_marg-log")
+data_use <- "db"
+# data_use <- "db40"
+
+targets <- paste(data_use, c("tau2_marg", "tau2_marg-log"), sep = "_")
 
 types <- c("rw", "stepping", "latent", "gess", "imh", "Qslice")
 subtypes <- c("AUC_samples", "MSW_samples") #, "Laplace_analytic", "Laplace_analytic_wide") # Add "MSW_samples"?
@@ -25,5 +28,6 @@ sched
 
 job_order <- sample(n_jobs, size = n_jobs, replace = FALSE)
 
-save(file = paste0("schedule_all.rda"),
+save(file = paste0("schedule_all_", data_use, ".rda"),
      sched, n_jobs, job_order)
+
