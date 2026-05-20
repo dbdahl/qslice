@@ -1,7 +1,6 @@
 
 mcmc_hs <- function(state, prior, data, sampler, n_iter,
-                    n_thin = 1, save = TRUE, prog = 0,
-                    upper_tau2 = 1.0e9) {
+                    n_thin = 1, save = TRUE, prog = 0) {
 
   ## state is a list with: beta, sig2, lam2, tau2, and latent_s (latent slice for tau2), and iter
   ## prior is a list with: n0, s20
@@ -24,8 +23,7 @@ mcmc_hs <- function(state, prior, data, sampler, n_iter,
       }
 
       tmp <- update_tau2(state = state, prior = prior, data = data,
-                         sampler = sampler[["tau2"]],
-                         upper = upper_tau2)
+                         sampler = sampler[["tau2"]])
       state <- tmp$state # includes update of s in latent sampler
 
       state$sig2 <- upd_sig2(y = data$y, X = data$X, n0 = prior$n0, s02 = prior$s02,
@@ -59,7 +57,7 @@ mcmc_hs <- function(state, prior, data, sampler, n_iter,
 
 
 time_hs <- function(state, prior, data, sampler, n_iter, param,
-                    upper_tau2 = 1.0e9) {
+                    ess_log = TRUE) { # calculate ESS on log-transformed param?
 
   require("coda")
 
@@ -70,13 +68,12 @@ time_hs <- function(state, prior, data, sampler, n_iter, param,
                         sampler = sampler,
                         n_iter = n_iter,
                         n_thin = 1,
-                        save = TRUE, prog = 0,
-                        upper_tau2 = upper_tau2)
+                        save = TRUE, prog = 0)
   })
 
-  draws <- sapply(mcmc_out$sims, function(x) x[[param]])
+  draws <- sapply(mcmc_out$sims, function(x) x[[param]]) # these are always tau2 (not log scale)
 
-  if (isTRUE(sampler[[param]]$logscale)) {
+  if (isTRUE(ess_log)) {
     draws_ess <- log(draws) |> coda::as.mcmc()
   } else {
     draws_ess <- draws |> coda::as.mcmc()

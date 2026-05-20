@@ -31,13 +31,27 @@ sig2_fc <- function(y, X, n0, s02, tau2, lam2) {
 
   Mtau <- constr_Mtau(tau2 = tau2, lam2 = lam2, X = X, n = n)
 
-  L <- chol(Mtau) |> t()
+  L <- tryCatch({
 
-  Linvy <- forwardsolve(L, y)
-  ss <- crossprod(Linvy) |> drop()
-  b1 <- 0.5 * (n0*s02 + ss)
+    chol(Mtau) |> t()
 
-  list(shape = a1, scale = b1, Mtau = Mtau, Linvy = Linvy, ss = ss)
+  }, error = function(e) {
+    message(paste0("tau2 = ", tau2, "\nerror: "), conditionMessage(e))
+    return(NULL)
+  })
+
+  if (is.null(L)) {
+    out <- NULL
+  } else {
+
+    Linvy <- forwardsolve(L, y)
+    ss <- crossprod(Linvy) |> drop()
+    b1 <- 0.5 * (n0*s02 + ss)
+
+    out <- list(shape = a1, scale = b1, Mtau = Mtau, Linvy = Linvy, ss = ss)
+  }
+
+  out
 }
 
 upd_sig2 <- function(y, X, n0, s02, tau2, lam2) {
@@ -70,32 +84,38 @@ upd_beta <- function(y, X, tau2, lam2, sig2) {
 }
 
 
-lmarg_tau2 <- function(y, X, tau2, lam2, n0, s02, upper = 1.0e9) {
+lmarg_tau2 <- function(y, X, tau2, lam2, n0, s02, upper) {
 
   n <- length(y)
 
-  if (tau2 < upper) {
+  if (tau2 > 0.0 && tau2 < upper) {
 
     abM <- sig2_fc(y = y, X = X, n0 = n0, s02 = s02, tau2 = tau2, lam2 = lam2)
 
-    # ldetM <- determinant(abM$Mtau$Mtau, logarithm = TRUE)$modulus # can calculate more efficiently?
+    if (is.null(abM)) {
+      out <- -Inf
+    } else {
 
-    ## this alternative calculation actually doesn't help in the n = 100, p = 4000 case... But it does in the n = 500, p = 60 case
-    lam <- sqrt(lam2)
-    XDh <- X * rep(lam, each = n)
-    svdXDh <- svd(XDh)
-    indx_nz <- which(svdXDh$d > 0.0)
+      # ldetM <- determinant(abM$Mtau$Mtau, logarithm = TRUE)$modulus # can calculate more efficiently?
 
-    eigens_nz <- svdXDh$d[indx_nz]^2
-    ldetM <- sum(log1p(tau2 * eigens_nz))
+      ## this alternative calculation actually doesn't help in the n = 100, p = 4000 case... But it does in the n = 500, p = 60 case
+      lam <- sqrt(lam2)
+      XDh <- X * rep(lam, each = n)
+      svdXDh <- svd(XDh)
+      indx_nz <- which(svdXDh$d > 0.0)
 
-    lfc_tau <- -0.5 * ldetM - abM$shape * log(abM$scale) - log1p(tau2)
-    ljacob <- -0.5 * log(tau2) # this is for the transformation tau -> tau2
+      eigens_nz <- svdXDh$d[indx_nz]^2
+      ldetM <- sum(log1p(tau2 * eigens_nz))
 
-    out <- lfc_tau + ljacob
+      lfc_tau <- -0.5 * ldetM - abM$shape * log(abM$scale) - log1p(tau2)
+      ljacob <- -0.5 * log(tau2) # this is for the transformation tau -> tau2
+
+      out <- lfc_tau + ljacob
+
+    }
 
   } else {
-    warning(paste0("truncated tau2, which was proposed to be ", tau2, ", at ", upper)) # this is necessary for stable computation of target for tau2
+    warning(paste0("tau2 proposed out of bounds:", tau2, ", boundaries (0, ", upper, "\nreturning -Inf log denisty")) # this is necessary for stable computation of target for tau2
     out <- -Inf
   }
 
@@ -103,7 +123,7 @@ lmarg_tau2 <- function(y, X, tau2, lam2, n0, s02, upper = 1.0e9) {
 }
 
 
-update_tau2 <- function(state, prior, data, sampler_tau2, upper = 1.0e9) {
+update_tau2 <- function(state, prior, data, sampler_tau2) {
 
   ## state is a list with: beta, sig2, lam2, tau2, and latent_s (latent slice for tau2), and iter
   ## prior is a list with: n0, s20
@@ -117,7 +137,7 @@ update_tau2 <- function(state, prior, data, sampler_tau2, upper = 1.0e9) {
                             tau2 = exp(ltau2),
                             lam2= state$lam2,
                             n0 = prior$n0, s02 = prior$s02,
-                            upper = upper)
+                            upper = sampler_tau2$support[2])
 
       lp_tau2 + ltau2 # add Jacobian for transformation tau2 -> log(tau2)
     }
@@ -131,7 +151,7 @@ update_tau2 <- function(state, prior, data, sampler_tau2, upper = 1.0e9) {
         out <- lmarg_tau2(y = data$y, X = data$X,
                           tau2 = tau2, lam2= state$lam2,
                           n0 = prior$n0, s02 = prior$s02,
-                          upper = upper)
+                          upper = sampler_tau2$support[2])
 
       } else {
         out <- -Inf
@@ -161,14 +181,6 @@ update_tau2 <- function(state, prior, data, sampler_tau2, upper = 1.0e9) {
                               log_target = ltarget,
                               w = sampler_tau2$w)
 
-  } else if (sampler_tau2$type == "gess") {
-
-    tmp <- slice_genelliptical(x = old_val,
-                               log_target = ltarget,
-                               mu = sampler_tau2$loc,
-                               sigma = sampler_tau2$sc,
-                               df = sampler_tau2$degf)
-
   } else if (sampler_tau2$type == "latent") {
 
     tmp <- slice_latent(x = old_val, s = state$latent_s,
@@ -178,20 +190,83 @@ update_tau2 <- function(state, prior, data, sampler_tau2, upper = 1.0e9) {
 
   } else if (sampler_tau2$type == "imh") {
 
-    tmp <- imh_pseudo(x = old_val,
-                      log_target = ltarget,
-                      pseudo = sampler_tau2$pseudo)
+    if (sampler_tau2$subtype == "samples_reg") {
 
-    tmp$nEvaluations <- 2
+      llam2_uq <- unname(quantile(log(state$lam2), sampler_tau2$bqr$qntle))
+      loc_now <- reg_mean(x = llam2_uq,
+                          beta = sampler_tau2$bqr$beta)
+
+      pseudo_now <- pseudo_list(family = "t", params = list(loc = loc_now,
+                                                            sc = sampler_tau2$bqr$sig,
+                                                            degf = sampler_tau2$degf))
+
+      tmp <- imh_pseudo(x = old_val,
+                        log_target = ltarget,
+                        pseudo = pseudo_now)
+
+      tmp$nEvaluations <- 2
+
+    } else if (grepl("samples$", sampler_tau2$subtype)) {
+
+      tmp <- imh_pseudo(x = old_val,
+                        log_target = ltarget,
+                        pseudo = sampler_tau2$pseudo)
+
+      tmp$nEvaluations <- 2
+
+    }
+
+  } else if (sampler_tau2$type == "gess") {
+
+    if (sampler_tau2$subtype == "samples_reg") {
+
+      llam2_uq <- unname(quantile(log(state$lam2), sampler_tau2$bqr$qntle))
+      loc_now <- reg_mean(x = llam2_uq,
+                          beta = sampler_tau2$bqr$beta)
+
+      tmp <- slice_genelliptical(x = old_val,
+                                 log_target = ltarget,
+                                 mu = loc_now,
+                                 sigma = sampler_tau2$bqr$sig,
+                                 df = sampler_tau2$degf)
+
+    } else if (grepl("samples$", sampler_tau2$subtype)) {
+
+      tmp <- slice_genelliptical(x = old_val,
+                                 log_target = ltarget,
+                                 mu = sampler_tau2$loc,
+                                 sigma = sampler_tau2$sc,
+                                 df = sampler_tau2$degf)
+
+    }
 
   } else if (sampler_tau2$type == "Qslice") {
 
-    tmp <- slice_quantile(x = old_val,
-                          log_target = ltarget,
-                          pseudo = sampler_tau2$pseudo)
+    if (sampler_tau2$subtype == "samples_reg") {
+
+      llam2_uq <- unname(quantile(log(state$lam2), sampler_tau2$bqr$qntle))
+      loc_now <- reg_mean(x = llam2_uq,
+                          beta = sampler_tau2$bqr$beta)
+
+      pseudo_now <- pseudo_list(family = "t", params = list(loc = loc_now,
+                                                            sc = sampler_tau2$bqr$sig,
+                                                            degf = sampler_tau2$degf))
+
+      tmp <- slice_quantile(x = old_val,
+                            log_target = ltarget,
+                            pseudo = pseudo_now)
+
+    } else if (grepl("samples$", sampler_tau2$subtype)) {
+
+      tmp <- slice_quantile(x = old_val,
+                            log_target = ltarget,
+                            pseudo = sampler_tau2$pseudo)
+
+    }
+
   }
 
-  state$tau2 <- ifelse(sampler_tau2$logscale, exp(tmp$x), tmp$x)
+  state$tau2 <- ifelse(sampler_tau2$logscale, exp(tmp$x), tmp$x) # always return tau2 (not log scale)
 
   list(tau2 = state$tau2, state = state, extras = tmp)
 }

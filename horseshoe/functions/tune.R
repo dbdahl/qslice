@@ -1,4 +1,5 @@
 tune <- function(state, prior, data, sampler, param, bnds_init,
+                 ess_log = TRUE,
                  n_iter = 1000,
                  n_grid = 3,
                  n_rep = 2,
@@ -45,10 +46,11 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
 
         ## collect timing info
         mc_time <- time_hs(state = state, prior = prior, data = data,
-                           sampler = sampler, n_iter = n_iter, param = param)
+                           sampler = sampler, n_iter = n_iter, param = param,
+                           ess_log = ess_log)
         state <- mc_time$state
 
-        esps[i,j] <- mc_time$timing$EffSamp / mc_time$timing$userTime
+        esps[i,j] <- max(mc_time$timing$EffSamp, 1.0) / mc_time$timing$userTime
 
       }
     }
@@ -71,7 +73,14 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
     if (betas[3] < 0.0) { # proceed with quadratic
 
       lx_max <- -0.5 * betas[2] / betas[3]
-      opt <- exp(lx_max)
+
+      if (lx_max < min(lxx)) { # don't extrapolate
+        opt <- exp(min(lxx))
+      } else if (lx_max > max(lxx)) {
+        opt <- exp(max(lxx))
+      } else {
+        opt <- exp(lx_max)
+      }
 
     } else {
 
@@ -103,9 +112,9 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
   ## final selection
 
   if ( (opt < min(vals_running)) || (opt > max(vals_running)) ) { # if solution out of bounds, don't extrapolate
-    val_opt <- vals_running[which.max(esps_means_running)]
+    val_opt <- unname(vals_running[which.max(esps_means_running)])
   } else {
-    val_opt <- opt
+    val_opt <- unname(opt)
   }
 
   if (isTRUE(verbose)) {
@@ -122,7 +131,35 @@ tune <- function(state, prior, data, sampler, param, bnds_init,
     sampler[[param]]$rate = val_opt
   }
 
-  list(val_opt = val_opt, lvals = lxx, lesps = lyy,
+  list(val_opt = unname(val_opt), lvals = lxx, lesps = lyy,
        hstry = hstry, state = state,
        sampler = sampler, n_iter = n_iter)
 }
+
+
+## tuning a regression-based pseudo-target conditional on a summary of other params
+reg_mean <- function(x, beta) {
+  loc <- beta[1] + beta[2]*x
+}
+
+best_quantile_reg <- function(y, # vector of samples of param of interest across iter
+                              X, # rows are samples, cols are parameters
+                              qq = c(0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95)){
+
+  nqq <- length(qq)
+  Rsq <- numeric(nqq)
+  sig <- numeric(nqq)
+  bet <- matrix(NA, nrow = nqq, ncol = 2)
+  for (i in 1:nqq) {
+    x_uq <- apply(X, 1, function(x) quantile(x, qq[i]))
+    lmod <- lm(y ~ x_uq)
+    sig[i] <- sigma(lmod)
+    bet[i,] <- coef(lmod)
+    Rsq[i] <- summary(lmod)$r.squared
+  }
+  indx_use <- which.max(Rsq)
+  cat("Selected ", qq[indx_use], " quantile with R-squared: ", Rsq[indx_use])
+
+  list(sig = sig[indx_use], beta = bet[indx_use,], qntle = qq[indx_use], Rsq = Rsq[indx_use])
+}
+

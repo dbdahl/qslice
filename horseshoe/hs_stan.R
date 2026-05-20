@@ -1,10 +1,10 @@
 
 # data_use <- "mtcars"
 # data_use <- "diabetes"
-data_use <- "riboflavin"
+# data_use <- "riboflavin"
 
-source("0_data.R")
-source("0_prior.R")
+# source("0_data.R")
+# source("0_prior.R")
 
 
 ## STAN
@@ -21,7 +21,7 @@ options(mc.cores = n_cores)
 
 fit_stan <- stan(model_code = readLines("hs.stan"),
                  data = data_stan, pars = params,
-                 iter = 5000, warmup = 500, thin = 5, chains = n_cores)
+                 iter = 15000, warmup = 500, thin = 5, chains = n_cores)
 
 sim_stan <- extract(fit_stan)
 
@@ -37,3 +37,4 @@ rstan::traceplot(fit_stan, pars = "beta[73]")
 (nsim <- length(sim_stan$tau))
 
 summary(fit_stan)$s
+summary(fit_stan, pars = "ltau2")$s
