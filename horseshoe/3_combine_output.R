@@ -1,10 +1,12 @@
 
 dte <- 260518
+dte <- 260520 # includes regression based pseudo-targets
+dte <- 260521 # further refined reg pseudos
 data_now <- "db40"
 data_now <- "db"
 
 files_all <- list.files("output")
-files_use <- files_all[grep(paste0(data_now, ".*_dte", dte), x = files_all)]
+files_use <- files_all[grep(paste0(data_now, "_.*_dte", dte), x = files_all)]
 
 temp <- lapply(paste0("output/", files_use), read.csv)
 out <- do.call(rbind, temp)
@@ -18,4 +20,4 @@ write.csv(file = paste0("output/combined_", data_now, "_", dte, ".csv"),
           out,
           row.names = FALSE)
 
-system("ls output")
+# system("ls output")

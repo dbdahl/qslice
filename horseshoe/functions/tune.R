@@ -150,16 +150,18 @@ best_quantile_reg <- function(y, # vector of samples of param of interest across
   Rsq <- numeric(nqq)
   sig <- numeric(nqq)
   bet <- matrix(NA, nrow = nqq, ncol = 2)
+  lmod <- list()
   for (i in 1:nqq) {
     x_uq <- apply(X, 1, function(x) quantile(x, qq[i]))
-    lmod <- lm(y ~ x_uq)
-    sig[i] <- sigma(lmod)
-    bet[i,] <- coef(lmod)
-    Rsq[i] <- summary(lmod)$r.squared
+    lmod[[i]] <- lm(y ~ x_uq)
+    sig[i] <- sigma(lmod[[i]])
+    bet[i,] <- coef(lmod[[i]])
+    Rsq[i] <- summary(lmod[[i]])$r.squared
   }
   indx_use <- which.max(Rsq)
   cat("Selected ", qq[indx_use], " quantile with R-squared: ", Rsq[indx_use])
 
-  list(sig = sig[indx_use], beta = bet[indx_use,], qntle = qq[indx_use], Rsq = Rsq[indx_use])
+  list(sig = sig[indx_use], beta = bet[indx_use,], qntle = qq[indx_use],
+       Rsq = Rsq[indx_use], model = lmod[[indx_use]])
 }
 

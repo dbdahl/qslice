@@ -4,8 +4,8 @@ ii <- as.numeric(args[2])  # job id
 dte <- as.numeric(args[3])
 
 ##### for testing
-# ii <- 54
-# dte <- 260518
+# ii <- 927
+# dte <- 260521
 # data_use <- "mtcars"
 # data_use <- "db" # diabetes n = 442
 # data_use <- "db40" # diabetes n = 40
@@ -72,10 +72,10 @@ tau2_samples <- sapply(mc_out$sims, function(x) x$tau2)
 # plot(as.mcmc(log(tau2_samples)))
 # coda::effectiveSize(log(tau2_samples))
 
-beta_samples <- sapply(mc_out$sims, function(x) x$beta) |> t()
+# beta_samples <- sapply(mc_out$sims, function(x) x$beta) |> t()
 # indx_check <- 1:4
 # (indx_check <- which(colMeans(abs(beta_samples) > 0.01) > 0.5))
-(indx_check <- which(apply(beta_samples, 2, function(b) abs(mean(b > 0.0) - 0.5)) > 0.35))
+# (indx_check <- which(apply(beta_samples, 2, function(b) abs(mean(b > 0.0) - 0.5)) > 0.35))
 # plot(as.mcmc(beta_samples[,indx_check]))
 
 llam2_samples <- sapply(mc_out$sims, function(x) log(x$lam2)) |> t()
@@ -89,8 +89,8 @@ llam2_samples <- sapply(mc_out$sims, function(x) log(x$lam2)) |> t()
 # llam2_q95 <- apply(llam2_samples, 1, function(x) quantile(x, 0.95))
 # llam2_q95 <- apply(llam2_samples, 1, function(x) mean(x[x > quantile(x, 0.90)]))
 
-# plot(log(tau2_samples), llam2_q95)
-# cor(log(tau2_samples), llam2_q95)
+# plot(llam2_q95, log(tau2_samples))
+# cor(llam2_q95, log(tau2_samples))
 
 
 if (isTRUE(logscale_tau2)) {
@@ -172,8 +172,10 @@ if (type %in% c("rw", "stepping", "latent")) { # will require tuning
   sampler_tuned$tau2$type <- type
   sampler_tuned$tau2$subtype <- subtype
   sampler_tuned$tau2$bqr <- bqr
-  sampler_tuned$tau2$degf <- 1.0
-
+  sampler_tuned$tau2$pseu_bqr <- pseudo_opt(samples = residuals(bqr$model),
+                                            type = "samples", famil = "t",
+                                            degf = c(1, 5), utility_type = "AUC",
+                                            plot = FALSE)
 }
 
 ### timing run

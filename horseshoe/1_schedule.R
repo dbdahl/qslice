@@ -1,9 +1,9 @@
 rm(list=ls())
 library("tidyverse")
 
-set.seed(260520)
+set.seed(260521)
 
-n_reps <- 50
+n_reps <- 100
 
 # data_use <- "db"
 data_use <- "db40"

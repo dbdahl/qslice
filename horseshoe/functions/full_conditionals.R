@@ -96,26 +96,37 @@ lmarg_tau2 <- function(y, X, tau2, lam2, n0, s02, upper) {
       out <- -Inf
     } else {
 
-      # ldetM <- determinant(abM$Mtau$Mtau, logarithm = TRUE)$modulus # can calculate more efficiently?
-
-      ## this alternative calculation actually doesn't help in the n = 100, p = 4000 case... But it does in the n = 500, p = 60 case
       lam <- sqrt(lam2)
       XDh <- X * rep(lam, each = n)
-      svdXDh <- svd(XDh)
-      indx_nz <- which(svdXDh$d > 0.0)
 
-      eigens_nz <- svdXDh$d[indx_nz]^2
-      ldetM <- sum(log1p(tau2 * eigens_nz))
+      svdXDh <- tryCatch({
 
-      lfc_tau <- -0.5 * ldetM - abM$shape * log(abM$scale) - log1p(tau2)
-      ljacob <- -0.5 * log(tau2) # this is for the transformation tau -> tau2
+        svd(XDh)
 
-      out <- lfc_tau + ljacob
+      }, error = function(e) {
+        message(paste0("SVD failure. tau2 = ", tau2, ". Returning -Inf for marginal density.\nerror: "), conditionMessage(e))
+        return(NULL)
+      })
+
+      if (is.null(svdXDh)) {
+        out <- -Inf
+      } else {
+
+        indx_nz <- which(svdXDh$d > 0.0)
+
+        eigens_nz <- svdXDh$d[indx_nz]^2
+        ldetM <- sum(log1p(tau2 * eigens_nz))
+
+        lfc_tau <- -0.5 * ldetM - abM$shape * log(abM$scale) - log1p(tau2)
+        ljacob <- -0.5 * log(tau2) # this is for the transformation tau -> tau2
+
+        out <- lfc_tau + ljacob
+
+      }
 
     }
 
   } else {
-    warning(paste0("tau2 proposed out of bounds:", tau2, ", boundaries (0, ", upper, "\nreturning -Inf log denisty")) # this is necessary for stable computation of target for tau2
     out <- -Inf
   }
 
@@ -194,11 +205,12 @@ update_tau2 <- function(state, prior, data, sampler_tau2) {
 
       llam2_uq <- unname(quantile(log(state$lam2), sampler_tau2$bqr$qntle))
       loc_now <- reg_mean(x = llam2_uq,
-                          beta = sampler_tau2$bqr$beta)
+                          beta = sampler_tau2$bqr$beta) + sampler_tau2$pseu_bqr$pseudo$params$loc
 
-      pseudo_now <- pseudo_list(family = "t", params = list(loc = loc_now,
-                                                            sc = sampler_tau2$bqr$sig,
-                                                            degf = sampler_tau2$degf))
+      pseudo_now <- pseudo_list(family = "t",
+                                params = list(loc = loc_now,
+                                              sc = sampler_tau2$pseu_bqr$pseudo$params$sc,
+                                              degf = sampler_tau2$pseu_bqr$pseudo$params$degf))
 
       tmp <- imh_pseudo(x = old_val,
                         log_target = ltarget,
@@ -222,13 +234,13 @@ update_tau2 <- function(state, prior, data, sampler_tau2) {
 
       llam2_uq <- unname(quantile(log(state$lam2), sampler_tau2$bqr$qntle))
       loc_now <- reg_mean(x = llam2_uq,
-                          beta = sampler_tau2$bqr$beta)
+                          beta = sampler_tau2$bqr$beta) + sampler_tau2$pseu_bqr$pseudo$params$loc
 
       tmp <- slice_genelliptical(x = old_val,
                                  log_target = ltarget,
                                  mu = loc_now,
-                                 sigma = sampler_tau2$bqr$sig,
-                                 df = sampler_tau2$degf)
+                                 sigma = sampler_tau2$pseu_bqr$pseudo$params$sc,
+                                 df = sampler_tau2$pseu_bqr$pseudo$params$degf)
 
     } else if (grepl("samples$", sampler_tau2$subtype)) {
 
@@ -246,11 +258,12 @@ update_tau2 <- function(state, prior, data, sampler_tau2) {
 
       llam2_uq <- unname(quantile(log(state$lam2), sampler_tau2$bqr$qntle))
       loc_now <- reg_mean(x = llam2_uq,
-                          beta = sampler_tau2$bqr$beta)
+                          beta = sampler_tau2$bqr$beta) + sampler_tau2$pseu_bqr$pseudo$params$loc
 
-      pseudo_now <- pseudo_list(family = "t", params = list(loc = loc_now,
-                                                            sc = sampler_tau2$bqr$sig,
-                                                            degf = sampler_tau2$degf))
+      pseudo_now <- pseudo_list(family = "t",
+                                params = list(loc = loc_now,
+                                              sc = sampler_tau2$pseu_bqr$pseudo$params$sc,
+                                              degf = sampler_tau2$pseu_bqr$pseudo$params$degf))
 
       tmp <- slice_quantile(x = old_val,
                             log_target = ltarget,
