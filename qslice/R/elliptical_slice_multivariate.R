@@ -1,12 +1,13 @@
-
 #' Multivariate Elliptical Slice Sampler
 #'
 #' Algorithm 1 of Nishihara et al. (2014) of the
 #' elliptical slice sampler of Murray et al. (2010).
 #'
-#' @inherit slice_stepping_out
-#' @param mu Numeric vector with the mean of the supporting normal distribution.
-#' @param Sig Positive definite covariance matrix. Alternatively, a
+#' @param x The current state (as a numeric vector).
+#' @param log_lik A function taking numeric vector that evaluates the natural logarithm of the
+#' "likelihood" L(x) part of the unnormalized target density L(x) * Normal(x; mu, Sig). Returns a numeric scalar.
+#' @param mu Numeric vector with the mean of the supporting normal "prior" distribution.
+#' @param Sig Positive definite covariance matrix of the supporting normal "prior" distribution. Alternatively, a
 #' lower-triangular matrix with the Cholesky factor of the covariance matrix
 #' (for faster computation).
 #' @param is_chol Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.
@@ -20,13 +21,16 @@
 #'
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
+#' mu <- c(0.5, 0.5)
+#' Sig <- matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2)
+#' log_lik <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
+#' lf <- function(x) log_lik(x) - 0.5 * ((x - mu) %*% solve(Sig, (x - mu)))
 #' n_iter <- 10 # set to 1e3 for more complete illustration
 #' draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, n_iter)) {
-#'   out <- slice_elliptical_mv(draws[i - 1,], log_target = lf,
-#'               mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2))
+#'   out <- slice_elliptical_mv(draws[i - 1,], log_lik = log_lik,
+#'               mu = mu, Sig = Sig)
 #'   draws[i,] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
@@ -35,7 +39,7 @@
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
-slice_elliptical_mv <- function(x, log_target, mu, Sig, is_chol = FALSE) {
+slice_elliptical_mv <- function(x, log_lik, mu, Sig, is_chol = FALSE) {
   nEvaluations <- 0
 
   k <- length(x)
@@ -50,14 +54,14 @@ slice_elliptical_mv <- function(x, log_target, mu, Sig, is_chol = FALSE) {
 
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
-    log_target(x)
+    log_lik(x)
   }
   # Step 1
   fx <- f(x)
   stopifnot(fx > -Inf)
   y <- log(runif(1)) + fx
 
-  nu <- SigL %*% rnorm(k, 0.0, 1.0) + mu
+  nu <- drop(SigL %*% rnorm(k, 0.0, 1.0) + mu)
 
   twopi <- 2.0 * pi
   theta <- runif(1, 0, twopi)
@@ -81,7 +85,13 @@ slice_elliptical_mv <- function(x, log_target, mu, Sig, is_chol = FALSE) {
 #'
 #' Generalized Elliptical Slice Sampler, Algorithm 2 of Nishihara et al. (2014)
 #'
-#' @inheritParams slice_elliptical_mv
+#' @param x The current state (as a numeric vector).
+#' @param log_target A function taking numeric vector that evaluates the natural logarithm of the
+#' unnormalized target density. Returns a numeric scalar.
+#' @param mu A numeric vector with the location parameter of the Student t pseudo-target.
+#' @param Sig Positive definite scale matrix of the Student t pseudo-target. Alternatively, a
+#' lower-triangular matrix with the Cholesky factor of the scale matrix
+#' (for faster computation).
 #' @param df Degrees of freedom of Student t pseudo-target.
 #'
 #' @return A list contains two elements: \code{x} is the new state and \code{nEvaluations}
@@ -111,8 +121,14 @@ slice_elliptical_mv <- function(x, log_target, mu, Sig, is_chol = FALSE) {
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
-slice_genelliptical_mv <- function(x, log_target, mu, Sig, df, is_chol = FALSE) {
-
+slice_genelliptical_mv <- function(
+  x,
+  log_target,
+  mu,
+  Sig,
+  df,
+  is_chol = FALSE
+) {
   k <- length(x)
   stopifnot(length(mu) == k)
   stopifnot(dim(Sig) == c(k, k))
@@ -121,6 +137,7 @@ slice_genelliptical_mv <- function(x, log_target, mu, Sig, df, is_chol = FALSE) 
     SigL <- Sig
   } else {
     SigL <- t(chol(Sig))
+    is_chol <- TRUE
   }
 
   a <- 0.5 * (df + k)
@@ -128,9 +145,15 @@ slice_genelliptical_mv <- function(x, log_target, mu, Sig, df, is_chol = FALSE) 
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
 
   lff <- function(xx) {
-    log_target(xx) + a*log1p(drop(crossprod(forwardsolve(SigL, (xx - mu))))/df)
+    log_target(xx) +
+      a * log1p(drop(crossprod(forwardsolve(SigL, (xx - mu)))) / df)
   }
 
-  slice_elliptical_mv(x = x, log_target = lff, mu = mu, Sig = sqrt(s) * SigL,
-                      is_chol = is_chol)
+  slice_elliptical_mv(
+    x = x,
+    log_lik = lff,
+    mu = mu,
+    Sig = sqrt(s) * SigL,
+    is_chol = is_chol
+  )
 }

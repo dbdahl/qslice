@@ -53,8 +53,12 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
   L <- x - runif(1) * w
   R <- L + w
   if (!is.finite(max)) {
-    while (y < f(L)) L <- L - w
-    while (y < f(R)) R <- R + w
+    while (y < f(L)) {
+      L <- L - w
+    }
+    while (y < f(R)) {
+      R <- R + w
+    }
   } else if (max > 0) {
     J <- floor(runif(1) * max)
     K <- max - 1 - J
@@ -108,7 +112,7 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
 #' pseu <- list(ld = function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE),
 #'              q = function(u) qbeta(u, shape1 = 1, shape2 = 1))
-#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+#' draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
 #'   out <- slice_quantile(draws[i - 1], log_target = lf, pseudo = pseu)
@@ -165,7 +169,7 @@ slice_quantile <- function(x, log_target, pseudo) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+#' draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 #' nEvaluations <- 0L
 #' s <- 0.5
 #' for (i in seq.int(2, length(draws))) {
@@ -208,9 +212,11 @@ slice_latent <- function(x, s, log_target, rate) {
 #' Algorithm 1 of Nishihara et al. (2014) of the
 #' elliptical slice sampler of Murray et al. (2010).
 #'
-#' @inherit slice_stepping_out
-#' @param mu A numeric scalar with the mean of the supporting normal distribution.
-#' @param sigma A numeric scalar with the standard deviation of the supporting normal distribution.
+#' @param x The current state (as a numeric scalar).
+#' @param log_lik A function taking numeric scalar that evaluates the natural logarithm of the
+#' "likelihood" L(x) part of the unnormalized target density L(x) * Normal(x; mu, sigma). Returns a numeric scalar.
+#' @param mu A numeric scalar with the mean of the supporting normal "prior" distribution.
+#' @param sigma A numeric scalar with the standard deviation of the supporting normal "prior" distribution.
 #'
 #' @references
 #' Murray, I., Adams, R., and MacKay, D., (2010), "Elliptical Slice Sampling," in *Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics*, JMLR Workshop and Conference Proceedings. \url{https://proceedings.mlr.press/v9/murray10a}
@@ -221,23 +227,26 @@ slice_latent <- function(x, s, log_target, rate) {
 #'
 #' @export
 #' @examples
-#' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+#' log_lik <- function(x) dbeta(x, 8, 2, log = TRUE)
+#' lf <- function(x) log_lik(x) + dnorm(x, mean = mu, sd = sig, log = TRUE)
+#' mu <- 0.2
+#' sig <- 0.3
+#' draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
-#'   out <- slice_elliptical(draws[i - 1], log_target = lf, mu = 0.5, sigma = 1)
+#'   out <- slice_elliptical(draws[i - 1], log_lik = log_lik, mu = mu, sigma = sig)
 #'   draws[i] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
 #' nEvaluations / (length(draws) - 1)
-#' plot(density(draws), xlim = c(0, 1))
-#' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
+#' plot(density(draws), xlim = c(-0.2, 1.2))
+#' curve(exp(lf(x))*4.5, -0.2, 1.2, col = "blue", add = TRUE) # 4.5 approximates the normalizing constant
 #'
-slice_elliptical <- function(x, log_target, mu, sigma) {
+slice_elliptical <- function(x, log_lik, mu, sigma) {
   nEvaluations <- 0
   f <- function(x) {
     nEvaluations <<- nEvaluations + 1
-    log_target(x)
+    log_lik(x)
   }
   # Step 1
   y <- log(runif(1)) + f(x)
@@ -264,7 +273,8 @@ slice_elliptical <- function(x, log_target, mu, sigma) {
 #' Single update using the generalized elliptical slice sampler of Nishihara et al. (2014).
 #'
 #' @inheritParams slice_stepping_out
-#' @inheritParams slice_elliptical
+#' @param mu A numeric scalar with the location parameter of the Student t pseudo-target.
+#' @param sigma A positive numeric scalar with the scale parameter of the Student t pseudo-target.
 #' @param df Degrees of freedom of Student t pseudo-target.
 #'
 #' @return A list contains two elements:
@@ -282,7 +292,7 @@ slice_elliptical <- function(x, log_target, mu, sigma) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+#' draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
 #'   out <- slice_genelliptical(draws[i - 1], log_target = lf,
@@ -298,6 +308,8 @@ slice_genelliptical <- function(x, log_target, mu, sigma, df) {
   a <- (df + 1.0) / 2.0
   b <- 0.5 * (df + ((x - mu) / sigma)^2)
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
-  lff <- function(xx) log_target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
-  slice_elliptical(x = x, log_target = lff, mu = mu, sigma = sqrt(s) * sigma)
+  lff <- function(xx) {
+    log_target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
+  }
+  slice_elliptical(x = x, log_lik = lff, mu = mu, sigma = sqrt(s) * sigma)
 }
