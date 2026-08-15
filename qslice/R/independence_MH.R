@@ -5,15 +5,15 @@
 #'   density, returning a numeric scalar.
 #' @param pseudo List specifying the pseudo-target (proposal distribution). If the list length is
 #' equal to the number of dimensions in \code{x}, each element is itself a list that specifies
-#' the pseudo-target for the corresponding dimension with functions \code{ld}
+#' the pseudo-target independently for each corresponding dimension with functions \code{ld}
 #' that evaluates the log density for that dimension,
 #' and \code{q} that evaluates the quantile (inverse-CDF) function for that dimension.
 #' If the dimension of \code{x} is one, then supply only the inner list
 #' specifying the single pseudo-target.
 #'
 #' If \code{x} is a vector but a single pseudo-target is supplied, the list must
-#' contain a log-density function \code{ld} that accepts a vector, and a \code{r}
-#' function that takes no arguments and generates a single multivariate draw from the
+#' contain a log-density function \code{ld} that accepts a vector, and a
+#' function \code{r} that takes no arguments and generates a single multivariate draw from the
 #' proposal distribution.
 #' @return A list containing the new state, \code{x}, and whether the proposed value was accepted, logical \code{accpt}.
 #' @importFrom stats runif
@@ -41,7 +41,12 @@
 imh_pseudo <- function(x, log_target, pseudo) {
   K <- length(x)
   if (K == 1) {
-    out <- imh_pseudo_univ(x = x, log_target = log_target, pseudo = pseudo, K = K)
+    out <- imh_pseudo_univ(
+      x = x,
+      log_target = log_target,
+      pseudo = pseudo,
+      K = K
+    )
   } else {
     out <- imh_pseudo_mv(x = x, log_target = log_target, pseudo = pseudo, K = K)
   }
@@ -49,7 +54,6 @@ imh_pseudo <- function(x, log_target, pseudo) {
 }
 
 imh_pseudo_univ <- function(x, log_target, pseudo, K = K) {
-
   lfx0 <- log_target(x) - pseudo$ld(x)
 
   u1 <- runif(K)
@@ -70,26 +74,41 @@ imh_pseudo_univ <- function(x, log_target, pseudo, K = K) {
 }
 
 imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
+  is_joint_pseudo <- is.function(pseudo$ld)
+  is_component_pseudo <-
+    length(pseudo) == K &&
+    all(vapply(
+      pseudo,
+      function(z) {
+        is.list(z) && is.function(z$ld) && is.function(z$q)
+      },
+      logical(1)
+    ))
 
-  Kpseu <- length(pseudo)
-
-  if (Kpseu == K) {
-
+  if (isTRUE(is_component_pseudo)) {
     lfx0 <- log_target(x) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x[k])))
-
     u1 <- runif(K)
     x1 <- sapply(1:K, function(k) pseudo[[k]]$q(u1[k]))
     lfx1 <- log_target(x1) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x1[k])))
-
-  } else if (Kpseu == 1) {
-
+  } else if (isTRUE(is_joint_pseudo)) {
     lfx0 <- log_target(x) - pseudo$ld(x)
     x1 <- pseudo$r()
+    if (length(x1) != K) {
+      stop(
+        "Dimension of proposal, ",
+        length(x1),
+        ", does not match dimension of input value, ",
+        K
+      )
+    }
     lfx1 <- log_target(x1) - pseudo$ld(x1)
-
   } else {
-    stop("imh_pseudo_mv() requires the pseudo (proposal) list to be of length 1 or
-         length matching that of input vector x.")
+    stop(
+      "Pseudo-target structure passed to imh_pseudo() is not supported. 
+      Multivariate sampling requires the pseudo-target (proposal) list to be 
+      of length 1 (joint proposal) or 
+      of length matching that of input vector x (independent components)."
+    )
   }
 
   lprob_accpt <- lfx1 - lfx0
