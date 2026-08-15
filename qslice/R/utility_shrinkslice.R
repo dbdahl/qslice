@@ -61,70 +61,81 @@
 #' utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "MSW")
 #' par(oldpar)
 #'
-utility_pseudo <- function(pseudo, log_target = NULL, samples = NULL,
-                        type = "samples",
-                        x = NULL,
-                        nbins = 30,
-                        plot = TRUE,
-                        utility_type = "AUC",
-                        tol_int = 1.0e-3) {
-
+utility_pseudo <- function(
+  pseudo,
+  log_target = NULL,
+  samples = NULL,
+  type = "samples",
+  x = NULL,
+  nbins = 30,
+  plot = TRUE,
+  utility_type = "AUC",
+  tol_int = 1.0e-3
+) {
   if (type == "function") {
-
-    h <- function(psi) exp( log_target( pseudo$q(psi) ) - pseudo$ld( pseudo$q(psi) ) )
+    h <- function(psi) exp(log_target(pseudo$q(psi)) - pseudo$ld(pseudo$q(psi)))
     x <- NULL
     y <- NULL
     u <- NULL
-
   } else {
-
     h <- NULL
 
     if (type == "grid") {
-
       xx <- pseudo$q(x)
-      ly <- sapply(xx, FUN = function(z) log_target( z ) - pseudo$ld( z ))
+      ly <- sapply(xx, FUN = function(z) log_target(z) - pseudo$ld(z))
       y <- exp(ly - max(ly))
       u <- NULL
-
     } else if (type == "samples") {
-
       u <- sapply(samples, FUN = pseudo$p)
       y <- NULL
-
     }
-
   }
 
   if (isTRUE(plot)) {
-
     if (type == "function") {
-      x_plot <- seq(pseudo$params$loc - 3.5*pseudo$params$sc,
-                    pseudo$params$loc + 3.5*pseudo$params$sc,
-                    length = 100)
+      x_plot <- seq(
+        pseudo$params$loc - 3.5 * pseudo$params$sc,
+        pseudo$params$loc + 3.5 * pseudo$params$sc,
+        length = 100
+      )
 
       y_targ_plot <- sapply(x_plot, function(z) exp(log_target(z)))
       y_targ_plot <- y_targ_plot / max(y_targ_plot)
       y_pseu_plot <- sapply(x_plot, function(z) exp(pseudo$ld(z)))
       y_pseu_plot <- y_pseu_plot / max(y_pseu_plot)
 
-      plot(x_plot, y_targ_plot, type = "l", lwd = 2,
-           xlab = "x", ylab = "density (unnormalized)",
-           main = paste0("Pseudo-target:\n", pseudo$txt))
+      plot(
+        x_plot,
+        y_targ_plot,
+        type = "l",
+        lwd = 2,
+        xlab = "x",
+        ylab = "density (unnormalized)",
+        main = paste0("Pseudo-target:\n", pseudo$txt)
+      )
       lines(x_plot, y_pseu_plot, lwd = 2, col = "red")
-      legend("topleft", lwd = 2, col = c("black", "red"), bty = "n",
-             legend = c("target", "pseudo-target"))
+      legend(
+        "topleft",
+        lwd = 2,
+        col = c("black", "red"),
+        bty = "n",
+        legend = c("target", "pseudo-target")
+      )
     }
   }
 
-  utility_shrinkslice(h = h, x = x, y = y, u = u,
-                      type = type,
-                      nbins = nbins,
-                      plot = plot,
-                      utility_type = utility_type,
-                      tol_int = tol_int)
+  utility_shrinkslice(
+    h = h,
+    x = x,
+    y = y,
+    u = u,
+    type = type,
+    nbins = nbins,
+    plot = plot,
+    utility_type = utility_type,
+    tol_int = tol_int
+  )
 }
-
 
 
 # #' Utility for a Transformed Target
@@ -152,75 +163,93 @@ utility_pseudo <- function(pseudo, log_target = NULL, samples = NULL,
 # #' @returns Scalar value of the utility function evaluation.
 # #' @keywords internal
 # #'
-utility_shrinkslice <- function(h = NULL, x = NULL, y = NULL, u = NULL,
-                                type = "samples", # supplied with u. Alternatively, type = "samples", type = "function" (supplied with function h) or "grid" (supplied with x, y)
-                                nbins = 30,
-                                plot = FALSE,
-                                utility_type = "AUC",
-                                tol_int = 1.0e-3) {
-
+utility_shrinkslice <- function(
+  h = NULL,
+  x = NULL,
+  y = NULL,
+  u = NULL,
+  type = "samples", # supplied with u. Alternatively, type = "samples", type = "function" (supplied with function h) or "grid" (supplied with x, y)
+  nbins = 30,
+  plot = FALSE,
+  utility_type = "AUC",
+  tol_int = 1.0e-3
+) {
   if (type == "function") {
-
     ## the supplied function here is the transformed target with support on (0, 1)
 
     if (utility_type == "AUC") {
-
       util_out <- auc(y = h, nbins = nbins)
-
     } else if (utility_type == "MSW") {
-
       util_out <- meanSliceWidth_int(h = h, tol = tol_int)
-
     }
 
     if (isTRUE(plot)) {
-
       x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
       y <- sapply(x, FUN = h)
       y <- y / max(y)
-
     }
-
   } else if (type %in% c("grid", "samples")) {
-
     if (type == "samples") {
-
       if (is.null(x)) {
-
-        x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
-
+        breaks <- seq(0, 1, length.out = nbins + 1L)
+        x <- (breaks[-1L] + breaks[-length(breaks)]) / 2
       } else {
+        stopifnot(
+          is.numeric(x),
+          length(x) == nbins,
+          all(is.finite(x)),
+          all(diff(x) > 0),
+          x[1] > 0.0,
+          x[length(x)] < 1.0
+        )
 
-        stopifnot(length(x) == nbins)
-
+        breaks <- if (nbins == 1L) {
+          c(0, 1)
+        } else {
+          c(0, (x[-nbins] + x[-1L]) / 2, 1)
+        }
       }
 
-      bins <- c(0.0, x[-c(1, nbins)], 1.0)
-      y <- tabulate( as.numeric(cut(u, breaks = bins)), nbins = nbins )
+      stopifnot(
+        is.numeric(u),
+        length(u) > 0L,
+        all(is.finite(u)),
+        all(u >= 0.0),
+        all(u <= 1.0)
+      )
+      binid <- findInterval(
+        u,
+        breaks,
+        rightmost.closed = TRUE,
+        all.inside = TRUE
+      )
+      y <- tabulate(binid, nbins = nbins)
       y <- y / max(y)
-
       stopifnot(sum(y) > 0)
-
     }
 
     if (utility_type == "AUC") {
-
       util_out <- auc(x = x, y = y)
-
     } else if (utility_type == "MSW") {
-
       util_out <- meanSliceWidth_grid(x = x, y = y)
-
     }
-
-  } # currently no support for histogram method (unless supplied as x and y)
+  }
 
   if (isTRUE(plot)) {
-    plot(x, y, type = "l", lwd = 2,
-         xlab = expression(psi), ylab = expression(h(psi)),
-         main = paste0("Transformed target\n", utility_type, ": ",
-                       round(util_out,3))
-         )
+    plot(
+      x,
+      y,
+      type = "l",
+      lwd = 2,
+      xlab = expression(psi),
+      ylab = expression(h(psi)),
+      main = paste0(
+        "Transformed target\n",
+        utility_type,
+        ": ",
+        round(util_out, 3)
+      )
+    )
   }
 
   util_out
