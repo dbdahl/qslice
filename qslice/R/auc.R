@@ -1,104 +1,89 @@
-#' Area Under the Curve (histogram)
-#'
-#' Calculate the histogram approximation to the area under the curve after restricting
-#' the curve to fit within the unit square. Specifically, the highest histogram bar reaches 1 and
-#' the support is the unit interval. See Heiner et al. (2024+).
-#'
-#' Accepts either samples \code{u} or a function \code{y} representing a (possibly
-#' unnormalized) probability density supported on the unit interval.
-#'
-#' @param u Numeric vector of samples supported on unit interval with which to
-#' create a histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
-#' @param x Numeric vector of histogram locations. (Not used if \code{u} is supplied).
-#' @param y Numeric vector of histogram heights OR function evaluating the curve
-#' for a given value of \code{u} supported on (0,1). (Not used if \code{u} is supplied).
-#' @param nbins Number of histogram bins to use (defaults to 30).
-#'
-#' @returns The (approximate) area under the curve as a numeric value of length one.
-#'
-#' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
-#'
-#' @export
-#' @examples
-#' u_samples <- rbeta(10e3, 4, 2)
-#' auc(u = u_samples)
-#' auc(u = u_samples, nbins = 50)
-#' auc(y = function(x) {dbeta(x, 4, 2)}, nbins = 30)
-#' auc(y = function(x) {dbeta(x, 4, 2)}, nbins = 300)
-#' xx <- seq(0.001, 0.999, length = 1000)
-#' auc(x = xx, y = function(x) {dbeta(x, 4, 2)})
-#' auc(x = xx, y = dbeta(xx, 4, 2))
-auc <- function(u = NULL, x = NULL, y = NULL, nbins = 30) {
-  xchecks_auc <- function(x) {
-    stopifnot(
-      is.numeric(x),
-      all(is.finite(x)),
-      all(diff(x) > 0),
-      x[1] > 0.0,
-      x[length(x)] < 1.0
+# #' Area Under the Curve (integration)
+# #'
+# #' Calculate the area under the curve after restricting
+# #' the curve to fit within the unit square. Specifically, the highest unnormalized density value reaches 1 and
+# #' the support is the unit interval. See Heiner et al. (2024+).
+# #'
+# #' Uses optimization (\code{optim()}) to find the highest point and numeric integration (\code{integrate()}) to find the area.
+# #'
+# #'
+# #' @param h Function evaluating an unnormalized density supported on the unit interval.
+# #' @param tol_int Numerical scalar passed to \code{abs.tol} in the call to \code{integrate()}.
+# #' @param n_opt Positive integer specifying the number of initializtion points (equally spaced over (0,1)) for the optimization routine.
+# #' @param interval_opt Numeric vector of length two (in (0,1)) giving the interval over which to optimize. Defaults to \code{c(0.000001, 0.999999)}.
+# #'
+# #' @importFrom stats integrate
+# #' @keywords internal
+# #'
+auc_int <- function(
+  h,
+  tol_int = 0.005,
+  n_opt = 10,
+  interval_opt = c(0.000001, 0.999999)
+) {
+  stopifnot(is.function(h))
+  stopifnot(n_opt > 0)
+  stopifnot(tol_int >= 0.0)
+
+  inits <- seq(0.01, 0.99, length = n_opt)
+  stopifnot(
+    interval_opt[1] < min(inits),
+    interval_opt[2] > max(inits),
+    interval_opt[1] >= 0.0,
+    interval_opt[2] <= 1.0,
+    interval_opt[1] < interval_opt[2]
+  )
+
+  opt <- lapply(inits, function(x) {
+    result <- tryCatch(
+      {
+        optim(
+          x,
+          h,
+          control = list(fnscale = -1),
+          lower = interval_opt[1],
+          upper = interval_opt[2],
+          method = "L-BFGS-B"
+        )
+      },
+      error = function(e) {
+        out <- list()
+        out$convergence <- 100 # anything but 0
+        out$message <- e$message
+        out
+      }
     )
-  }
+  })
 
-  if (is.null(u)) {
-    if (is.function(y)) {
-      if (is.null(x)) {
-        x <- seq(1e-6, 1.0 - 1e-6, length = nbins) # reach into tails of function
-      }
+  convergence <- sapply(opt, function(x) x$convergence)
 
-      y <- sapply(x, FUN = y) # convert y to density evaluations
-      yn <- y / max(y)
-      out <- mean(yn)
-    } else {
-      xchecks_auc(x)
-      nx <- length(x)
-      stopifnot(nx == length(y))
-
-      breaks <- if (nx == 1L) {
-        c(0, 1)
-      } else {
-        c(0, (x[-nx] + x[-1L]) / 2, 1)
-      }
-
-      widths <- diff(breaks)
-      yn <- y / max(y)
-      out <- sum(yn * widths)
-    }
+  if (all(convergence != 0)) {
+    stop(
+      "AUC optimiation for unnormalized target density failed to converge: ",
+      paste(sapply(opt, function(x) x$message), sep = "\n")
+    )
   } else {
-    ## u supplied
-    stopifnot(
-      is.numeric(u),
-      length(u) > 0L,
-      all(is.finite(u)),
-      all(u >= 0.0),
-      all(u <= 1.0)
-    )
-    if (is.null(x)) {
-      bins <- seq(0.0, 1.0, len = nbins + 1)
-      x <- (bins[-(nbins + 1)] + bins[-1]) / 2.0
-      y <- tabulate(as.numeric(cut(u, breaks = bins)), nbins = nbins)
-      stopifnot(sum(y) > 0)
-      yn <- y / max(y)
-      out <- mean(yn)
-    } else {
-      xchecks_auc(x)
-      nx <- length(x)
-      breaks <- if (nx == 1L) {
-        c(0, 1)
-      } else {
-        c(0, (x[-nx] + x[-1L]) / 2, 1)
-      }
-      binid <- findInterval(
-        u,
-        breaks,
-        rightmost.closed = TRUE,
-        all.inside = TRUE
-      )
-      y <- tabulate(binid, nbins = nx)
-      y <- y / max(y)
-      stopifnot(sum(y) > 0)
-      out <- auc(x = x, y = y, nbins = nx) # recursively calculate
-    }
+    indx_converge <- which(convergence == 0)
+    opt_vals <- sapply(indx_converge, function(j) opt[[j]]$value)
+    max_val <- max(opt_vals)
   }
-  out
+
+  h_vec <- function(x) sapply(x, FUN = h) # vectorized version of h
+
+  int <- integrate(
+    h_vec,
+    lower = 0.0,
+    upper = 1.0,
+    abs.tol = tol_int
+  )
+
+  auc_val <- int$value / max_val
+
+  if (auc_val > (1.0 + int$abs.error)) {
+    stop("Calculated AUC is greater than 1.")
+  } else if (auc_val < (0.0 - int$abs.error)) {
+    stop("Calculated AUC is less than 0.")
+  }
+
+  min(auc_val, 1.0)
 }
