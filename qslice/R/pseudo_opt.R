@@ -24,8 +24,10 @@
 #' Defaults to 100.
 #' @param tol_opt Positive numeric scalar that passes to \code{reltol} in the call
 #' to \link[stats]{optim}. Defaults to \code{1.0e-6}.
-#' @param tol_int Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate}.
-#' Defaults to \code{1.0e-3}.
+#' @param utility_options List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
+#' \code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+#' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+#'
 #' @param verbose Logical for whether to print intermediate steps of optimization.
 #' Defaults to \code{FALSE}.
 #' @returns A list with named components:
@@ -50,15 +52,15 @@
 #'
 #' @export
 #' @examples
+#' oldpar <- par(mfrow = c(1,2))
 #' (pseu <- pseudo_opt(samples = rnorm(1e3), type = "samples",
 #'                family = "t", utility_type = "AUC",
 #'                nbins = 10, plot = TRUE,
 #'                verbose = FALSE))
-#' oldpar <- par(mfrow = c(1,2))
 #' (pseu <- pseudo_opt(log_target = function(x) dnorm(x, log = TRUE),
-#'                 type = "function",
-#'                 family = "logistic", utility_type = "AUC",
-#'                 nbins = 100, plot = TRUE,
+#'                 type = "grid",
+#'                 family = "logistic", utility_type = "MSW",
+#'                 nbins = 30, plot = TRUE,
 #'                 verbose = FALSE))
 #' (pseu <- pseudo_opt(log_target = function(x) dbeta(x, 4, 2, log = TRUE),
 #'                 lb = 0, ub = 1,
@@ -79,15 +81,17 @@ pseudo_opt <- function(
   utility_type = "AUC",
   nbins = 100,
   tol_opt = 1.0e-6,
-  tol_int = 1.0e-3,
+  utility_options = list(
+    tol_int = 1.0e-3, # integration accuracy
+    n_opt = 10, # number of inits for numerical optimization in AUC with type = "integration"
+    interval_opt = c(0.000001, 0.999999) # interval for numerical optimization in AUC with type = "integration"
+  ),
   plot = TRUE,
   verbose = FALSE
 ) {
   if (family == "beta") {
     stop("Optimazation for beta pseudo-targets not implemented.")
   }
-
-  x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
 
   if (is.null(samples)) {
     inits <- c(loc = 0.5, sc = 2.0)
@@ -98,7 +102,6 @@ pseudo_opt <- function(
   get_util <- function(
     pars,
     type,
-    x,
     log_target,
     samples,
     family,
@@ -132,11 +135,10 @@ pseudo_opt <- function(
         log_target = log_target,
         samples = samples,
         type = type,
-        x = x,
         nbins = nbins,
         plot = FALSE,
         utility_type = utility_type,
-        tol_int = tol_int
+        options = utility_options
       )
 
       if (verbose) {
@@ -165,7 +167,6 @@ pseudo_opt <- function(
       get_util,
       control = list(fnscale = -1, reltol = tol_opt),
       type = type,
-      x = x,
       log_target = log_target,
       samples = samples,
       family = family,
@@ -196,11 +197,10 @@ pseudo_opt <- function(
     log_target = log_target,
     samples = samples,
     type = type,
-    x = x,
     nbins = nbins,
     plot = plot,
     utility_type = utility_type,
-    tol_int = tol_int
+    options = utility_options
   )
 
   list(
@@ -209,7 +209,7 @@ pseudo_opt <- function(
     utility_type = utility_type,
     opt = opt[[use_indx]],
     nbins = nbins,
-    tol_int = tol_int,
+    utility_options = utility_options,
     tol_opt = tol_opt
   )
 }

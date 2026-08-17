@@ -39,16 +39,16 @@
 #'
 #' Defaults to \code{TRUE}.
 #' @param utility_type String identifying utility type, either AUC (default) or MSW.
-#' @param options List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "integration".
+#' @param options List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
 #' \code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
-#' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "integration".
+#' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
 #'
 #' @returns Scalar value of the utility function evaluation.
 #'
 #' @references
 #' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
 #'
-#' @importFrom graphics legend lines
+#' @importFrom graphics legend lines hist
 #' @importFrom graphics curve points segments text
 #' @importFrom stats integrate optim
 #' @export
@@ -85,16 +85,16 @@ utility_pseudo <- function(
   }
 
   if (isTRUE(plot)) {
-    if (type == "function") {
-      x_plot <- seq(
-        pseudo$params$loc - 4.0 * pseudo$params$sc,
-        pseudo$params$loc + 4.0 * pseudo$params$sc,
-        length = 200
-      )
+    x_plot <- seq(
+      pseudo$params$loc - 4.0 * pseudo$params$sc,
+      pseudo$params$loc + 4.0 * pseudo$params$sc,
+      length = 200
+    )
+    y_pseu_plot <- sapply(x_plot, function(z) exp(pseudo$ld(z)))
 
+    if (type %in% c("function", "grid")) {
       y_targ_plot <- sapply(x_plot, function(z) exp(log_target(z)))
       y_targ_plot <- y_targ_plot / max(y_targ_plot)
-      y_pseu_plot <- sapply(x_plot, function(z) exp(pseudo$ld(z)))
       y_pseu_plot <- y_pseu_plot / max(y_pseu_plot)
 
       plot(
@@ -104,7 +104,26 @@ utility_pseudo <- function(
         lwd = 2,
         xlab = "x",
         ylab = "density (unnormalized)",
-        main = paste0("Pseudo-target:\n", pseudo$txt)
+        main = paste0("Pseudo-target:\n", pseudo$txt),
+        cex.main = 0.97
+      )
+      lines(x_plot, y_pseu_plot, lwd = 2, col = "red", lty = 2)
+      legend(
+        "topleft",
+        lwd = 2,
+        lty = c(1, 2),
+        col = c("black", "red"),
+        bty = "n",
+        legend = c("target", "pseudo-target")
+      )
+    } else if (type == "samples") {
+      y_pseu_plot <- y_pseu_plot
+      hist(
+        samples,
+        freq = FALSE,
+        xlab = "Samples",
+        main = paste0("Pseudo-target:\n", pseudo$txt),
+        cex.main = 0.97
       )
       lines(x_plot, y_pseu_plot, lwd = 2, col = "red", lty = 2)
       legend(
@@ -139,7 +158,7 @@ utility_pseudo <- function(
 # #' @param h Function to evaluate the unnormalized transformed target
 # #' \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
 # #' with argument \eqn{\psi \in (0,1)}. Use \code(h = NULL) if type = "samples".
-# #' @param x Numeric vector of histogram locations. Not used if \code{u} is supplied or type = "integration". If used but not supplied, a default eqally spaced grid is chosen.
+# #' @param x Numeric vector of histogram locations. Not used if \code{u} is supplied or type = "integration". If used but not supplied, a default grid is chosen.
 # #' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
 # #' create histogram (use \code{u = NULL} if type = "integration" or "grid").
 # #' @param type String specifying the utility calculation method. One of "samples", "integration", or "grid".
@@ -253,8 +272,7 @@ utility_shrinkslice <- function(
     }
   } else {
     if (is.null(x)) {
-      breaks <- seq(0.0, 1.0, length.out = nbins + 1L)
-      x <- (breaks[-1L] + breaks[-length(breaks)]) / 2
+      x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # important to reach into tails
     } else {
       nbins <- length(x)
 
@@ -265,14 +283,13 @@ utility_shrinkslice <- function(
         x[1] > 0.0,
         x[length(x)] < 1.0
       )
-
-      breaks <- if (nbins == 1L) {
-        c(0.0, 1.0)
-      } else {
-        c(0.0, (x[-nbins] + x[-1L]) / 2.0, 1.0)
-      }
     }
 
+    breaks <- if (nbins == 1L) {
+      c(0.0, 1.0)
+    } else {
+      c(0.0, (x[-nbins] + x[-1L]) / 2.0, 1.0)
+    }
     widths <- diff(breaks)
 
     if (type == "samples") {

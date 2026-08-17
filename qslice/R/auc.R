@@ -59,7 +59,9 @@ auc_int <- function(
 
   if (all(convergence != 0)) {
     stop(
-      "AUC optimiation for unnormalized target density failed to converge: ",
+      "AUC optimiation for unnormalized target density failed to converge.\n 
+      Consider calculating AUC on a grid (use type = 'grid') instead of via numerical optimization/integration.\n
+      Error messages from optimization step:\n",
       paste(sapply(opt, function(x) x$message), sep = "\n")
     )
   } else {
@@ -80,9 +82,25 @@ auc_int <- function(
   auc_val <- int$value / max_val
 
   if (auc_val > (1.0 + int$abs.error)) {
-    stop("Calculated AUC is greater than 1.")
+    stop(
+      "Calculated AUC is greater than 1.\nAUC = ",
+      auc_val,
+      ", integral = ",
+      int$value,
+      ", max(h(x)) = ",
+      max_val,
+      "\nConsider calculating AUC on a grid (use type = 'grid') instead of via numerical optimization/integration."
+    )
   } else if (auc_val < (0.0 - int$abs.error)) {
-    stop("Calculated AUC is less than 0.")
+    stop(
+      "Calculated AUC is less than 0.  AUC = ",
+      auc_val,
+      ", integral = ",
+      int$value,
+      ", max(h(x)) = ",
+      max_val,
+      "\nConsider calculating AUC on a grid (use type = 'grid') instead of via numerical optimization/integration."
+    )
   }
 
   min(auc_val, 1.0)
