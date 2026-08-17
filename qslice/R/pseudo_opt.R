@@ -68,19 +68,24 @@
 #'                 verbose = FALSE))
 #' par(oldpar)
 #'
-pseudo_opt <- function(log_target = NULL,
-                       samples = NULL,
-                       type = "samples", # one of "samples", "function"
-                       family = "t",
-                       degf = c(1, 5, 20),
-                       lb = -Inf, ub = Inf,
-                       utility_type = "AUC",
-                       nbins = 100,
-                       tol_opt = 1.0e-6, tol_int = 1.0e-3,
-                       plot = TRUE,
-                       verbose = FALSE) {
-
-  if (family == "beta") stop("Optimazation for beta pseudo-targets not implemented.")
+pseudo_opt <- function(
+  log_target = NULL,
+  samples = NULL,
+  type = "samples", # one of "samples", "function"
+  family = "t",
+  degf = c(1, 5, 20),
+  lb = -Inf,
+  ub = Inf,
+  utility_type = "AUC",
+  nbins = 100,
+  tol_opt = 1.0e-6,
+  tol_int = 1.0e-3,
+  plot = TRUE,
+  verbose = FALSE
+) {
+  if (family == "beta") {
+    stop("Optimazation for beta pseudo-targets not implemented.")
+  }
 
   x <- seq(1.0e-6, 1.0 - 1.0e-6, length = nbins) # trouble if it doesn't reach far enough into tails
 
@@ -90,43 +95,59 @@ pseudo_opt <- function(log_target = NULL,
     inits <- c(loc = mean(samples), sc = sd(samples))
   }
 
-  get_util <- function(pars, type, x, log_target, samples, family,
-                       degf, lb, ub, utility_type, nbins, verbose) {
-
+  get_util <- function(
+    pars,
+    type,
+    x,
+    log_target,
+    samples,
+    family,
+    degf,
+    lb,
+    ub,
+    utility_type,
+    nbins,
+    verbose
+  ) {
     loc <- pars[1]
     sc <- pars[2]
 
     if (sc <= 0.0) {
-
       out <- -1.0
-
     } else {
+      pseu <- pseudo_list(
+        family = family,
+        params = list(loc = loc, sc = sc, degf = degf),
+        lb = lb,
+        ub = ub
+      )
 
-      pseu <- pseudo_list(family = family,
-                          params = list(loc = loc, sc = sc, degf = degf),
-                          lb = lb, ub = ub)
-
-      if (verbose) cat("trying", pseu$t, "\n")
+      if (verbose) {
+        cat("trying", pseu$t, "\n")
+      }
 
       # this function is found in utility_shrinkslice.R; output is the same as utility_shrinkslice()
-      out <- utility_pseudo(pseudo = pseu,
-                            log_target = log_target,
-                            samples = samples,
-                            type = type, x = x,
-                            nbins = nbins,
-                            plot = FALSE,
-                            utility_type = utility_type,
-                            tol_int = tol_int)
+      out <- utility_pseudo(
+        pseudo = pseu,
+        log_target = log_target,
+        samples = samples,
+        type = type,
+        x = x,
+        nbins = nbins,
+        plot = FALSE,
+        utility_type = utility_type,
+        tol_int = tol_int
+      )
 
       if (verbose) {
         print(out)
         cat("\n")
       }
 
-      if (out > 1.0) { # then the result isn't viable. Penalize.
+      if (out > 1.0) {
+        # then the result isn't viable. Penalize.
         out <- -1.0
       }
-
     }
 
     out
@@ -135,39 +156,60 @@ pseudo_opt <- function(log_target = NULL,
   opt <- list()
 
   if (family != "t") {
-    degf = NA
+    degf <- NA
   }
 
   for (i in 1:length(degf)) {
-    opt[[i]] <- optim(inits, get_util, control = list(fnscale=-1, reltol = tol_opt),
-                      type = type,
-                      x = x, log_target = log_target, samples = samples,
-                      family = family,
-                      degf = degf[i],
-                      lb = lb, ub = ub,
-                      utility_type = utility_type,
-                      nbins = nbins,
-                      verbose = verbose)
-   }
+    opt[[i]] <- optim(
+      inits,
+      get_util,
+      control = list(fnscale = -1, reltol = tol_opt),
+      type = type,
+      x = x,
+      log_target = log_target,
+      samples = samples,
+      family = family,
+      degf = degf[i],
+      lb = lb,
+      ub = ub,
+      utility_type = utility_type,
+      nbins = nbins,
+      verbose = verbose
+    )
+  }
 
   use_indx <- which.max(sapply(opt, function(obj) obj$value))
 
-  pseu <- pseudo_list(family = family,
-                      params = list(loc = unname(opt[[use_indx]]$par[1]),
-                                    sc = unname(opt[[use_indx]]$par[2]),
-                                    degf = degf[use_indx]),
-                      lb = lb, ub = ub)
+  pseu <- pseudo_list(
+    family = family,
+    params = list(
+      loc = unname(opt[[use_indx]]$par[1]),
+      sc = unname(opt[[use_indx]]$par[2]),
+      degf = degf[use_indx]
+    ),
+    lb = lb,
+    ub = ub
+  )
 
-  util <- utility_pseudo(pseudo = pseu,
-                         log_target = log_target,
-                         samples = samples,
-                         type = type, x = x,
-                         nbins = nbins,
-                         plot = plot,
-                         utility_type = utility_type,
-                         tol_int = tol_int)
+  util <- utility_pseudo(
+    pseudo = pseu,
+    log_target = log_target,
+    samples = samples,
+    type = type,
+    x = x,
+    nbins = nbins,
+    plot = plot,
+    utility_type = utility_type,
+    tol_int = tol_int
+  )
 
-  list(pseudo = pseu, utility = util, utility_type = utility_type,
-       opt = opt[[use_indx]],
-       nbins = nbins, tol_int = tol_int, tol_opt = tol_opt)
+  list(
+    pseudo = pseu,
+    utility = util,
+    utility_type = utility_type,
+    opt = opt[[use_indx]],
+    nbins = nbins,
+    tol_int = tol_int,
+    tol_opt = tol_opt
+  )
 }

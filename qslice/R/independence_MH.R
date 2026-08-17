@@ -74,7 +74,7 @@ imh_pseudo_univ <- function(x, log_target, pseudo, K = K) {
 }
 
 imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
-  is_joint_pseudo <- is.function(pseudo$ld)
+  is_joint_pseudo <- is.function(pseudo$ld) && is.function(pseudo$r)
   is_component_pseudo <-
     length(pseudo) == K &&
     all(vapply(
@@ -105,9 +105,8 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
   } else {
     stop(
       "Pseudo-target structure passed to imh_pseudo() is not supported. 
-      Multivariate sampling requires the pseudo-target (proposal) list to be 
-      of length 1 (joint proposal) or 
-      of length matching that of input vector x (independent components)."
+      Multivariate sampling requires the pseudo-target (proposal) list to contain a joint log-density and generation function, 
+      or have length matching that of input vector x (independent components)."
     )
   }
 

@@ -96,7 +96,7 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #'
 #' \code{x} is the new state.
 #'
-#' \code{u} is the value of the CDF of the psuedo-target associated with the
+#' \code{u} is the value of the CDF of the pseudo-target associated with the
 #' returned value (also referred to as psi).
 #'
 #' \code{nEvaluations} is the number of evaluations of the

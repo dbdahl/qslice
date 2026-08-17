@@ -19,7 +19,7 @@
 #'
 #'  \code{logistic}: location \code{loc} and scale \code{sc}
 #'
-#'  \code{beta}: scale \code{scale1} and scale \code{scale2}
+#'  \code{beta}: shape \code{shape1} and shape \code{shape2}
 #'
 #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}. Not operative in family \code{beta}.
 #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}. Not operative in family \code{beta}.
@@ -88,42 +88,70 @@
 #' pseu$ld(0.5)
 #' pseu$p(0.5)
 #' pseu$q(0.25)
-pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
-                        log_p = FALSE, name = NULL) {
-
+pseudo_list <- function(
+  family,
+  params,
+  lb = -Inf,
+  ub = Inf,
+  log_p = FALSE,
+  name = NULL
+) {
   if (family == "t") {
-
     if (params$degf == 1) {
-
-      out <- pseudo_cauchy_list(loc = params$loc, sc = params$sc,
-                                lb = lb, ub = ub, log_p = log_p, name = name)
+      out <- pseudo_cauchy_list(
+        loc = params$loc,
+        sc = params$sc,
+        lb = lb,
+        ub = ub,
+        log_p = log_p,
+        name = name
+      )
       out$params <- params
-
     } else {
-      out <- pseudo_t_list(loc = params$loc, sc = params$sc, degf = params$degf,
-                           lb = lb, ub = ub, log_p = log_p, name = name)
+      out <- pseudo_t_list(
+        loc = params$loc,
+        sc = params$sc,
+        degf = params$degf,
+        lb = lb,
+        ub = ub,
+        log_p = log_p,
+        name = name
+      )
     }
-
   } else if (family == "cauchy") {
-
-    out <- pseudo_cauchy_list(loc = params$loc, sc = params$sc,
-                              lb = lb, ub = ub, log_p = log_p, name = name)
-
+    out <- pseudo_cauchy_list(
+      loc = params$loc,
+      sc = params$sc,
+      lb = lb,
+      ub = ub,
+      log_p = log_p,
+      name = name
+    )
   } else if (family == "normal") {
-
-    out <- pseudo_normal_list(loc = params$loc, sc = params$sc,
-                              lb = lb, ub = ub, log_p = log_p, name = name)
-
+    out <- pseudo_normal_list(
+      loc = params$loc,
+      sc = params$sc,
+      lb = lb,
+      ub = ub,
+      log_p = log_p,
+      name = name
+    )
   } else if (family == "logistic") {
-
-    out <- pseudo_logistic_list(loc = params$loc, sc = params$sc,
-                                lb = lb, ub = ub, log_p = log_p, name = name)
-
+    out <- pseudo_logistic_list(
+      loc = params$loc,
+      sc = params$sc,
+      lb = lb,
+      ub = ub,
+      log_p = log_p,
+      name = name
+    )
   } else if (family == "beta") {
-
-    out <- pseudo_beta_list(shape1 = params$shape1, shape2 = params$shape2,
-                            log_p = log_p, name = name)
-
+    out <- pseudo_beta_list(
+      shape1 = params$shape1,
+      shape2 = params$shape2,
+      log_p = log_p,
+      name = name
+    )
   } else {
     stop("Pseudo-target family supplied to pseudo_list() is not supported.")
   }
@@ -131,8 +159,6 @@ pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
   out$family <- family
   out
 }
-
-
 
 
 # #' Specify a Pseudo-Target within the Student-t Class
@@ -170,9 +196,24 @@ pseudo_list <- function(family, params, lb = -Inf, ub = Inf,
 # #' @importFrom stats pt qt dt
 # #' @keywords internal
 # #'
-pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
-
-  txt <- paste0("t(loc = ", round(loc,2), ", sc = ", round(sc,2), ", degf = ", round(degf), ")")
+pseudo_t_list <- function(
+  loc,
+  sc,
+  degf,
+  lb = -Inf,
+  ub = Inf,
+  log_p = FALSE,
+  name = NULL
+) {
+  txt <- paste0(
+    "t(loc = ",
+    round(loc, 2),
+    ", sc = ",
+    round(sc, 2),
+    ", degf = ",
+    round(degf),
+    ")"
+  )
   if (!is.null(name)) {
     txt <- paste0(txt, ", ", name)
   }
@@ -181,8 +222,8 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
     txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
 
-  plb <- pt((lb - loc)/sc, df = degf)
-  pub <- pt((ub - loc)/sc, df = degf)
+  plb <- pt((lb - loc) / sc, df = degf)
+  pub <- pt((ub - loc) / sc, df = degf)
   normc <- pub - plb
   lognormc <- log(normc)
 
@@ -220,7 +261,8 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
     },
     txt = txt,
     params = list(loc = loc, sc = sc, degf = degf),
-    lb = lb, ub = ub
+    lb = lb,
+    ub = ub
   )
 }
 
@@ -259,9 +301,15 @@ pseudo_t_list <- function(loc, sc, degf, lb = -Inf, ub = Inf, log_p = FALSE, nam
 # #' @importFrom stats pcauchy qcauchy dcauchy
 # #' @keywords internal
 # #'
-pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
-
-  txt <- paste0("Cauchy(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
+pseudo_cauchy_list <- function(
+  loc,
+  sc,
+  lb = -Inf,
+  ub = Inf,
+  log_p = FALSE,
+  name = NULL
+) {
+  txt <- paste0("Cauchy(loc = ", round(loc, 2), ", sc = ", round(sc, 2), ")")
   if (!is.null(name)) {
     txt <- paste0(txt, ", ", name)
   }
@@ -270,8 +318,8 @@ pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
     txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
 
-  plb <- pcauchy((lb - loc)/sc)
-  pub <- pcauchy((ub - loc)/sc)
+  plb <- pcauchy((lb - loc) / sc)
+  pub <- pcauchy((ub - loc) / sc)
   normc <- pub - plb
   lognormc <- log(normc)
 
@@ -309,7 +357,8 @@ pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
     },
     txt = txt,
     params = list(loc = loc, sc = sc),
-    lb = lb, ub = ub
+    lb = lb,
+    ub = ub
   )
 }
 
@@ -347,9 +396,15 @@ pseudo_cauchy_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
 # #' @importFrom stats pnorm qnorm dnorm
 # #' @keywords internal
 # #'
-pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
-
-  txt <- paste0("normal(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
+pseudo_normal_list <- function(
+  loc,
+  sc,
+  lb = -Inf,
+  ub = Inf,
+  log_p = FALSE,
+  name = NULL
+) {
+  txt <- paste0("normal(loc = ", round(loc, 2), ", sc = ", round(sc, 2), ")")
   if (!is.null(name)) {
     txt <- paste0(txt, ", ", name)
   }
@@ -358,8 +413,8 @@ pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
     txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
 
-  plb <- pnorm((lb - loc)/sc)
-  pub <- pnorm((ub - loc)/sc)
+  plb <- pnorm((lb - loc) / sc)
+  pub <- pnorm((ub - loc) / sc)
   normc <- pub - plb
   lognormc <- log(normc)
 
@@ -396,8 +451,9 @@ pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
       out
     },
     txt = txt,
-    params = list( loc = loc, sc = sc),
-    lb = lb, ub = ub
+    params = list(loc = loc, sc = sc),
+    lb = lb,
+    ub = ub
   )
 }
 
@@ -436,9 +492,15 @@ pseudo_normal_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name
 # #' @importFrom stats plogis qlogis dlogis
 # #' @keywords internal
 # #'
-pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL) {
-
-  txt <- paste0("logistic(loc = ", round(loc,2), ", sc = ", round(sc,2), ")")
+pseudo_logistic_list <- function(
+  loc,
+  sc,
+  lb = -Inf,
+  ub = Inf,
+  log_p = FALSE,
+  name = NULL
+) {
+  txt <- paste0("logistic(loc = ", round(loc, 2), ", sc = ", round(sc, 2), ")")
   if (!is.null(name)) {
     txt <- paste0(txt, ", ", name)
   }
@@ -447,8 +509,8 @@ pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, na
     txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
 
-  plb <- plogis((lb - loc)/sc)
-  pub <- plogis((ub - loc)/sc)
+  plb <- plogis((lb - loc) / sc)
+  pub <- plogis((ub - loc) / sc)
   normc <- pub - plb
   lognormc <- log(normc)
 
@@ -486,7 +548,8 @@ pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, na
     },
     txt = txt,
     params = list(loc = loc, sc = sc),
-    lb = lb, ub = ub
+    lb = lb,
+    ub = ub
   )
 }
 
@@ -519,8 +582,13 @@ pseudo_logistic_list <- function(loc, sc, lb = -Inf, ub = Inf, log_p = FALSE, na
 # #' @keywords internal
 # #'
 pseudo_beta_list <- function(shape1, shape2, log_p = FALSE, name = NULL) {
-
-  txt <- paste0("beta(shape1 = ", round(shape1,2), ", shape2 = ", round(shape2,2), ")")
+  txt <- paste0(
+    "beta(shape1 = ",
+    round(shape1, 2),
+    ", shape2 = ",
+    round(shape2, 2),
+    ")"
+  )
   if (!is.null(name)) {
     txt <- paste0(txt, ", ", name)
   }
@@ -540,6 +608,7 @@ pseudo_beta_list <- function(shape1, shape2, log_p = FALSE, name = NULL) {
     },
     txt = txt,
     params = list(shape1 = shape1, shape2 = shape2),
-    lb = 0.0, ub = 1.0
+    lb = 0.0,
+    ub = 1.0
   )
 }

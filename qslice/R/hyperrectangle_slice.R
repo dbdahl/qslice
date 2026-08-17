@@ -43,7 +43,6 @@
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
 slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
-
   k <- length(x)
 
   nEvaluations <- 0
@@ -69,7 +68,6 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 
   # Step 3 ("Shrinkage" procedure)
   repeat {
-
     x1 <- L + runif(k) * (R - L)
 
     if (y < f(x1)) {
@@ -87,7 +85,6 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
       indx <- which(!shrinkL)
       R[indx] <- x1[indx]
     }
-
   }
 }
 
@@ -101,7 +98,7 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 #' the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density,
 #' \code{p} that evaluates the CDF, and \code{q} that evaluates the quantile (inverse-CDF) function.
 #' @return A list containing three elements: "x" is the new state, "u" is the
-#'   value of the CDF of the psuedo-target associated with the returned value,
+#'   value of the CDF of the pseudo-target associated with the returned value,
 #'   inverse CDF method, and "nEvaluations is the number of evaluations of the
 #'   target function used to obtain the new state.
 #'
@@ -144,7 +141,6 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 #' auc(u = draws_u[,1])
 #' auc(u = draws_u[,2])
 slice_quantile_mv <- function(x, log_target, pseudo) {
-
   K <- length(x)
 
   lhu <- function(u) {
@@ -158,10 +154,6 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 
   list(x = x1, u = shyp$x, nEvaluations = shyp$nEvaluations)
 }
-
-
-
-
 
 
 #' Sequence of conditional pseudo-targets from a realization
@@ -197,7 +189,6 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' @example man/examples/pseudo_sequential.R
 #'
 pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
-
   # lb and ub must have length K (even though first elements will be ignored)
 
   K <- length(x)
@@ -208,13 +199,15 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
   params_now <- pseudo_init$params
 
   for (k in 2:K) {
+    params_now$loc <- loc_fn(x[1:(k - 1)])
+    params_now$sc <- sc_fn(x[1:(k - 1)])
 
-    params_now$loc <- loc_fn(x[1:(k-1)])
-    params_now$sc <- sc_fn(x[1:(k-1)])
-
-    out[[k]] <- pseudo_list(family = family,
-                            params = params_now,
-                            lb = lb[k], ub = ub[k])
+    out[[k]] <- pseudo_list(
+      family = family,
+      params = params_now,
+      lb = lb[k],
+      ub = ub[k]
+    )
   }
 
   out
@@ -250,7 +243,6 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' @example man/examples/pseudo_sequential.R
 #'
 pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
-
   # lb and ub must have length K (even though first elements will be ignored)
 
   K <- length(u)
@@ -263,19 +255,20 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
   params_now <- pseudo_init$params
 
   for (k in 2:K) {
+    params_now$loc <- loc_fn(x[1:(k - 1)])
+    params_now$sc <- sc_fn(x[1:(k - 1)])
 
-    params_now$loc <- loc_fn(x[1:(k-1)])
-    params_now$sc <- sc_fn(x[1:(k-1)])
-
-    out[[k]] <- pseudo_list(family = family,
-                            params = params_now,
-                            lb = lb[k], ub = ub[k])
+    out[[k]] <- pseudo_list(
+      family = family,
+      params = params_now,
+      lb = lb[k],
+      ub = ub[k]
+    )
     x[k] <- out[[k]]$q(u[k])
   }
 
   list(x = x, pseudo_seq = out)
 }
-
 
 
 #' Multivariate Quantile Slice Sampler from a sequence of conditional pseudo-targets
@@ -304,7 +297,7 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #'  bound of support for each conditional pseudo-target.
 #'
 #' @return A list containing three elements: "x" is the new state, "u" is a vector
-#'   of values of the sequence of conditional CDFs of the psuedo-targets associated
+#'   of values of the sequence of conditional CDFs of the pseudo-targets associated
 #'   with the returned value, and "nEvaluations is the number of evaluations of the
 #'   target function used to obtain the new state.
 #'
@@ -317,18 +310,19 @@ pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' @example man/examples/pseudo_sequential.R
 #'
 slice_quantile_mv_seq <- function(x, log_target, pseudo_control) {
-
   # target is log target only without pseudo
 
   K <- length(x)
 
   # Step 1
-  tmp_seq <- pseudo_condseq(x = x,
-                            pseudo_init = pseudo_control$pseudo_init,
-                            loc_fn = pseudo_control$loc_fn,
-                            sc_fn = pseudo_control$sc_fn,
-                            lb = pseudo_control$lb,
-                            ub = pseudo_control$ub)
+  tmp_seq <- pseudo_condseq(
+    x = x,
+    pseudo_init = pseudo_control$pseudo_init,
+    loc_fn = pseudo_control$loc_fn,
+    sc_fn = pseudo_control$sc_fn,
+    lb = pseudo_control$lb,
+    ub = pseudo_control$ub
+  )
 
   fx <- log_target(x) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x[k])))
   nEvaluations <- 1
@@ -346,14 +340,15 @@ slice_quantile_mv_seq <- function(x, log_target, pseudo_control) {
   # Step 3 ("Shrinkage" procedure)
 
   repeat {
-
     u1 <- L + runif(K) * (R - L)
-    tmp <- pseudo_condseq_XfromU(u = u1,
-                                 pseudo_init = pseudo_control$pseudo_init,
-                                 loc_fn = pseudo_control$loc_fn,
-                                 sc_fn = pseudo_control$sc_fn,
-                                 lb = pseudo_control$lb,
-                                 ub = pseudo_control$ub)
+    tmp <- pseudo_condseq_XfromU(
+      u = u1,
+      pseudo_init = pseudo_control$pseudo_init,
+      loc_fn = pseudo_control$loc_fn,
+      sc_fn = pseudo_control$sc_fn,
+      lb = pseudo_control$lb,
+      ub = pseudo_control$ub
+    )
     x1 <- tmp$x
     tmp_seq <- tmp$pseudo_seq
 
@@ -375,6 +370,5 @@ slice_quantile_mv_seq <- function(x, log_target, pseudo_control) {
       indx <- which(!shrinkL)
       R[indx] <- u1[indx]
     }
-
   }
 }
