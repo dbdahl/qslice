@@ -105,3 +105,40 @@ auc_int <- function(
 
   min(auc_val, 1.0)
 }
+
+
+#' Area Under the Curve (histogram)
+#'
+#' Function auc() is deprecated. Use utility_shrinkslice(..., utility_type = "AUC").
+#'
+#' @export
+auc <- function(u = NULL, x = NULL, y = NULL, nbins = 30) {
+  warning(
+    "Function auc() is deprecated. Use utility_shrinkslice(..., utility_type = 'AUC')."
+  )
+  if (is.null(u)) {
+    if (is.function(y)) {
+      utility_shrinkslice(
+        h = h,
+        x = x,
+        u = NULL,
+        type = "integration",
+        plot = FALSE,
+        utility_type = "AUC"
+      )
+    } else {
+      out <- NA
+    }
+  } else {
+    out <- utility_shrinkslice(
+      h = NULL,
+      x = x,
+      u = u,
+      type = "samples",
+      plot = FALSE,
+      utility_type = "AUC"
+    )
+  }
+
+  out
+}
