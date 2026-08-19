@@ -46,7 +46,7 @@
 #' @returns Scalar value of the utility function evaluation.
 #'
 #' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
 #'
 #' @importFrom graphics legend lines hist
 #' @importFrom graphics points
@@ -188,7 +188,7 @@ utility_pseudo <- function(
 #' @returns Scalar value of the utility function evaluation.
 #'
 #' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
 #'
 #' @importFrom graphics legend lines hist
 #' @importFrom graphics points

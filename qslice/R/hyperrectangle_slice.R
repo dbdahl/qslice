@@ -119,7 +119,7 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 #'   target function used to obtain the new state.
 #'
 #' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
 #'
 #' @importFrom stats runif
 #'
@@ -257,8 +257,7 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' @return A list containing a sequence of pseudo-targets, each from \link[qslice]{pseudo_list}.
 #'
 #' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
-#'
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
 #' @importFrom stats runif
 #'
 #' @export
@@ -431,7 +430,7 @@ pseudo_condseq_XfromU <- function(
 #'   target function used to obtain the new state.
 #'
 #' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
 #'
 #' @importFrom stats runif
 #'

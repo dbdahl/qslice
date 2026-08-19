@@ -1,3 +1,42 @@
+## degf deprecation bridge
+.resolve_df <- function(
+  df,
+  degf,
+  default = NULL,
+  caller
+) {
+  if (!is.null(df) && !is.null(degf)) {
+    stop(
+      caller,
+      "(): supply only `df`; `degf` is deprecated.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(degf)) {
+    warning(
+      caller,
+      "(): `degf` is deprecated; use `df` instead.",
+      call. = FALSE
+    )
+    return(degf)
+  }
+
+  if (is.null(df)) {
+    if (is.null(default)) {
+      stop(
+        caller,
+        "(): `df` must be supplied.",
+        call. = FALSE
+      )
+    }
+
+    return(default)
+  }
+
+  df
+}
+
 #' Optimal pseudo-target for a given target
 #'
 #' Find an optimal pseudo-target in a specified family to approximate
@@ -16,7 +55,7 @@
 #' Use of "samples" requires specification of \code{samples}.
 #' @param family String specifying the family of distributions for the pseudo-target.
 #' Can be any of the families accepted by \link[qslice]{pseudo_list}.
-#' @param degf Numeric vector of degrees of freedom values to try (only if \code{family = "t"}.
+#' @param df Numeric vector of degrees of freedom values to try (only if \code{family = "t"}.
 #' Defaults to \code{c(1, 5, 20)}.
 #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
 #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
@@ -45,8 +84,7 @@
 #'  Other outputs repeating inputs.
 #'
 #' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
-#'
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
 #' @importFrom stats sd optim
 #' @importFrom stats sd
 #'
@@ -73,9 +111,9 @@
 pseudo_opt <- function(
   log_target = NULL,
   samples = NULL,
-  type = "samples", # one of "samples", "function"
+  type = "samples", # one of "function", "samples", or "grid"
   family = "t",
-  degf = c(1, 5, 20),
+  df = NULL,
   lb = -Inf,
   ub = Inf,
   utility_type = "AUC",
@@ -87,8 +125,16 @@ pseudo_opt <- function(
     interval_opt = c(0.000001, 0.999999) # interval for numerical optimization in AUC with type = "integration"
   ),
   plot = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  degf = NULL
 ) {
+  ## degf deprecation
+  df <- .resolve_df(
+    df = df,
+    degf = degf,
+    default = c(1, 5, 20),
+    caller = "pseudo_opt"
+  )
   if (family == "beta") {
     stop("Optimazation for beta pseudo-targets not implemented.")
   }
@@ -105,7 +151,7 @@ pseudo_opt <- function(
     log_target,
     samples,
     family,
-    degf,
+    df,
     lb,
     ub,
     utility_type,
@@ -120,7 +166,7 @@ pseudo_opt <- function(
     } else {
       pseu <- pseudo_list(
         family = family,
-        params = list(loc = loc, sc = sc, degf = degf),
+        params = list(loc = loc, sc = sc, df = df),
         lb = lb,
         ub = ub
       )
@@ -158,10 +204,10 @@ pseudo_opt <- function(
   opt <- list()
 
   if (family != "t") {
-    degf <- NA
+    df <- NA
   }
 
-  for (i in 1:length(degf)) {
+  for (i in 1:length(df)) {
     opt[[i]] <- optim(
       inits,
       get_util,
@@ -170,7 +216,7 @@ pseudo_opt <- function(
       log_target = log_target,
       samples = samples,
       family = family,
-      degf = degf[i],
+      df = df[i],
       lb = lb,
       ub = ub,
       utility_type = utility_type,
@@ -186,7 +232,7 @@ pseudo_opt <- function(
     params = list(
       loc = unname(opt[[use_indx]]$par[1]),
       sc = unname(opt[[use_indx]]$par[2]),
-      degf = degf[use_indx]
+      df = df[use_indx]
     ),
     lb = lb,
     ub = ub

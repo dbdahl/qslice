@@ -1,3 +1,30 @@
+## degf deprecation
+.normalize_df_params <- function(params, caller = "pseudo_list") {
+  has_df <- !is.null(params$df)
+  has_degf <- !is.null(params$degf)
+
+  if (has_df && has_degf) {
+    stop(
+      caller,
+      "(): `params` must contain only `df`; `degf` is deprecated.",
+      call. = FALSE
+    )
+  }
+
+  if (has_degf) {
+    warning(
+      caller,
+      "(): `params$degf` is deprecated; use `params$df`.",
+      call. = FALSE
+    )
+
+    params$df <- params$degf
+    params$degf <- NULL
+  }
+
+  params
+}
+
 #' Specify a pseudo-target within a given class
 #'
 #' Create a list of functions to evaluate a pseudo-target in a given class
@@ -11,7 +38,7 @@
 #' \code{normal}, \code{logistic}, and \code{beta}.
 #' @param params Named list identifying parameters, which vary by distribution family.
 #'
-#'  \code{t}: location \code{loc}, scale \code{sc}, and degrees of freedom \code{degf}
+#'  \code{t}: location \code{loc}, scale \code{sc}, and degrees of freedom \code{df}
 #'
 #'  \code{cauchy}: location \code{loc} and scale \code{sc}
 #'
@@ -44,7 +71,7 @@
 #'  \code{ub}: upper boundary of support
 #'
 #' @references
-#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
 #'
 #' @importFrom stats pt qt dt
 #' @importFrom stats pcauchy qcauchy dcauchy
@@ -54,7 +81,7 @@
 #'
 #' @export
 #' @examples
-#' pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, degf = 5),
+#' pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, df = 5),
 #'                     lb = 0.0, ub = Inf) # half t
 #' str(pseu)
 #' pseu$d(1.5)
@@ -96,8 +123,10 @@ pseudo_list <- function(
   log_p = FALSE,
   name = NULL
 ) {
+  params <- .normalize_df_params(params) # degf deprecation
+
   if (family == "t") {
-    if (params$degf == 1) {
+    if (params$df == 1) {
       out <- pseudo_cauchy_list(
         loc = params$loc,
         sc = params$sc,
@@ -111,7 +140,7 @@ pseudo_list <- function(
       out <- pseudo_t_list(
         loc = params$loc,
         sc = params$sc,
-        degf = params$degf,
+        df = params$df,
         lb = lb,
         ub = ub,
         log_p = log_p,
@@ -170,7 +199,7 @@ pseudo_list <- function(
 # #'
 # #' @param loc Numeric scalar giving the location parameter.
 # #' @param sc Positive numeric scalar giving the scale parameter.
-# #' @param degf Positive numeric scalar giving the degrees of freedom parameter.
+# #' @param df Positive numeric scalar giving the degrees of freedom parameter.
 # #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
 # #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
 # #' @param log_p (Not implemented) Logical: evaluate distribution and quantile functions using the log probability.
@@ -199,7 +228,7 @@ pseudo_list <- function(
 pseudo_t_list <- function(
   loc,
   sc,
-  degf,
+  df,
   lb = -Inf,
   ub = Inf,
   log_p = FALSE,
@@ -210,8 +239,8 @@ pseudo_t_list <- function(
     round(loc, 2),
     ", sc = ",
     round(sc, 2),
-    ", degf = ",
-    round(degf),
+    ", df = ",
+    round(df),
     ")"
   )
   if (!is.null(name)) {
@@ -222,8 +251,8 @@ pseudo_t_list <- function(
     txt <- paste0(txt, " I(", lb, " < x < ", ub, ")")
   }
 
-  plb <- pt((lb - loc) / sc, df = degf)
-  pub <- pt((ub - loc) / sc, df = degf)
+  plb <- pt((lb - loc) / sc, df = df)
+  pub <- pt((ub - loc) / sc, df = df)
   normc <- pub - plb
   lognormc <- log(normc)
 
@@ -232,7 +261,7 @@ pseudo_t_list <- function(
   list(
     d = function(x) {
       if (x > lb && x < ub) {
-        out <- dt((x - loc) / sc, df = degf) / sc / normc
+        out <- dt((x - loc) / sc, df = df) / sc / normc
       } else {
         out <- 0.0
       }
@@ -240,27 +269,27 @@ pseudo_t_list <- function(
     },
     ld = function(x) {
       if (x > lb && x < ub) {
-        out <- dt((x - loc) / sc, df = degf, log = TRUE) - logsc - lognormc
+        out <- dt((x - loc) / sc, df = df, log = TRUE) - logsc - lognormc
       } else {
         out <- -Inf
       }
       out
     },
     q = function(u, log.p = FALSE) {
-      qt(plb + u * normc, log.p = log.p, df = degf) * sc + loc
+      qt(plb + u * normc, log.p = log.p, df = df) * sc + loc
     },
     p = function(x) {
       if (x < lb) {
         out <- 0.0
       } else if (x <= ub) {
-        out <- (pt((x - loc) / sc, df = degf) - plb) / normc
+        out <- (pt((x - loc) / sc, df = df) - plb) / normc
       } else {
         out <- 1.0
       }
       out
     },
     txt = txt,
-    params = list(loc = loc, sc = sc, degf = degf),
+    params = list(loc = loc, sc = sc, df = df),
     lb = lb,
     ub = ub
   )

@@ -27,7 +27,7 @@
 #' @examples
 #' pseu <- lapprox(function(x) dnorm(x, log = TRUE),
 #'   family = "t",
-#'   params = list(loc = NA, sc = NA, degf = 5.0),
+#'   params = list(loc = NA, sc = NA, df = 5.0),
 #'   init = 0.5, lb = -1.0)
 #' curve(dnorm(x)/(1 - pnorm(-1)), from = -1, to = 6, col = "blue")
 #' xx <- seq(-1, 6, length = 500)
