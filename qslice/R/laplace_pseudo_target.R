@@ -29,35 +29,55 @@
 #'   family = "t",
 #'   params = list(loc = NA, sc = NA, degf = 5.0),
 #'   init = 0.5, lb = -1.0)
-#' curve(dnorm(x)/(1- pnorm(-1)), from = -1, to = 6, col = "blue")
+#' curve(dnorm(x)/(1 - pnorm(-1)), from = -1, to = 6, col = "blue")
 #' xx <- seq(-1, 6, length = 500)
-#' lines(xx, sapply(xx, FUN = pseu$d))
-lapprox <- function(log_target, init, family = "t", params = NULL, sc_adj = 1.0,
-                    lb = -Inf, ub = Inf, maxit = 100, ...) {
-
-  fit <- optim(par = init, fn = log_target, control = list(fnscale = -1, maxit = maxit), method = 'BFGS', ...)
+#' lines(xx, sapply(xx, FUN = pseu$d), lty = 2, col = "red")
+lapprox <- function(
+  log_target,
+  init,
+  family = "t",
+  params = NULL,
+  sc_adj = 1.0,
+  lb = -Inf,
+  ub = Inf,
+  maxit = 100,
+  ...
+) {
+  fit <- optim(
+    par = init,
+    fn = log_target,
+    control = list(fnscale = -1, maxit = maxit),
+    method = 'BFGS',
+    ...
+  )
   loc <- fit$par
-  hessian <- second_derivative( x = loc, h = 1e-5, f = log_target, ...)
+  hessian <- second_derivative(x = loc, h = 1e-5, f = log_target, ...)
 
-  if (hessian > 0.0) warning(paste0("Hessian =", hessian, "; optim iters: ", fit$counts))
+  if (hessian > 0.0) {
+    warning(paste0("Hessian =", hessian, "; optim iters: ", fit$counts))
+  }
 
   sc <- sc_adj / sqrt(-hessian)
 
   params$loc <- loc
   params$sc <- sc
 
-  out <- pseudo_list(family = family, params = params,
-                     lb = lb, ub = ub, name = 'Laplace')
+  out <- pseudo_list(
+    family = family,
+    params = params,
+    lb = lb,
+    ub = ub,
+    name = 'Laplace'
+  )
 
   out$opt <- fit
 
   out
 }
 
-second_derivative <- function(x, h = 1e-5, f, ... ) {
-
-  num <- f(x + h, ...) - 2*f(x, ...) + f(x - h, ...)
+second_derivative <- function(x, h = 1e-5, f, ...) {
+  num <- f(x + h, ...) - 2 * f(x, ...) + f(x - h, ...)
   denom <- h^2
 
-  num/denom
+  num / denom
 }

@@ -8,10 +8,10 @@
 #'   density, returning a numeric scalar.
 #' @param w A numeric vector tuning the algorithm which gives the typical slice
 #'   width in each dimension. This is a main tuning parameter of the algorithm.
-#'   If \code{NULL}, the sampler begins shrinking from the supplied boundaries (should,
+#'   If \code{NULL}, the sampler begins shrinking from the supplied boundaries \code{L} and \code{R} (should,
 #'   correspond with the support).
-#' @param L Numeric vector giving the lower boundary of support in each dimension.
-#' @param R Numeric vector giving the upper boundary of support in each dimension.
+#' @param L Optional numeric vector giving the lower boundary of support in each dimension.
+#' @param R Optional numeric vector giving the upper boundary of support in each dimension.
 #' Will be used if \code{w} is null. If all of \code{L}, \code{R}, and \code{w}
 #' are null, then the boundaries default to those of the unit hypercube.
 #'
@@ -43,34 +43,50 @@
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
 slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
-  k <- length(x)
+  K <- length(x)
 
-  nEvaluations <- 0
-  f <- function(x) {
-    nEvaluations <<- nEvaluations + 1
-    log_target(x)
+  nEvaluations <- 0L
+
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
+
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_hyperrect",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
 
   # Step 1
-  fx <- f(x)
-  stopifnot(fx > -Inf)
-  y <- log(runif(1)) + fx
+  lfx <- lf(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
+  y <- log(runif(1, min = 0.0, max = 1.0)) + lfx
 
   # Step 2 (Initialize hyperrectangle)
-
   if (!all(is.null(w))) {
-    L <- x - runif(k) * w
+    stopifnot(all(w > 0.0))
+    L <- x - runif(K, min = 0.0, max = w)
     R <- L + w
   } else if (all(is.null(c(L, R)))) {
-    L <- rep(0.0, k)
-    R <- rep(1.0, k)
+    L <- rep(0.0, K)
+    R <- rep(1.0, K)
+  } else {
+    stopifnot(
+      all(is.finite(L)),
+      all(is.finite(R)),
+      all(L < R),
+      length(L) == K,
+      length(R) == K
+    )
   }
 
   # Step 3 ("Shrinkage" procedure)
   repeat {
-    x1 <- L + runif(k) * (R - L)
+    x1 <- runif(K, min = L, max = R)
 
-    if (y < f(x1)) {
+    if (y < lf(x1, stage = "shrinkage proposal")) {
       return(list(x = x1, nEvaluations = nEvaluations))
     }
 
@@ -136,23 +152,83 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #' plot(draws_u[,1], draws_u[,2], xlim = c(0, 1))
-#' hist(draws_u[,1], freq = FALSE)
-#' hist(draws_u[,2], freq = FALSE)
-#' auc(u = draws_u[,1])
-#' auc(u = draws_u[,2])
+#' utility_shrinkslice(u = draws_u[,1], nbins = 30, type = "samples", plot = TRUE, utility_type = "AUC")
+#' utility_shrinkslice(u = draws_u[,2], nbins = 30, type = "samples", plot = TRUE, utility_type = "AUC")
 slice_quantile_mv <- function(x, log_target, pseudo) {
   K <- length(x)
 
-  lhu <- function(u) {
-    xx <- sapply(1:K, function(k) pseudo[[k]]$q(u[k]))
-    log_target(xx) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(xx[k])))
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_quantile_mv",
+      stage = stage,
+      evaluation = transformed_evaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
 
-  u0 <- sapply(1:K, function(k) pseudo[[k]]$p(x[k]))
-  shyp <- slice_hyperrect(u0, log_target = lhu, w = NULL, L = NULL, R = NULL)
-  x1 <- sapply(1:K, function(k) pseudo[[k]]$q(shyp$x[k]))
+  ld_pseudo <- function(z, k, stage) {
+    .eval_pseudo_logdens(
+      logdens = pseudo[[k]]$ld,
+      x = z,
+      sampler = "slice_quantile_mv",
+      stage = stage,
+      evaluation = transformed_evaluations,
+      allow_minus_inf = FALSE
+    )
+  }
 
-  list(x = x1, u = shyp$x, nEvaluations = shyp$nEvaluations)
+  transformed_evaluations <- 0L
+  lhu <- function(u) {
+    transformed_evaluations <<- transformed_evaluations + 1L
+    first_eval <- transformed_evaluations == 1L
+    xx <- numeric(K)
+    for (k in 1:K) {
+      xx[k] <- .eval_pseudo_quantile(
+        q = pseudo[[k]]$q,
+        u = u[k],
+        sampler = "slice_quantile_mv",
+        stage = sprintf("component %d evaluation", k),
+        attempt = transformed_evaluations,
+        expected_length = 1L
+      )
+    }
+
+    lf(xx, stage = "evaluation", allow_minus_inf = isFALSE(first_eval)) -
+      sum(sapply(1:K, function(k) {
+        ld_pseudo(xx[k], k = k, stage = "evaluation of transformed target")
+      }))
+  }
+
+  u0 <- numeric(K)
+  for (k in 1:K) {
+    u0[k] <- .eval_pseudo_cdf(
+      p = pseudo[[k]]$p,
+      x = x[k],
+      sampler = "slice_quantile_mv",
+      stage = sprintf("transforming current state, component %d", k),
+      attempt = transformed_evaluations,
+      expected_length = 1L,
+      require_interior = TRUE
+    )
+  }
+
+  shyp <- slice_hyperrect(u0, log_target = lhu, w = NULL, L = NULL, R = NULL)
+
+  x1 <- numeric(K)
+  for (k in 1:K) {
+    x1[k] <- .eval_pseudo_quantile(
+      q = pseudo[[k]]$q,
+      u = shyp$x[k],
+      sampler = "slice_quantile_mv",
+      stage = sprintf("back-transforming component %d output", k),
+      attempt = transformed_evaluations,
+      expected_length = 1L
+    )
+  }
+
+  list(x = x1, u = shyp$x, nEvaluations = transformed_evaluations)
 }
 
 
@@ -213,6 +289,68 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
   out
 }
 
+.pseudo_condseq_XfromU_impl <- function(
+  u,
+  pseudo_init,
+  loc_fn,
+  sc_fn,
+  lb,
+  ub,
+  sampler,
+  attempt
+) {
+  # lb and ub must have length K (even though first elements will be ignored)
+
+  K <- length(u)
+
+  stopifnot(K >= 2L, all(u > 0.0), all(u < 1.0))
+
+  out <- list()
+  out[[1L]] <- pseudo_init
+
+  x <- numeric(K)
+
+  x[1L] <- .eval_pseudo_quantile(
+    q = pseudo_init$q,
+    u = u[1L],
+    sampler = sampler,
+    stage = sprintf(
+      "back-transforming component %d in sequential evaluation",
+      1L
+    ),
+    attempt = attempt,
+    expected_length = 1L
+  )
+
+  family <- pseudo_init$family
+  params_now <- pseudo_init$params
+
+  for (k in 2:K) {
+    params_now$loc <- loc_fn(x[1:(k - 1)])
+    params_now$sc <- sc_fn(x[1:(k - 1)])
+
+    out[[k]] <- pseudo_list(
+      family = family,
+      params = params_now,
+      lb = lb[k],
+      ub = ub[k]
+    )
+
+    x[k] <- .eval_pseudo_quantile(
+      q = out[[k]]$q,
+      u = u[k],
+      sampler = sampler,
+      stage = sprintf(
+        "back-transforming component %d in sequential evaluation",
+        k
+      ),
+      attempt = attempt,
+      expected_length = 1L
+    )
+  }
+
+  list(x = x, pseudo_seq = out)
+}
 
 #' Inverse transform from sequence of conditional pseudo-targets
 #'
@@ -242,34 +380,25 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 #' @export
 #' @example man/examples/pseudo_sequential.R
 #'
-pseudo_condseq_XfromU <- function(u, pseudo_init, loc_fn, sc_fn, lb, ub) {
-  # lb and ub must have length K (even though first elements will be ignored)
-
-  K <- length(u)
-  out <- list()
-  out[[1]] <- pseudo_init
-
-  x <- numeric(K)
-  x[1] <- pseudo_init$q(u[1])
-  family <- pseudo_init$family
-  params_now <- pseudo_init$params
-
-  for (k in 2:K) {
-    params_now$loc <- loc_fn(x[1:(k - 1)])
-    params_now$sc <- sc_fn(x[1:(k - 1)])
-
-    out[[k]] <- pseudo_list(
-      family = family,
-      params = params_now,
-      lb = lb[k],
-      ub = ub[k]
-    )
-    x[k] <- out[[k]]$q(u[k])
-  }
-
-  list(x = x, pseudo_seq = out)
+pseudo_condseq_XfromU <- function(
+  u,
+  pseudo_init,
+  loc_fn,
+  sc_fn,
+  lb,
+  ub
+) {
+  .pseudo_condseq_XfromU_impl(
+    u = u,
+    pseudo_init = pseudo_init,
+    loc_fn = loc_fn,
+    sc_fn = sc_fn,
+    lb = lb,
+    ub = ub,
+    sampler = "pseudo_condseq_XfromU",
+    attempt = 0L
+  )
 }
-
 
 #' Multivariate Quantile Slice Sampler from a sequence of conditional pseudo-targets
 #'
@@ -324,38 +453,100 @@ slice_quantile_mv_seq <- function(x, log_target, pseudo_control) {
     ub = pseudo_control$ub
   )
 
-  fx <- log_target(x) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x[k])))
-  nEvaluations <- 1
-  stopifnot(fx > -Inf)
+  nEvaluations <- 0L
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
 
-  y <- log(runif(1)) + fx
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_quantile_mv_seq",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
+  }
+
+  ld_pseudo <- function(z, pseudo, k, stage) {
+    .eval_pseudo_logdens(
+      logdens = pseudo[[k]]$ld,
+      x = z,
+      sampler = "slice_quantile_mv_seq",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = FALSE
+    )
+  }
+
+  lhx <- function(x, pseudo, stage, allow_minus_inf = TRUE) {
+    lf(x, stage = stage, allow_minus_inf = allow_minus_inf) -
+      sum(sapply(1:K, function(k) {
+        ld_pseudo(
+          x[k],
+          pseudo = pseudo,
+          k = k,
+          stage = paste(
+            sprintf("component %d evaluation", k),
+            "of stage:",
+            stage
+          )
+        )
+      }))
+  }
+
+  lfx0 <- lhx(
+    x,
+    pseudo = tmp_seq,
+    stage = "evaluate at current state",
+    allow_minus_inf = FALSE
+  )
+
+  y <- log(runif(1, min = 0.0, max = 1.0)) + lfx0
 
   # Step 2 (Initialize hypercube)
 
-  u0 <- sapply(1:K, function(k) tmp_seq[[k]]$p(x[k]))
+  u0 <- numeric(K)
+  for (k in 1:K) {
+    u0[k] <- .eval_pseudo_cdf(
+      p = tmp_seq[[k]]$p,
+      x = x[k],
+      sampler = "slice_quantile_mv_seq",
+      stage = sprintf("transforming current state, component %d", k),
+      attempt = 0L,
+      expected_length = 1L,
+      require_interior = TRUE
+    )
+  }
 
   L <- rep(0.0, K)
   R <- rep(1.0, K)
 
   # Step 3 ("Shrinkage" procedure)
-
+  proposal_attempts <- 0L
   repeat {
-    u1 <- L + runif(K) * (R - L)
-    tmp <- pseudo_condseq_XfromU(
+    proposal_attempts <- proposal_attempts + 1L
+    u1 <- runif(K, min = L, max = R)
+    tmp <- .pseudo_condseq_XfromU_impl(
       u = u1,
       pseudo_init = pseudo_control$pseudo_init,
       loc_fn = pseudo_control$loc_fn,
       sc_fn = pseudo_control$sc_fn,
       lb = pseudo_control$lb,
-      ub = pseudo_control$ub
+      ub = pseudo_control$ub,
+      sampler = "slice_quantile_mv_seq",
+      attempt = proposal_attempts
     )
     x1 <- tmp$x
     tmp_seq <- tmp$pseudo_seq
 
-    fx1 <- log_target(x1) - sum(sapply(1:K, function(k) tmp_seq[[k]]$ld(x1[k])))
-    nEvaluations <- nEvaluations + 1
+    lfx1 <- lhx(
+      x1,
+      pseudo = tmp_seq,
+      stage = "evaluate at proposed state in shrinking step",
+      allow_minus_inf = TRUE
+    )
 
-    if (y < fx1) {
+    if (y < lfx1) {
       return(list(x = x1, u = u1, nEvaluations = nEvaluations))
     }
 

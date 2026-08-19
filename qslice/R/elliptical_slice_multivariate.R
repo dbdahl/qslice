@@ -1,3 +1,71 @@
+.slice_elliptical_mv_impl <- function(
+  x,
+  log_lik,
+  mu,
+  Sig,
+  is_chol = FALSE,
+  sampler
+) {
+  K <- length(x)
+  stopifnot(
+    length(mu) == K,
+    dim(Sig) == c(K, K),
+    all(is.finite(x)),
+    is.function(log_lik),
+    all(is.finite(mu)),
+    all(is.finite(Sig)),
+    is.logical(is_chol)
+  )
+
+  if (isTRUE(is_chol)) {
+    SigL <- Sig
+  } else {
+    SigL <- t(chol(Sig))
+  }
+
+  nEvaluations <- 0L
+
+  llik <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
+
+    .eval_log_target(
+      log_target = log_lik,
+      x = z,
+      sampler = sampler,
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
+  }
+
+  # Step 1
+  llik_x0 <- llik(
+    x,
+    stage = "evaluate at current state",
+    allow_minus_inf = FALSE
+  )
+  y <- log(runif(1, min = 0.0, max = 1.0)) + llik_x0
+
+  nu <- drop(SigL %*% rnorm(K, mean = 0.0, sd = 1.0) + mu)
+
+  twopi <- 2.0 * pi
+  theta <- runif(1, min = 0, max = twopi)
+  theta_min <- theta - twopi
+  theta_max <- theta
+  repeat {
+    x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
+    if (y < llik(x1, stage = "shrinkage step")) {
+      return(list(x = x1, nEvaluations = nEvaluations))
+    }
+    if (theta < 0) {
+      theta_min <- theta
+    } else {
+      theta_max <- theta
+    }
+    theta <- runif(1, min = theta_min, max = theta_max)
+  }
+}
+
 #' Multivariate Elliptical Slice Sampler
 #'
 #' Algorithm 1 of Nishihara et al. (2014) of the
@@ -23,14 +91,15 @@
 #' @examples
 #' mu <- c(0.5, 0.5)
 #' Sig <- matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2)
+#' SigL <- t(chol(Sig))
 #' log_lik <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-#' lf <- function(x) log_lik(x) - 0.5 * ((x - mu) %*% solve(Sig, (x - mu)))
+#' lf <- function(x) log_lik(x) - 0.5 * drop(crossprod(forwardsolve(SigL, x - mu)))
 #' n_iter <- 10 # set to 1e3 for more complete illustration
 #' draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, n_iter)) {
 #'   out <- slice_elliptical_mv(draws[i - 1,], log_lik = log_lik,
-#'               mu = mu, Sig = Sig)
+#'               mu = mu, Sig = SigL, is_chol = TRUE)
 #'   draws[i,] <- out$x
 #'   nEvaluations <- nEvaluations + out$nEvaluations
 #' }
@@ -39,46 +108,21 @@
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
-slice_elliptical_mv <- function(x, log_lik, mu, Sig, is_chol = FALSE) {
-  nEvaluations <- 0
-
-  k <- length(x)
-  stopifnot(length(mu) == k)
-  stopifnot(dim(Sig) == c(k, k))
-
-  if (isTRUE(is_chol)) {
-    SigL <- Sig
-  } else {
-    SigL <- t(chol(Sig))
-  }
-
-  f <- function(x) {
-    nEvaluations <<- nEvaluations + 1
-    log_lik(x)
-  }
-  # Step 1
-  fx <- f(x)
-  stopifnot(fx > -Inf)
-  y <- log(runif(1)) + fx
-
-  nu <- drop(SigL %*% rnorm(k, 0.0, 1.0) + mu)
-
-  twopi <- 2.0 * pi
-  theta <- runif(1, 0, twopi)
-  theta_min <- theta - twopi
-  theta_max <- theta
-  repeat {
-    x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
-    if (y < f(x1)) {
-      return(list(x = x1, nEvaluations = nEvaluations))
-    }
-    if (theta < 0) {
-      theta_min <- theta
-    } else {
-      theta_max <- theta
-    }
-    theta <- runif(1, theta_min, theta_max)
-  }
+slice_elliptical_mv <- function(
+  x,
+  log_lik,
+  mu,
+  Sig,
+  is_chol = FALSE
+) {
+  .slice_elliptical_mv_impl(
+    x = x,
+    log_lik = log_lik,
+    mu = mu,
+    Sig = Sig,
+    is_chol = is_chol,
+    sampler = "slice_elliptical_mv"
+  )
 }
 
 #' Generalized Elliptical Slice Sampler (Multivariate)
@@ -129,9 +173,19 @@ slice_genelliptical_mv <- function(
   df,
   is_chol = FALSE
 ) {
-  k <- length(x)
-  stopifnot(length(mu) == k)
-  stopifnot(dim(Sig) == c(k, k))
+  K <- length(x)
+  stopifnot(
+    length(mu) == K,
+    dim(Sig) == c(K, K),
+    length(df) == 1L,
+    all(is.finite(x)),
+    is.function(log_target),
+    all(is.finite(mu)),
+    all(is.finite(Sig)),
+    is.finite(df),
+    df > 0.0,
+    is.logical(is_chol)
+  )
 
   if (isTRUE(is_chol)) {
     SigL <- Sig
@@ -140,7 +194,7 @@ slice_genelliptical_mv <- function(
     is_chol <- TRUE
   }
 
-  a <- 0.5 * (df + k)
+  a <- 0.5 * (df + K)
   b <- 0.5 * (df + drop(crossprod(forwardsolve(SigL, (x - mu)))))
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
 
@@ -149,11 +203,12 @@ slice_genelliptical_mv <- function(
       a * log1p(drop(crossprod(forwardsolve(SigL, (xx - mu)))) / df)
   }
 
-  slice_elliptical_mv(
+  .slice_elliptical_mv_impl(
     x = x,
     log_lik = lff,
     mu = mu,
     Sig = sqrt(s) * SigL,
-    is_chol = is_chol
+    is_chol = is_chol,
+    sampler = "slice_genelliptical_mv"
   )
 }

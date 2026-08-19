@@ -41,40 +41,64 @@
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
 slice_stepping_out <- function(x, log_target, w, max = Inf) {
-  nEvaluations <- 0
-  f <- function(x) {
-    nEvaluations <<- nEvaluations + 1
-    log_target(x)
+  stopifnot(
+    length(x) == 1L,
+    is.finite(x),
+    is.function(log_target),
+    length(w) == 1L,
+    is.finite(w),
+    w > 0.0,
+    is.numeric(max),
+    length(max) == 1L,
+    !is.na(max),
+    (is.infinite(max) && max > 0) ||
+      (is.finite(max) && max >= 0 && max == floor(max))
+  )
+
+  nEvaluations <- 0L
+
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
+
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_stepping_out",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
+
   # Step 1
-  fx <- f(x)
-  y <- log(runif(1)) + fx
+  lfx <- lf(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
+  y <- log(runif(1, min = 0.0, max = 1.0)) + lfx
   # Step 2 ("Stepping out" procedure)
-  L <- x - runif(1) * w
+  L <- x - runif(1, min = 0.0, max = w)
   R <- L + w
   if (!is.finite(max)) {
-    while (y < f(L)) {
+    while (y < lf(L, stage = "left stepping-out proposal")) {
       L <- L - w
     }
-    while (y < f(R)) {
+    while (y < lf(R, stage = "right stepping-out proposal")) {
       R <- R + w
     }
   } else if (max > 0) {
-    J <- floor(runif(1) * max)
+    J <- floor(runif(1, min = 0.0, max = max))
     K <- max - 1 - J
-    while (J > 0 && y < f(L)) {
+    while (J > 0 && y < lf(L, stage = "left stepping-out proposal")) {
       L <- L - w
       J <- J - 1
     }
-    while (K > 0 && y < f(R)) {
+    while (K > 0 && y < lf(R, stage = "right stepping-out proposal")) {
       R <- R + w
       K <- K - 1
     }
   }
   # Step 3 ("Shrinkage" procedure)
   repeat {
-    x1 <- L + runif(1) * (R - L)
-    if (y < f(x1)) {
+    x1 <- runif(1, min = L, max = R)
+    if (y < lf(x1, stage = "shrinkage proposal")) {
       return(list(x = x1, nEvaluations = nEvaluations))
     }
     if (x1 < x) L <- x1 else R <- x1
@@ -124,20 +148,65 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
 slice_quantile <- function(x, log_target, pseudo) {
-  nEvaluations <- 0
-  f <- function(x) {
-    nEvaluations <<- nEvaluations + 1
-    log_target(x) - pseudo$ld(x)
+  stopifnot(
+    length(x) == 1L,
+    is.finite(x),
+    is.function(log_target),
+    is.list(pseudo),
+    is.function(pseudo$ld),
+    is.function(pseudo$q)
+  )
+
+  nEvaluations <- 0L
+
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
+
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_quantile",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
+
+  ld_pseudo <- function(z, stage) {
+    .eval_pseudo_logdens(
+      logdens = pseudo$ld,
+      x = z,
+      sampler = "slice_quantile",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = FALSE
+    )
+  }
+
+  lh <- function(x, stage, allow_minus_inf = TRUE) {
+    lf(x, stage = stage, allow_minus_inf = allow_minus_inf) -
+      ld_pseudo(x, stage = stage)
+  }
+
   # Step 1
-  y <- log(runif(1)) + f(x)
+  y <- log(runif(1, min = 0.0, max = 1.0)) +
+    lh(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
   # Step 2 ("Shrinkage" procedure)
-  L <- 0
-  R <- 1
+  L <- 0.0
+  R <- 1.0
+  proposal_attempts <- 0L
   repeat {
-    u1 <- runif(1, L, R)
-    x1 <- pseudo$q(u1)
-    if (y < f(x1)) {
+    proposal_attempts <- proposal_attempts + 1L
+    u1 <- runif(1, min = L, max = R)
+    x1 <- .eval_pseudo_quantile(
+      q = pseudo$q,
+      u = u1,
+      sampler = "slice_quantile",
+      stage = "shrinkage proposal",
+      attempt = proposal_attempts,
+      expected_length = 1L
+    )
+    if (y < lh(x1, stage = "shrinkage")) {
       return(list(x = x1, u = u1, nEvaluations = nEvaluations))
     }
     if (x1 < x) L <- u1 else R <- u1
@@ -183,27 +252,84 @@ slice_quantile <- function(x, log_target, pseudo) {
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
 slice_latent <- function(x, s, log_target, rate) {
-  nEvaluations <- 0
-  f <- function(x) {
-    nEvaluations <<- nEvaluations + 1
-    log_target(x)
+  stopifnot(
+    length(x) == 1L,
+    length(s) == 1L,
+    length(rate) == 1L,
+    is.finite(x),
+    is.function(log_target),
+    is.finite(s),
+    is.finite(rate),
+    s > 0.0,
+    rate > 0.0
+  )
+
+  nEvaluations <- 0L
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
+
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_latent",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
   # Step 1
-  y <- log(runif(1)) + f(x)
+  y <- log(runif(1, min = 0.0, max = 1.0)) +
+    lf(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
   half_s <- s / 2
-  l <- runif(1, x - half_s, x + half_s)
+  l <- runif(1, min = x - half_s, max = x + half_s)
   # Eq. 7... a truncated exponential using the inverse CDF method.
-  s <- -log(runif(1)) / rate + 2 * abs(l - x)
-  half_s <- s / 2
+  s <- -log(runif(1, min = 0.0, max = 1.0)) / rate + 2.0 * abs(l - x)
+  half_s <- s / 2.0
   L <- l - half_s
   R <- l + half_s
   # Step 2 ("Shrinkage" procedure)
   repeat {
-    x1 <- L + runif(1) * (R - L)
-    if (y < f(x1)) {
+    x1 <- runif(1, min = L, max = R)
+    if (y < lf(x1, stage = "shrinkage step")) {
       return(list(x = x1, s = s, nEvaluations = nEvaluations))
     }
     if (x1 < x) L <- x1 else R <- x1
+  }
+}
+
+.slice_elliptical_impl <- function(x, log_lik, mu, sigma, sampler) {
+  nEvaluations <- 0L
+  llik <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
+
+    .eval_log_target(
+      log_target = log_lik,
+      x = z,
+      sampler = sampler,
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
+  }
+
+  # Step 1
+  y <- log(runif(1, min = 0.0, max = 1.0)) +
+    llik(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
+  nu <- rnorm(1, mean = mu, sd = sigma)
+  theta <- runif(1, 0, 2 * pi)
+  theta_min <- theta - 2 * pi
+  theta_max <- theta
+  repeat {
+    x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
+    if (y < llik(x1, stage = "shrinkage step")) {
+      return(list(x = x1, nEvaluations = nEvaluations))
+    }
+    if (theta < 0) {
+      theta_min <- theta
+    } else {
+      theta_max <- theta
+    }
+    theta <- runif(1, theta_min, theta_max)
   }
 }
 
@@ -243,29 +369,24 @@ slice_latent <- function(x, s, log_target, rate) {
 #' curve(exp(lf(x))*4.5, -0.2, 1.2, col = "blue", add = TRUE) # 4.5 approximates the normalizing constant
 #'
 slice_elliptical <- function(x, log_lik, mu, sigma) {
-  nEvaluations <- 0
-  f <- function(x) {
-    nEvaluations <<- nEvaluations + 1
-    log_lik(x)
-  }
-  # Step 1
-  y <- log(runif(1)) + f(x)
-  nu <- rnorm(1, mu, sigma)
-  theta <- runif(1, 0, 2 * pi)
-  theta_min <- theta - 2 * pi
-  theta_max <- theta
-  repeat {
-    x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
-    if (y < f(x1)) {
-      return(list(x = x1, nEvaluations = nEvaluations))
-    }
-    if (theta < 0) {
-      theta_min <- theta
-    } else {
-      theta_max <- theta
-    }
-    theta <- runif(1, theta_min, theta_max)
-  }
+  stopifnot(
+    length(x) == 1L,
+    length(mu) == 1L,
+    length(sigma) == 1L,
+    is.finite(x),
+    is.function(log_lik),
+    is.finite(mu),
+    is.finite(sigma),
+    sigma > 0.0
+  )
+
+  .slice_elliptical_impl(
+    x = x,
+    log_lik = log_lik,
+    mu = mu,
+    sigma = sigma,
+    sampler = "slice_elliptical"
+  )
 }
 
 #' Generalized Elliptical Slice Sampler (univariate)
@@ -305,11 +426,31 @@ slice_elliptical <- function(x, log_lik, mu, sigma) {
 #' curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 #'
 slice_genelliptical <- function(x, log_target, mu, sigma, df) {
+  stopifnot(
+    length(x) == 1L,
+    length(mu) == 1L,
+    length(sigma) == 1L,
+    length(df) == 1L,
+    is.finite(x),
+    is.function(log_target),
+    is.finite(mu),
+    is.finite(sigma),
+    is.finite(df),
+    sigma > 0.0,
+    df > 0.0
+  )
+
   a <- (df + 1.0) / 2.0
   b <- 0.5 * (df + ((x - mu) / sigma)^2)
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
   lff <- function(xx) {
-    log_target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE) - log(sigma))
+    log_target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE)) #  - log(sigma) is const. and not necessary
   }
-  slice_elliptical(x = x, log_lik = lff, mu = mu, sigma = sqrt(s) * sigma)
+  .slice_elliptical_impl(
+    x = x,
+    log_lik = lff,
+    mu = mu,
+    sigma = sqrt(s) * sigma,
+    sampler = "slice_genelliptical"
+  )
 }

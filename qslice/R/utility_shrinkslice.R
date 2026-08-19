@@ -49,7 +49,7 @@
 #' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
 #'
 #' @importFrom graphics legend lines hist
-#' @importFrom graphics curve points segments text
+#' @importFrom graphics points
 #' @importFrom stats integrate optim
 #' @export
 #' @examples
@@ -79,7 +79,21 @@ utility_pseudo <- function(
   )
 ) {
   if (type == "samples") {
-    u <- sapply(samples, FUN = pseudo$p)
+    u <- vapply(
+      seq_along(samples),
+      function(i) {
+        .eval_pseudo_cdf(
+          p = pseudo$p,
+          x = samples[i],
+          sampler = "utility_pseudo",
+          stage = "transforming target samples",
+          attempt = i,
+          expected_length = 1L,
+          require_interior = TRUE
+        )
+      },
+      numeric(1)
+    )
   } else {
     h <- function(psi) exp(log_target(pseudo$q(psi)) - pseudo$ld(pseudo$q(psi)))
   }
@@ -150,86 +164,92 @@ utility_pseudo <- function(
 }
 
 
-# #' Utility for a Transformed Target
-# #'
-# #' Evaluates the utility function for a transformed target, which can be one of
-# #' Area Under the Curve (AUC) and Mean Slice Width (MSW).
-# #'
-# #' @param h Function to evaluate the unnormalized transformed target
-# #' \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
-# #' with argument \eqn{\psi \in (0,1)}. Use \code(h = NULL) if type = "samples".
-# #' @param x Numeric vector of histogram locations. Not used if \code{u} is supplied or type = "integration". If used but not supplied, a default grid is chosen.
-# #' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
-# #' create histogram (use \code{u = NULL} if type = "integration" or "grid").
-# #' @param type String specifying the utility calculation method. One of "samples", "integration", or "grid".
-# #' Use of "integration" requires \code{h}. Use of "samples" requires \code{u}.
-# #' Use of "grid" requires \code{h} and optionally \code{x}. Default is to use "samples".
-# #' @param nbins Number of histogram bins to use (defaults to 30). Overridden by the length of x.
-# #' @param plot Logical for whether to plot a visualization of the transformed target.
-# #' Defaults to \code{FALSE}.
-# #' @param utility_type String identifying utility type, either "AUC" (default) or "MSW"
-# #' @param options List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()} used for type = "integration".
-# #' \code{n_opt}: Positive integer giving the number of initialization points for numerical optimization in AUC with type = "integration".
-# #' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization in AUC with type = "integration".
-# #' @returns Scalar value of the utility function evaluation.
-# #' @keywords internal
-# #'
-# #' @examples
-# #' a <- 4
-# #' b <- 2
-# #' u <- rbeta(10e3, a, b)
-# #' h <- function(x) dbeta(x, a, b)
-# #' x <- sort(runif(20))
-# #' type <- "AUC"
-# #' type <- "MSW"
-# #'
-# #' utility_shrinkslice(
-# #'   h = h,
-# #'   x = NULL,
-# #'   u = NULL,
-# #'   type = "integration",
-# #'   plot = T,
-# #'   utility_type = type
-# #' )
-# #'
-# #' utility_shrinkslice(
-# #'   h = h,
-# #'   x = NULL,
-# #'   u = NULL,
-# #'   nbins = 50,
-# #'   type = "grid",
-# #'   plot = T,
-# #'   utility_type = type
-# #' )
-# #'
-# #' utility_shrinkslice(
-# #'   h = h,
-# #'   x = x,
-# #'   u = NULL,
-# #'   type = "grid",
-# #'   plot = T,
-# #'   utility_type = type
-# #' )
-# #'
-# #' utility_shrinkslice(
-# #'   h = NULL,
-# #'   x = NULL,
-# #'   u = u,
-# #'   nbins = 30,
-# #'   type = "samples",
-# #'   plot = T,
-# #'   utility_type = type
-# #' )
-# #'
-# #' utility_shrinkslice(
-# #'   h = NULL,
-# #'   x = x,
-# #'   u = u,
-# #'   type = "samples",
-# #'   plot = T,
-# #'   utility_type = type
-# #' )
-# #'
+#' Utility for a Transformed Target
+#'
+#' Evaluates the utility function for a transformed target, which can be one of
+#' Area Under the Curve (AUC) and Mean Slice Width (MSW).
+#'
+#' @param h Function to evaluate the unnormalized transformed target
+#' \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
+#' with argument \eqn{\psi \in (0,1)}. Use \code(h = NULL) if type = "samples".
+#' @param x Numeric vector of histogram locations. Not used if \code{u} is supplied or type = "integration". If used but not supplied, a default grid is chosen.
+#' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
+#' create histogram (use \code{u = NULL} if type = "integration" or "grid").
+#' @param type String specifying the utility calculation method. One of "samples", "integration", or "grid".
+#' Use of "integration" requires \code{h}. Use of "samples" requires \code{u}.
+#' Use of "grid" requires \code{h} and optionally \code{x}. Default is to use "samples".
+#' @param nbins Number of histogram bins to use (defaults to 30). Overridden by the length of x.
+#' @param plot Logical for whether to plot a visualization of the transformed target.
+#' Defaults to \code{FALSE}.
+#' @param utility_type String identifying utility type, either "AUC" (default) or "MSW"
+#' @param options List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \code{integrate()} used for type = "integration".
+#' \code{n_opt}: Positive integer giving the number of initialization points for numerical optimization in AUC with type = "integration".
+#' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization in AUC with type = "integration".
+#' @returns Scalar value of the utility function evaluation.
+#'
+#' @references
+#' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," *arXiv preprint arXiv:###*.
+#'
+#' @importFrom graphics legend lines hist
+#' @importFrom graphics points
+#' @importFrom stats integrate optim
+#' @export
+#' @examples
+#' a <- 4
+#' b <- 2
+#' u <- rbeta(10e3, a, b)
+#' h <- function(x) dbeta(x, a, b)
+#' x <- sort(runif(20))
+#' type <- "AUC"
+#' type <- "MSW"
+#'
+#' utility_shrinkslice(
+#'   h = h,
+#'   x = NULL,
+#'   u = NULL,
+#'   type = "integration",
+#'   plot = TRUE,
+#'   utility_type = type
+#' )
+#'
+#' utility_shrinkslice(
+#'   h = h,
+#'   x = NULL,
+#'   u = NULL,
+#'   nbins = 50,
+#'   type = "grid",
+#'   plot = TRUE,
+#'   utility_type = type
+#' )
+#'
+#' utility_shrinkslice(
+#'   h = h,
+#'   x = x,
+#'   u = NULL,
+#'   type = "grid",
+#'   plot = TRUE,
+#'   utility_type = type
+#' )
+#'
+#' utility_shrinkslice(
+#'   h = NULL,
+#'   x = NULL,
+#'   u = u,
+#'   nbins = 30,
+#'   type = "samples",
+#'   plot = TRUE,
+#'   utility_type = type
+#' )
+#'
+#' utility_shrinkslice(
+#'   h = NULL,
+#'   x = x,
+#'   u = u,
+#'   type = "samples",
+#'   plot = TRUE,
+#'   utility_type = type
+#' )
+#'
 utility_shrinkslice <- function(
   h = NULL,
   x = NULL,

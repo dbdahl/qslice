@@ -20,7 +20,7 @@
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
-#' n_iter <- 100 # set to 1e3 for more complete illustration
+#' n_iter <- 10 # set to 1e3 for more complete illustration
 #' draws <- matrix(0.2, nrow = n_iter, ncol = 2)
 #' nAccpt <- 0L
 #' pseudo <- list( list(ld = function(x) dbeta(x, 2, 2, log = TRUE),
@@ -39,13 +39,18 @@
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 imh_pseudo <- function(x, log_target, pseudo) {
+  stopifnot(
+    all(is.finite(x)),
+    is.function(log_target),
+    is.list(pseudo)
+  )
+
   K <- length(x)
   if (K == 1) {
     out <- imh_pseudo_univ(
       x = x,
       log_target = log_target,
-      pseudo = pseudo,
-      K = K
+      pseudo = pseudo
     )
   } else {
     out <- imh_pseudo_mv(x = x, log_target = log_target, pseudo = pseudo, K = K)
@@ -53,27 +58,70 @@ imh_pseudo <- function(x, log_target, pseudo) {
   out
 }
 
-imh_pseudo_univ <- function(x, log_target, pseudo, K = K) {
-  lfx0 <- log_target(x) - pseudo$ld(x)
+imh_pseudo_univ <- function(x, log_target, pseudo) {
+  stopifnot(
+    is.function(pseudo$ld),
+    is.function(pseudo$q)
+  )
 
-  u1 <- runif(K)
+  nEvaluations <- 0L
 
-  x1 <- pseudo$q(u1)
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
 
-  lfx1 <- log_target(x1) - pseudo$ld(x1)
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "imh_pseudo",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
+  }
 
-  lprob_accpt <- lfx1 - lfx0
-  lu_accpt <- log(runif(1))
+  ld_pseudo <- function(z, stage) {
+    .eval_pseudo_logdens(
+      logdens = pseudo$ld,
+      x = z,
+      sampler = "imh_pseudo",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = FALSE
+    )
+  }
+
+  lh <- function(x, stage, allow_minus_inf = TRUE) {
+    lf(x, stage = stage, allow_minus_inf = allow_minus_inf) -
+      ld_pseudo(x, stage = stage)
+  }
+
+  lhx0 <- lh(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
+
+  u1 <- runif(1, min = 0.0, max = 1.0)
+
+  x1 <- .eval_pseudo_quantile(
+    q = pseudo$q,
+    u = u1,
+    sampler = "imh_pseudo",
+    stage = "generate proposal",
+    attempt = 1L,
+    expected_length = 1L
+  )
+
+  lhx1 <- lh(x1, stage = "evaluate at proposal")
+
+  lprob_accpt <- lhx1 - lhx0
+  lu_accpt <- log(runif(1, min = 0.0, max = 1.0))
 
   if (isTRUE(lu_accpt < lprob_accpt)) {
-    out <- list(x = x1, accpt = TRUE)
+    out <- list(x = x1, accpt = TRUE, nEvaluations = nEvaluations)
   } else {
-    out <- list(x = x, accpt = FALSE)
+    out <- list(x = x, accpt = FALSE, nEvaluations = nEvaluations)
   }
   out
 }
 
-imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
+imh_pseudo_mv <- function(x, log_target, pseudo, K) {
   is_joint_pseudo <- is.function(pseudo$ld) && is.function(pseudo$r)
   is_component_pseudo <-
     length(pseudo) == K &&
@@ -85,14 +133,85 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
       logical(1)
     ))
 
+  nEvaluations <- 0L
+
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
+
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "imh_pseudo",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
+  }
+
   if (isTRUE(is_component_pseudo)) {
-    lfx0 <- log_target(x) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x[k])))
-    u1 <- runif(K)
-    x1 <- sapply(1:K, function(k) pseudo[[k]]$q(u1[k]))
-    lfx1 <- log_target(x1) - sum(sapply(1:K, function(k) pseudo[[k]]$ld(x1[k])))
+    ld_pseudo <- function(z, k, stage) {
+      .eval_pseudo_logdens(
+        logdens = pseudo[[k]]$ld,
+        x = z,
+        sampler = "imh_pseudo",
+        stage = stage,
+        evaluation = nEvaluations,
+        allow_minus_inf = FALSE
+      )
+    }
+
+    lhx0 <- lf(
+      x,
+      stage = "evaluate at the current state",
+      allow_minus_inf = FALSE
+    ) -
+      sum(sapply(1:K, function(k) {
+        ld_pseudo(x[k], k = k, stage = "evaluate at the current state")
+      }))
+
+    u1 <- runif(K, min = 0.0, max = 1.0)
+
+    x1 <- numeric(K)
+    for (k in 1:K) {
+      x1[k] <- .eval_pseudo_quantile(
+        q = pseudo[[k]]$q,
+        u = u1[k],
+        sampler = "imh_pseudo",
+        stage = sprintf("component %d proposal", k),
+        attempt = 1L,
+        expected_length = 1L
+      )
+    }
+
+    lhx1 <- lf(
+      x1,
+      stage = "evaluate at proposal",
+      allow_minus_inf = TRUE
+    ) -
+      sum(sapply(1:K, function(k) {
+        ld_pseudo(x1[k], k = k, stage = "evaluate at proposal")
+      }))
   } else if (isTRUE(is_joint_pseudo)) {
-    lfx0 <- log_target(x) - pseudo$ld(x)
+    ld_pseudo <- function(z, stage) {
+      .eval_pseudo_logdens(
+        logdens = pseudo$ld,
+        x = z,
+        sampler = "imh_pseudo",
+        stage = stage,
+        evaluation = nEvaluations,
+        allow_minus_inf = FALSE
+      )
+    }
+
+    lhx0 <- lf(
+      x,
+      stage = "evaluate at the current state",
+      allow_minus_inf = FALSE
+    ) -
+      ld_pseudo(x, stage = "evaluate at the current state")
+
     x1 <- pseudo$r()
+
     if (length(x1) != K) {
       stop(
         "Dimension of proposal, ",
@@ -101,7 +220,13 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
         K
       )
     }
-    lfx1 <- log_target(x1) - pseudo$ld(x1)
+
+    lhx1 <- lf(
+      x1,
+      stage = "evaluate at proposal",
+      allow_minus_inf = TRUE
+    ) -
+      ld_pseudo(x1, stage = "evaluate at proposal")
   } else {
     stop(
       "Pseudo-target structure passed to imh_pseudo() is not supported. 
@@ -110,13 +235,13 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K = K) {
     )
   }
 
-  lprob_accpt <- lfx1 - lfx0
-  lu_accpt <- log(runif(1))
+  lprob_accpt <- lhx1 - lhx0
+  lu_accpt <- log(runif(1, min = 0.0, max = 1.0))
 
   if (isTRUE(lu_accpt < lprob_accpt)) {
-    out <- list(x = x1, accpt = TRUE)
+    out <- list(x = x1, accpt = TRUE, nEvaluations = nEvaluations)
   } else {
-    out <- list(x = x, accpt = FALSE)
+    out <- list(x = x, accpt = FALSE, nEvaluations = nEvaluations)
   }
   out
 }
