@@ -14,7 +14,12 @@ for (lb in lb_vec) {
 
       ps <- tryCatch(
         {
-          value <- .pseudo_t_list(loc = loc, sc = sc, df = df, lb = lb, ub = ub)
+          value <- pseudo_list(
+            family = "t",
+            params = list(loc = loc, sc = sc, df = df),
+            lb = lb,
+            ub = ub
+          )
         },
         error = function(e) {
           print(e$message)
