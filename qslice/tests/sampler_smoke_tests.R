@@ -21,8 +21,8 @@ slice_genelliptical_mv <- qfun("slice_genelliptical_mv")
 imh_pseudo <- qfun("imh_pseudo")
 pseudo_list <- qfun("pseudo_list")
 
-n_iter <- 10e3
-burn <- 2e3
+n_iter <- 5e3
+burn <- 1e3
 keep <- seq.int(burn + 1L, n_iter, by = 10)
 
 run_univariate <- function(initial, update) {

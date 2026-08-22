@@ -98,6 +98,11 @@ utility_pseudo <- function(
     is.list(options)
   )
   if (type == "samples") {
+    if (is.null(samples) || any(is.na(samples))) {
+      stop(
+        "Must supply samples from the target distribution for type = 'samples'."
+      )
+    }
     stopifnot(is.numeric(samples), all(is.finite(samples)))
     u <- vapply(
       seq_along(samples),
@@ -109,17 +114,29 @@ utility_pseudo <- function(
           stage = "transforming target samples",
           attempt = i,
           expected_length = 1L,
-          require_interior = TRUE
+          require_interior = FALSE
         )
       },
       numeric(1)
     )
+
+    if (any(u <= 0.0) || any(u >= 1.0)) {
+      warning(paste(
+        "At least one sample evaluated to a boundary quantile. The proposed pseudo-target",
+        pseudo$txt,
+        "has inadequate coverage for the supplied sample."
+      ))
+    }
   } else {
-    stopifnot(
-      is.function(pseudo$q),
-      is.function(pseudo$ld),
-      is.function(log_target)
-    )
+    if (
+      !is.function(pseudo$q) ||
+        !is.function(pseudo$ld) ||
+        !is.function(log_target)
+    ) {
+      stop(
+        "Must supply pseudo-target (log density and quantile) and target (log density) functions for type = 'function' or type = 'grid'."
+      )
+    }
 
     h <- function(psi) {
       z <- .eval_pseudo_quantile(
@@ -128,7 +145,8 @@ utility_pseudo <- function(
         sampler = "utility_pseudo",
         stage = "constructing transformed target",
         attempt = 1L,
-        expected_length = 1L
+        expected_length = 1L,
+        require_interior = TRUE
       )
 
       lt <- .eval_log_target(
@@ -379,6 +397,15 @@ utility_shrinkslice <- function(
         all(u >= 0.0),
         all(u <= 1.0)
       )
+
+      if (any(u <= 0.0) || any(u >= 1.0)) {
+        warning(paste(
+          "At least one sample value is at the boundary. Function utility_shrinkslice returning utility 0."
+        ))
+
+        return(0.0)
+      }
+
       binid <- findInterval(
         u,
         breaks,
@@ -444,5 +471,5 @@ utility_shrinkslice <- function(
     }
   }
 
-  util_out
+  return(util_out)
 }
