@@ -1,13 +1,13 @@
-#' Utility for a given target and pseudo-target
+#' Utility for a given univariate target and pseudo-target
 #'
 #' Takes a pseudo-target and target (or samples from the target) and
 #' evaluates the utility function for the transformed target, which can be one of
-#' Area Under the Curve (AUC) and Mean Slice Width (MSW). See Heiner et al. (2024+).
+#' Area Under the Curve (AUC) and Mean Slice Width (MSW). See Heiner et al. (2026+).
 #'
 #' Optionally plot the target and pseudo-target densities as well as the
 #' transformed target.
 #'
-#' @param pseudo List containing the following functions relating to the pseudo-target, each with scalar input:
+#' @param pseudo List containing the following functions relating to the univariate pseudo-target, each with scalar input:
 #'
 #'  \code{ld}: function to evaluate the log density
 #'
@@ -15,7 +15,7 @@
 #'
 #'  \code{p}: function to evaluate the distribution function
 #'
-#' @param log_target Function to evaluate the log density of the unnormalized target.
+#' @param log_target Function to evaluate the log density of the unnormalized univariate target.
 #'
 #' @param samples Numeric vector of samples from the target distribution.
 #' @param type String specifying the input type. One of "function", "samples", or "grid".
@@ -53,16 +53,24 @@
 #' @importFrom stats integrate optim
 #' @export
 #' @examples
-#' pseu <- pseudo_list(family = "t", params = list(loc = 0.25, sc = 1.0, degf = 1))
-#' ltarg <- list(ld = function(x) dnorm(x, log = TRUE))
+#' pseu <- pseudo_list(family = "t", params = list(loc = 0.25, sc = 1.0, df = 1))
+#' ltargdens <- function(x) dnorm(x, log = TRUE)
 #' oldpar <- par(mfrow = c(1,2))
-#' utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function", utility_type = "MSW")
-#' utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function", utility_type = "AUC")
+#' utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "MSW")
+#' utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "AUC")
 #' samp <- rnorm(10e3)
 #' utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "MSW")
 #' utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "AUC")
 #' par(oldpar)
-#'
+#' pseu <- pseudo_list(family = "beta", params = list(shape1 = 1.5, shape2 = 1.5))
+#' ltargdens <- function(x) dbeta(x, shape1 = 2.0, shape2 = 3.0, log = TRUE)
+#' oldpar <- par(mfrow = c(1,2))
+#' utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "MSW")
+#' utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "AUC")
+#' samp <- rbeta(10e3, shape1 = 2.0, shape2 = 3.0)
+#' utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "MSW")
+#' utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "AUC")
+#' par(oldpar)
 utility_pseudo <- function(
   pseudo,
   log_target = NULL,
@@ -78,7 +86,19 @@ utility_pseudo <- function(
     interval_opt = c(0.000001, 0.999999) # interval for numerical optimization in AUC with type = "integration"
   )
 ) {
+  stopifnot(
+    utility_type %in% c("AUC", "MSW"),
+    type %in% c("samples", "function", "grid"),
+    is.list(pseudo),
+    length(nbins) == 1L,
+    is.numeric(nbins),
+    is.finite(nbins),
+    nbins > 1,
+    is.logical(plot),
+    is.list(options)
+  )
   if (type == "samples") {
+    stopifnot(is.numeric(samples), all(is.finite(samples)))
     u <- vapply(
       seq_along(samples),
       function(i) {
@@ -95,13 +115,51 @@ utility_pseudo <- function(
       numeric(1)
     )
   } else {
-    h <- function(psi) exp(log_target(pseudo$q(psi)) - pseudo$ld(pseudo$q(psi)))
+    stopifnot(
+      is.function(pseudo$q),
+      is.function(pseudo$ld),
+      is.function(log_target)
+    )
+
+    h <- function(psi) {
+      z <- .eval_pseudo_quantile(
+        q = pseudo$q,
+        u = psi,
+        sampler = "utility_pseudo",
+        stage = "constructing transformed target",
+        attempt = 1L,
+        expected_length = 1L
+      )
+
+      lt <- .eval_log_target(
+        log_target = log_target,
+        x = z,
+        sampler = "utility_pseudo",
+        stage = "evaluating transformed target",
+        evaluation = 1L,
+        allow_minus_inf = TRUE
+      )
+
+      lp <- .eval_pseudo_logdens(
+        logdens = pseudo$ld,
+        x = z,
+        sampler = "utility_pseudo",
+        stage = "evaluating transformed pseudo-target density",
+        evaluation = 1L,
+        allow_minus_inf = FALSE
+      )
+
+      exp(lt - lp)
+    }
   }
 
   if (isTRUE(plot)) {
+    pseu_lq <- pseudo$q(0.05)
+    pseu_uq <- pseudo$q(0.95)
+    pseu_range <- pseu_uq - pseu_lq
     x_plot <- seq(
-      pseudo$params$loc - 4.0 * pseudo$params$sc,
-      pseudo$params$loc + 4.0 * pseudo$params$sc,
+      pseu_lq - 0.2 * pseu_range,
+      pseu_uq + 0.2 * pseu_range,
       length = 200
     )
     y_pseu_plot <- sapply(x_plot, function(z) exp(pseudo$ld(z)))
@@ -171,7 +229,7 @@ utility_pseudo <- function(
 #'
 #' @param h Function to evaluate the unnormalized transformed target
 #' \eqn{h(\psi) = g(\hat{\Pi}^{-1}(\psi))/\hat{\pi}(\hat{\Pi}^{-1}(\psi))}
-#' with argument \eqn{\psi \in (0,1)}. Use \code(h = NULL) if type = "samples".
+#' with argument \eqn{\psi \in (0,1)}. Use \code{h = NULL} if type = "samples".
 #' @param x Numeric vector of histogram locations. Not used if \code{u} is supplied or type = "integration". If used but not supplied, a default grid is chosen.
 #' @param u Numeric vector of samples supported on unit interval (\eqn{\psi}) with which to
 #' create histogram (use \code{u = NULL} if type = "integration" or "grid").
@@ -186,6 +244,7 @@ utility_pseudo <- function(
 #' \code{n_opt}: Positive integer giving the number of initialization points for numerical optimization in AUC with type = "integration".
 #' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization in AUC with type = "integration".
 #' @returns Scalar value of the utility function evaluation.
+#' @details Calculating the utility with a function and \code{type = 'integration'} employs numerical optimization (for AUC) and numerical integration (for both AUC and MSW), which may not succeed for highly multimodal or narrow target densities.
 #'
 #' @references
 #' Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608* \doi{https://doi.org/10.48550/arXiv.2407.12608}
@@ -275,14 +334,14 @@ utility_shrinkslice <- function(
     }
 
     if (utility_type == "AUC") {
-      util_out <- auc_int(
+      util_out <- .auc_int(
         h = h,
         tol_int = options$tol_int,
         n_opt = options$n_opt,
         interval_opt = options$interval_opt
       )
     } else if (utility_type == "MSW") {
-      util_out <- meanSliceWidth_int(h = h, tol = options$tol_int)
+      util_out <- .meanSliceWidth_int(h = h, tol = options$tol_int)
     }
 
     if (isTRUE(plot)) {

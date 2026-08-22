@@ -47,18 +47,23 @@ imh_pseudo <- function(x, log_target, pseudo) {
 
   K <- length(x)
   if (K == 1) {
-    out <- imh_pseudo_univ(
+    out <- .imh_pseudo_univ(
       x = x,
       log_target = log_target,
       pseudo = pseudo
     )
   } else {
-    out <- imh_pseudo_mv(x = x, log_target = log_target, pseudo = pseudo, K = K)
+    out <- .imh_pseudo_mv(
+      x = x,
+      log_target = log_target,
+      pseudo = pseudo,
+      K = K
+    )
   }
   out
 }
 
-imh_pseudo_univ <- function(x, log_target, pseudo) {
+.imh_pseudo_univ <- function(x, log_target, pseudo) {
   stopifnot(
     is.function(pseudo$ld),
     is.function(pseudo$q)
@@ -121,7 +126,7 @@ imh_pseudo_univ <- function(x, log_target, pseudo) {
   out
 }
 
-imh_pseudo_mv <- function(x, log_target, pseudo, K) {
+.imh_pseudo_mv <- function(x, log_target, pseudo, K) {
   is_joint_pseudo <- is.function(pseudo$ld) && is.function(pseudo$r)
   is_component_pseudo <-
     length(pseudo) == K &&
@@ -149,7 +154,7 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K) {
   }
 
   if (isTRUE(is_component_pseudo)) {
-    ld_pseudo <- function(z, k, stage) {
+    ld_pseudo_k <- function(z, k, stage) {
       .eval_pseudo_logdens(
         logdens = pseudo[[k]]$ld,
         x = z,
@@ -166,7 +171,7 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K) {
       allow_minus_inf = FALSE
     ) -
       sum(sapply(1:K, function(k) {
-        ld_pseudo(x[k], k = k, stage = "evaluate at the current state")
+        ld_pseudo_k(x[k], k = k, stage = "evaluate at the current state")
       }))
 
     u1 <- runif(K, min = 0.0, max = 1.0)
@@ -189,7 +194,7 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K) {
       allow_minus_inf = TRUE
     ) -
       sum(sapply(1:K, function(k) {
-        ld_pseudo(x1[k], k = k, stage = "evaluate at proposal")
+        ld_pseudo_k(x1[k], k = k, stage = "evaluate at proposal")
       }))
   } else if (isTRUE(is_joint_pseudo)) {
     ld_pseudo <- function(z, stage) {
@@ -210,7 +215,13 @@ imh_pseudo_mv <- function(x, log_target, pseudo, K) {
     ) -
       ld_pseudo(x, stage = "evaluate at the current state")
 
-    x1 <- pseudo$r()
+    x1 <- .eval_pseudo_randgen(
+      r = pseudo$r,
+      sampler = "imh_pseudo",
+      stage = "generate proposal",
+      attempt = 1L,
+      expected_length = K
+    )
 
     if (length(x1) != K) {
       stop(

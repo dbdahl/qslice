@@ -2,7 +2,7 @@
 # #'
 # #' Calculate the area under the curve after restricting
 # #' the curve to fit within the unit square. Specifically, the highest unnormalized density value reaches 1 and
-# #' the support is the unit interval. See Heiner et al. (2024+).
+# #' the support is the unit interval. See Heiner et al. (2026+).
 # #'
 # #' Uses optimization (\code{optim()}) to find the highest point and numeric integration (\code{integrate()}) to find the area.
 # #'
@@ -15,7 +15,7 @@
 # #' @importFrom stats integrate
 # #' @keywords internal
 # #'
-auc_int <- function(
+.auc_int <- function(
   h,
   tol_int = 0.005,
   n_opt = 10,
@@ -111,6 +111,13 @@ auc_int <- function(
 #'
 #' Function auc() is deprecated. Use utility_shrinkslice(..., utility_type = "AUC").
 #'
+#' @param u Numeric vector of samples supported on unit interval with which to
+#' create a histogram (use \code{u = NULL} if \code{x} and \code{y} are supplied).
+#' @param x Numeric vector of histogram locations. (Not used if \code{u} is supplied).
+#' @param y Numeric vector of histogram heights OR function evaluating the curve
+#' for a given value of \code{u} supported on (0,1). (Not used if \code{u} is supplied).
+#' @param nbins Number of histogram bins to use (defaults to 30).
+#'
 #' @export
 auc <- function(u = NULL, x = NULL, y = NULL, nbins = 30) {
   warning(
@@ -119,7 +126,7 @@ auc <- function(u = NULL, x = NULL, y = NULL, nbins = 30) {
   if (is.null(u)) {
     if (is.function(y)) {
       utility_shrinkslice(
-        h = h,
+        h = y,
         x = x,
         u = NULL,
         type = "integration",

@@ -4,42 +4,38 @@
 \alias{slice_elliptical_mv}
 \title{Multivariate Elliptical Slice Sampler}
 \usage{
-slice_elliptical_mv(x, log_target, mu, Sig, is_chol = FALSE)
+slice_elliptical_mv(x, log_lik, mu, Sig, is_chol = FALSE)
 }
 \arguments{
-\item{x}{The current state (as a numeric scalar).}
+\item{x}{The current state (as a numeric vector).}
 
-\item{log_target}{A function taking numeric scalar that evaluates the
-(potentially unnormalized) log-target density, returning a numeric scalar.}
+\item{log_lik}{A function taking numeric vector that evaluates the natural logarithm of the
+"likelihood" L(x) part of the unnormalized target density L(x) * Normal(x; mu, Sig). Returns a numeric scalar.}
 
-\item{mu}{Numeric vector with the mean of the supporting normal distribution.}
+\item{mu}{Numeric vector with the mean of the supporting normal "prior" distribution.}
 
-\item{Sig}{Positive definite covariance matrix. Alternatively, a
+\item{Sig}{Positive definite covariance matrix of the supporting normal "prior" distribution. Alternatively, a
 lower-triangular matrix with the Cholesky factor of the covariance matrix
 (for faster computation).}
 
 \item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.}
-}
-\value{
-A list with two elements:
-
-\code{x} is the new state.
-
-\code{nEvaluations} is the number of evaluations of the target function used to obtain the new
-state.
 }
 \description{
 Algorithm 1 of Nishihara et al. (2014) of the
 elliptical slice sampler of Murray et al. (2010).
 }
 \examples{
-lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
+mu <- c(0.5, 0.5)
+Sig <- matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2)
+SigL <- t(chol(Sig))
+log_lik <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)
+lf <- function(x) log_lik(x) - 0.5 * drop(crossprod(forwardsolve(SigL, x - mu)))
 n_iter <- 10 # set to 1e3 for more complete illustration
 draws <- matrix(0.3, nrow = n_iter, ncol = 2)
 nEvaluations <- 0L
 for (i in seq.int(2, n_iter)) {
-  out <- slice_elliptical_mv(draws[i - 1,], log_target = lf,
-              mu = c(0.5, 0.5), Sig = matrix(c(0.5, 0.25, 0.25, 0.5), nrow = 2))
+  out <- slice_elliptical_mv(draws[i - 1,], log_lik = log_lik,
+              mu = mu, Sig = SigL, is_chol = TRUE)
   draws[i,] <- out$x
   nEvaluations <- nEvaluations + out$nEvaluations
 }

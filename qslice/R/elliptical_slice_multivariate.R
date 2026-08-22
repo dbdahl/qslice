@@ -9,11 +9,16 @@
   K <- length(x)
   stopifnot(
     length(mu) == K,
+    is.matrix(Sig),
+    is.numeric(Sig),
     dim(Sig) == c(K, K),
+    all(diag(Sig) > 0.0),
     all(is.finite(x)),
     is.function(log_lik),
     all(is.finite(mu)),
     all(is.finite(Sig)),
+    length(is_chol) == 1L,
+    !is.na(is_chol),
     is.logical(is_chol)
   )
 
@@ -137,6 +142,7 @@ slice_elliptical_mv <- function(
 #' lower-triangular matrix with the Cholesky factor of the scale matrix
 #' (for faster computation).
 #' @param df Degrees of freedom of Student t pseudo-target.
+#' @param is_chol Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.
 #'
 #' @return A list contains two elements: \code{x} is the new state and \code{nEvaluations}
 #'   is the number of evaluations of the target function used to obtain the new
@@ -176,7 +182,11 @@ slice_genelliptical_mv <- function(
   K <- length(x)
   stopifnot(
     length(mu) == K,
+    is.matrix(Sig),
+    is.numeric(Sig),
     dim(Sig) == c(K, K),
+    all(diag(Sig) > 0.0),
+    all(is.finite(Sig)),
     length(df) == 1L,
     all(is.finite(x)),
     is.function(log_target),
@@ -184,6 +194,8 @@ slice_genelliptical_mv <- function(
     all(is.finite(Sig)),
     is.finite(df),
     df > 0.0,
+    length(is_chol) == 1L,
+    !is.na(is_chol),
     is.logical(is_chol)
   )
 

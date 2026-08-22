@@ -7,15 +7,15 @@
 slice_genelliptical_mv(x, log_target, mu, Sig, df, is_chol = FALSE)
 }
 \arguments{
-\item{x}{The current state (as a numeric scalar).}
+\item{x}{The current state (as a numeric vector).}
 
-\item{log_target}{A function taking numeric scalar that evaluates the
-(potentially unnormalized) log-target density, returning a numeric scalar.}
+\item{log_target}{A function taking numeric vector that evaluates the natural logarithm of the
+unnormalized target density. Returns a numeric scalar.}
 
-\item{mu}{Numeric vector with the mean of the supporting normal distribution.}
+\item{mu}{A numeric vector with the location parameter of the Student t pseudo-target.}
 
-\item{Sig}{Positive definite covariance matrix. Alternatively, a
-lower-triangular matrix with the Cholesky factor of the covariance matrix
+\item{Sig}{Positive definite scale matrix of the Student t pseudo-target. Alternatively, a
+lower-triangular matrix with the Cholesky factor of the scale matrix
 (for faster computation).}
 
 \item{df}{Degrees of freedom of Student t pseudo-target.}

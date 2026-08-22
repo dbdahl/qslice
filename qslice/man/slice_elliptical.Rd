@@ -4,42 +4,37 @@
 \alias{slice_elliptical}
 \title{Univariate Elliptical Slice Sampler}
 \usage{
-slice_elliptical(x, log_target, mu, sigma)
+slice_elliptical(x, log_lik, mu, sigma)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
 
-\item{log_target}{A function taking numeric scalar that evaluates the
-(potentially unnormalized) log-target density, returning a numeric scalar.}
+\item{log_lik}{A function taking numeric scalar that evaluates the natural logarithm of the
+"likelihood" L(x) part of the unnormalized target density L(x) * Normal(x; mu, sigma). Returns a numeric scalar.}
 
-\item{mu}{A numeric scalar with the mean of the supporting normal distribution.}
+\item{mu}{A numeric scalar with the mean of the supporting normal "prior" distribution.}
 
-\item{sigma}{A numeric scalar with the standard deviation of the supporting normal distribution.}
-}
-\value{
-A list with two elements:
-
-\code{x} is the new state.
-
-\code{nEvaluations} is the number of evaluations of the target function used to obtain the new
-state.
+\item{sigma}{A numeric scalar with the standard deviation of the supporting normal "prior" distribution.}
 }
 \description{
 Algorithm 1 of Nishihara et al. (2014) of the
 elliptical slice sampler of Murray et al. (2010).
 }
 \examples{
-lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+log_lik <- function(x) dbeta(x, 8, 2, log = TRUE)
+lf <- function(x) log_lik(x) + dnorm(x, mean = mu, sd = sig, log = TRUE)
+mu <- 0.2
+sig <- 0.3
+draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 nEvaluations <- 0L
 for (i in seq.int(2, length(draws))) {
-  out <- slice_elliptical(draws[i - 1], log_target = lf, mu = 0.5, sigma = 1)
+  out <- slice_elliptical(draws[i - 1], log_lik = log_lik, mu = mu, sigma = sig)
   draws[i] <- out$x
   nEvaluations <- nEvaluations + out$nEvaluations
 }
 nEvaluations / (length(draws) - 1)
-plot(density(draws), xlim = c(0, 1))
-curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
+plot(density(draws), xlim = c(-0.2, 1.2))
+curve(exp(lf(x)) * 4.5, -0.2, 1.2, col = "blue", add = TRUE) # 4.5 to match curve height
 
 }
 \references{

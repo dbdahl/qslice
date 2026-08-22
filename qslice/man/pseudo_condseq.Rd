@@ -30,7 +30,7 @@ A list containing a sequence of pseudo-targets, each from \link[qslice]{pseudo_l
 }
 \description{
 Given a realization of a random vector, generate a the corresponding
-sequence of conditional pseudo-target inverse CDFs (Heiner et al., 2024+).
+sequence of conditional pseudo-target inverse CDFs (Heiner et al., 2026+).
 The pseudo-target is specified as
 a sequence of growing conditional distributions.
 }
@@ -43,13 +43,13 @@ K <- 10
 n_iter <- 50 # MCMC iterations; set to 10e3 for more complete illustration
 n <- 100 # number of iid samples from the target; set to 10e3 for more complete illustration
 Y <- matrix(NA, nrow = n, ncol = K) # iid samples from the target
-Y[,1] <- rnorm(n, 0.0, 3.0)
+Y[, 1] <- rnorm(n, 0.0, 3.0)
 for (i in 1:n) {
-  Y[i, 2:K] <- rnorm(K-1, 0.0, exp(0.5*Y[i,1]))
+  Y[i, 2:K] <- rnorm(K - 1, 0.0, exp(0.5 * Y[i, 1]))
 }
 ltarget <- function(x) {
-dnorm(x[1], 0.0, 3.0, log = TRUE) +
-  sum(dnorm(x[2:K], 0.0, exp(0.5*x[1]), log = TRUE))
+  dnorm(x[1], 0.0, 3.0, log = TRUE) +
+    sum(dnorm(x[2:K], 0.0, exp(0.5 * x[1]), log = TRUE))
 }
 pseudo_control <- list(
   loc_fn = function(x) {
@@ -59,13 +59,16 @@ pseudo_control <- list(
     if (is.null(x)) {
       out <- 3.0
     } else {
-      out <- exp(0.5*x[1])
+      out <- exp(0.5 * x[1])
     }
     out
   },
-  pseudo_init = pseudo_list(family = "t",
-                            params = list(loc = 0.0, sc = 3.0, degf = 20),
-                            lb = -Inf, ub = Inf),
+  pseudo_init = pseudo_list(
+    family = "t",
+    params = list(loc = 0.0, sc = 3.0, df = 20),
+    lb = -Inf,
+    ub = Inf
+  ),
   lb = rep(-Inf, K),
   ub = rep(Inf, K)
 )
@@ -74,21 +77,25 @@ draws <- matrix(rep(x0, n_iter + 1), nrow = n_iter + 1, byrow = TRUE)
 draws_u <- matrix(rep(x0, n_iter), nrow = n_iter, byrow = TRUE)
 n_eval <- 0
 for (i in 2:(n_iter + 1)) {
-  tmp <- slice_quantile_mv_seq(draws[i-1,],
-                                log_target = ltarget,
-                                pseudo_control = pseudo_control)
-  draws[i,] <- tmp$x
-  draws_u[i-1,] <- tmp$u
+  tmp <- slice_quantile_mv_seq(
+    draws[i - 1, ],
+    log_target = ltarget,
+    pseudo_control = pseudo_control
+  )
+  draws[i, ] <- tmp$x
+  draws_u[i - 1, ] <- tmp$u
   n_eval <- n_eval + tmp$nEvaluations
 }
 # (es <- coda::effectiveSize(coda::as.mcmc(draws)))
 # mean(es)
 n_eval / n_iter
-sapply(1:K, function (k) auc(u = draws_u[,k]))
-hist(draws_u[,1])
-plot(draws[,1], draws[,2])
-points(Y[,1], Y[,2], col = "blue", cex = 0.5)
+sapply(1:K, function(k) {
+  utility_shrinkslice(u = draws_u[, k], utility_type = "AUC")
+})
+hist(draws_u[, 1])
+plot(draws[, 1], draws[, 2])
+points(Y[, 1], Y[, 2], col = "blue", cex = 0.5)
 }
 \references{
-Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:2407.12608} \doi{https://doi.org/10.48550/arXiv.2407.12608}
 }

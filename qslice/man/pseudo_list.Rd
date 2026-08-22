@@ -4,7 +4,7 @@
 \alias{pseudo_list}
 \title{Specify a pseudo-target within a given class}
 \usage{
-pseudo_list(family, params, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL)
+pseudo_list(family, params, lb = -Inf, ub = Inf, name = NULL)
 }
 \arguments{
 \item{family}{String identifying the distribution family. One of \code{t}, \code{cauchy},
@@ -12,7 +12,7 @@ pseudo_list(family, params, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL)
 
 \item{params}{Named list identifying parameters, which vary by distribution family.
 
-\code{t}: location \code{loc}, scale \code{sc}, and degrees of freedom \code{degf}
+\code{t}: location \code{loc}, scale \code{sc}, and degrees of freedom \code{df}
 
 \code{cauchy}: location \code{loc} and scale \code{sc}
 
@@ -20,22 +20,22 @@ pseudo_list(family, params, lb = -Inf, ub = Inf, log_p = FALSE, name = NULL)
 
 \code{logistic}: location \code{loc} and scale \code{sc}
 
-\code{beta}: scale \code{scale1} and scale \code{scale2}}
+\code{beta}: shape \code{shape1} and shape \code{shape2}}
 
-\item{lb}{Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}. Not operative in family \code{beta}.}
+\item{lb}{Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
+For family \code{beta}, this is intersected with its natural lower bound of zero.}
 
-\item{ub}{Numeric scalar giving the value of right truncation. Defaults to \code{Inf}. Not operative in family \code{beta}.}
-
-\item{log_p}{(Not implemented) Logical: evaluate distribution and quantile functions using the log probability.}
+\item{ub}{Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
+For family \code{beta}, this is intersected with its natural upper bound of one.}
 
 \item{name}{String appending optional message to the textual name of the distribution.}
 }
 \value{
 A list with named components:
 
-\code{d}: function to evaluate the density
+\code{d}: function to evaluate the density (finite boundary points of the support evaluate to \code{0})
 
-\code{ld}: function to evaluate the log density
+\code{ld}: function to evaluate the log density (finite boundary points of the support evaluate to \code{-Inf})
 
 \code{q}: function to evaluate the quantile function
 
@@ -52,20 +52,23 @@ A list with named components:
 \description{
 Create a list of functions to evaluate a pseudo-target in a given class
 with supplied parameters (usually location and scale). The distribution is optionally
-truncated to specified bounds (and renormalized). See Heiner et al. (2024+).
+truncated to specified bounds (and renormalized). See Heiner et al. (2026+).
 }
 \details{
 The supported classes of pseudo-targets include: \code{t}, \code{cauchy},
 \code{normal}, \code{logistic}, and \code{beta}.
 }
 \examples{
-pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, degf = 5),
+pseu <- pseudo_list(family = "t", params = list(loc = 0.0, sc = 1.0, df = 5),
                     lb = 0.0, ub = Inf) # half t
 str(pseu)
 pseu$d(1.5)
 pseu$ld(1.5)
 pseu$p(1.5)
+# should match (F(x) - F(0)) / (1 - F(0)) below
+(pt(1.5, df = 5) - pt(0.0, df = 5)) / pt(0.0, df = 5, lower.tail = FALSE)
 pseu$q(0.8060963)
+curve(pseu$d(x), from = -1.0, to = 5.0, n = 1000)
 pseu <- pseudo_list(family = "cauchy", params = list(loc = 0.0, sc = 1.0),
                     lb = 0.0, ub = Inf) # half Cauchy
 str(pseu)
@@ -87,13 +90,16 @@ pseu$d(1.5)
 pseu$ld(1.5)
 pseu$p(1.5)
 pseu$q(0.635149)
-pseu <- pseudo_list(family = "beta", params = list(shape1 = 2.0, shape2 = 1.0))
+pseu <- pseudo_list(family = "beta", params = list(shape1 = 3.0, shape2 = 2.0), lb = 0.2)
 str(pseu)
 pseu$d(0.5)
 pseu$ld(0.5)
 pseu$p(0.5)
-pseu$q(0.25)
+# should match (F(x) - F(0.2)) / (1 - F(0.2)) below
+(pbeta(0.5, 3.0, 2.0) - pbeta(0.2, 3.0, 2.0)) / pbeta(0.2, 3.0, 2.0, lower.tail = FALSE)
+pseu$q(0.2932771)
+curve(pseu$d(x), from = 0.0, to = 1.0, n = 1000)
 }
 \references{
-Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:2407.12608} \doi{https://doi.org/10.48550/arXiv.2407.12608}
 }

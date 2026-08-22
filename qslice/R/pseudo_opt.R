@@ -40,7 +40,7 @@
 #' Optimal pseudo-target for a given target
 #'
 #' Find an optimal pseudo-target in a specified family to approximate
-#' the given (unnormalized) target (Heiner et al., 2024+). Optimize over the selected utility function.
+#' the given (unnormalized) target (Heiner et al., 2026+). Optimize over the selected utility function.
 #'
 #' Optionally supply samples from the target distribution.
 #'
@@ -55,7 +55,7 @@
 #' Use of "samples" requires specification of \code{samples}.
 #' @param family String specifying the family of distributions for the pseudo-target.
 #' Can be any of the families accepted by \link[qslice]{pseudo_list}.
-#' @param df Numeric vector of degrees of freedom values to try (only if \code{family = "t"}.
+#' @param df Numeric vector of degrees of freedom values to try (only if \code{family = "t"}).
 #' Defaults to \code{c(1, 5, 20)}.
 #' @param lb Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.
 #' @param ub Numeric scalar giving the value of right truncation. Defaults to \code{Inf}.
@@ -69,6 +69,7 @@
 #'
 #' @param verbose Logical for whether to print intermediate steps of optimization.
 #' Defaults to \code{FALSE}.
+#' @param degf (deprecated) Numeric vector of degrees of freedom values to try (only if \code{family = "t"}). Use \code{df} instead.
 #' @returns A list with named components:
 #'
 #'  \code{pseudo}: a list with functions corresponding to the selected pseudo-target;
@@ -128,6 +129,15 @@ pseudo_opt <- function(
   verbose = FALSE,
   degf = NULL
 ) {
+  stopifnot(
+    type %in% c("function", "samples", "grid"),
+    utility_type %in% c("AUC", "MSW"),
+    is.numeric(nbins),
+    is.finite(nbins),
+    nbins > 1,
+    is.logical(plot),
+    is.logical(verbose)
+  )
   ## degf deprecation
   df <- .resolve_df(
     df = df,
@@ -172,7 +182,7 @@ pseudo_opt <- function(
       )
 
       if (verbose) {
-        cat("trying", pseu$t, "\n")
+        cat("trying", pseu$txt, "\n")
       }
 
       # this function is found in utility_shrinkslice.R; output is the same as utility_shrinkslice()
@@ -225,7 +235,21 @@ pseudo_opt <- function(
     )
   }
 
-  use_indx <- which.max(sapply(opt, function(obj) obj$value))
+  opt_converged <- sapply(opt, function(obj) obj$convergence == 0)
+  if (any(opt_converged)) {
+    if (any(!opt_converged)) {
+      warning(
+        "Pseudo-target utility optimization failed for df = ",
+        paste(which(isFALSE(opt_converged)), collapse = " ")
+      )
+    }
+    indx_converged <- which(opt_converged)
+    use_indx <- indx_converged[which.max(sapply(indx_converged, function(k) {
+      opt[[k]]$value
+    }))]
+  } else {
+    stop("All pseudo-target utility optimizations failed.")
+  }
 
   pseu <- pseudo_list(
     family = family,

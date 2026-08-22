@@ -17,28 +17,6 @@ for a given value of \code{u} supported on (0,1). (Not used if \code{u} is suppl
 
 \item{nbins}{Number of histogram bins to use (defaults to 30).}
 }
-\value{
-The (approximate) area under the curve as a numeric value of length one.
-}
 \description{
-Calculate the histogram approximation to the area under the curve after restricting
-the curve to fit within the unit square. Specifically, the highest histogram bar reaches 1 and
-the support is the unit interval. See Heiner et al. (2024+).
-}
-\details{
-Accepts either samples \code{u} or a function \code{y} representing a (possibly
-unnormalized) probability density supported on the unit interval.
-}
-\examples{
-u_samples <- rbeta(10e3, 2, 2)
-auc(u = u_samples)
-auc(u = u_samples, nbins = 50)
-auc(y = function(x) {dbeta(x, 2, 2)}, nbins = 30)
-auc(y = function(x) {dbeta(x, 2, 2)}, nbins = 300)
-xx <- seq(0.001, 0.999, length = 1000)
-auc(x = xx, y = function(x) {dbeta(x, 2, 2)})
-auc(x = xx, y = dbeta(xx, 2, 2))
-}
-\references{
-Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}.
+Function auc() is deprecated. Use utility_shrinkslice(..., utility_type = "AUC").
 }

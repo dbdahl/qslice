@@ -18,30 +18,36 @@ export(slice_quantile_mv)
 export(slice_quantile_mv_seq)
 export(slice_stepping_out)
 export(utility_pseudo)
-importFrom(graphics,curve)
-importFrom(graphics,legend)
-importFrom(graphics,lines)
-importFrom(graphics,points)
-importFrom(graphics,segments)
-importFrom(graphics,text)
-importFrom(stats,dbeta)
-importFrom(stats,dcauchy)
-importFrom(stats,dlogis)
-importFrom(stats,dnorm)
-importFrom(stats,dt)
-importFrom(stats,integrate)
-importFrom(stats,optim)
-importFrom(stats,pbeta)
-importFrom(stats,pcauchy)
-importFrom(stats,plogis)
-importFrom(stats,pnorm)
-importFrom(stats,pt)
-importFrom(stats,qbeta)
-importFrom(stats,qcauchy)
-importFrom(stats,qlogis)
-importFrom(stats,qnorm)
-importFrom(stats,qt)
-importFrom(stats,rgamma)
-importFrom(stats,rnorm)
-importFrom(stats,runif)
-importFrom(stats,sd)
+export(utility_shrinkslice)
+importFrom(graphics,
+  curve,
+  hist,
+  legend,
+  lines,
+  points,
+  segments,
+  text
+)
+importFrom(stats,
+  dbeta,
+  dcauchy,
+  dlogis,
+  dnorm,
+  dt,
+  integrate,
+  optim,
+  pbeta,
+  pcauchy,
+  plogis,
+  pnorm,
+  pt,
+  qbeta,
+  qcauchy,
+  qlogis,
+  qnorm,
+  qt,
+  rgamma,
+  rnorm,
+  runif,
+  sd
+)

@@ -325,7 +325,7 @@
     if (is.na(x)) {
       return(x)
     }
-    if (x >= lb && x <= ub) {
+    if (x > lb && x < ub) {
       fn_ldens_free(x) - lp_interval
     } else {
       -Inf
@@ -463,9 +463,9 @@
 #' @param name String appending optional message to the textual name of the distribution.
 #' @returns A list with named components:
 #'
-#'  \code{d}: function to evaluate the density
+#'  \code{d}: function to evaluate the density (finite boundary points of the support evaluate to \code{0})
 #'
-#'  \code{ld}: function to evaluate the log density
+#'  \code{ld}: function to evaluate the log density (finite boundary points of the support evaluate to \code{-Inf})
 #'
 #'  \code{q}: function to evaluate the quantile function
 #'
@@ -496,7 +496,8 @@
 #' pseu$d(1.5)
 #' pseu$ld(1.5)
 #' pseu$p(1.5)
-#' (pt(1.5, df = 5) - pt(0.0, df = 5)) / pt(0.0, df = 5, lower.tail = FALSE) # (F(x) - F(0)) / (1 - F(0))
+#' # should match (F(x) - F(0)) / (1 - F(0)) below
+#' (pt(1.5, df = 5) - pt(0.0, df = 5)) / pt(0.0, df = 5, lower.tail = FALSE)
 #' pseu$q(0.8060963)
 #' curve(pseu$d(x), from = -1.0, to = 5.0, n = 1000)
 #' pseu <- pseudo_list(family = "cauchy", params = list(loc = 0.0, sc = 1.0),
@@ -525,7 +526,8 @@
 #' pseu$d(0.5)
 #' pseu$ld(0.5)
 #' pseu$p(0.5)
-#' (pbeta(0.5, 3.0, 2.0) - pbeta(0.2, 3.0, 2.0)) / pbeta(0.2, 3.0, 2.0, lower.tail = FALSE) # # (F(x) - F(0.2)) / (1 - F(0.2))
+#' # should match (F(x) - F(0.2)) / (1 - F(0.2)) below
+#' (pbeta(0.5, 3.0, 2.0) - pbeta(0.2, 3.0, 2.0)) / pbeta(0.2, 3.0, 2.0, lower.tail = FALSE)
 #' pseu$q(0.2932771)
 #' curve(pseu$d(x), from = 0.0, to = 1.0, n = 1000)
 pseudo_list <- function(
@@ -613,9 +615,9 @@ pseudo_list <- function(
 # #' @param name String appending optional message to the textual name of the distribution.
 # #' @returns A list with named components:
 # #'
-# #'  \code{d}: function to evaluate the density
+# #'  \code{d}: function to evaluate the density (finite boundary points of restricted support evaluate to \code{0})
 # #'
-# #'  \code{ld}: function to evaluate the log density
+# #'  \code{ld}: function to evaluate the log density (finite boundary points of restricted support evaluate to \code{-Inf})
 # #'
 # #'  \code{q}: function to evaluate the quantile function
 # #'
@@ -714,9 +716,9 @@ pseudo_list <- function(
 # #' @param name String appending optional message to the textual name of the distribution.
 # #' @returns A list with named components:
 # #'
-# #'  \code{d}: function to evaluate the density
+# #'  \code{d}: function to evaluate the density (finite boundary points of restricted support evaluate to \code{0})
 # #'
-# #'  \code{ld}: function to evaluate the log density
+# #'  \code{ld}: function to evaluate the log density (finite boundary points of restricted support evaluate to \code{-Inf})
 # #'
 # #'  \code{q}: function to evaluate the quantile function
 # #'
@@ -793,9 +795,9 @@ pseudo_list <- function(
 # #' @param name String appending optional message to the textual name of the distribution.
 # #' @returns A list with named components:
 # #'
-# #'  \code{d}: function to evaluate the density
+# #'  \code{d}: function to evaluate the density (finite boundary points of restricted support evaluate to \code{0})
 # #'
-# #'  \code{ld}: function to evaluate the log density
+# #'  \code{ld}: function to evaluate the log density (finite boundary points of restricted support evaluate to \code{-Inf})
 # #'
 # #'  \code{q}: function to evaluate the quantile function
 # #'
@@ -873,9 +875,9 @@ pseudo_list <- function(
 # #' @param name String appending optional message to the textual name of the distribution.
 # #' @returns A list with named components:
 # #'
-# #'  \code{d}: function to evaluate the density
+# #'  \code{d}: function to evaluate the density (finite boundary points of restricted support evaluate to \code{0})
 # #'
-# #'  \code{ld}: function to evaluate the log density
+# #'  \code{ld}: function to evaluate the log density (finite boundary points of restricted support evaluate to \code{-Inf})
 # #'
 # #'  \code{q}: function to evaluate the quantile function
 # #'
@@ -954,9 +956,9 @@ pseudo_list <- function(
 # #' @param name String appending optional message to the textual name of the distribution.
 # #' @returns A list with named components:
 # #'
-# #'  \code{d}: function to evaluate the density
+# #'  \code{d}: function to evaluate the density (finite boundary points of the support evaluate to \code{0})
 # #'
-# #'  \code{ld}: function to evaluate the log density
+# #'  \code{ld}: function to evaluate the log density (finite boundary points of the support evaluate to \code{-Inf})
 # #'
 # #'  \code{q}: function to evaluate the quantile function
 # #'

@@ -14,12 +14,12 @@ density, returning a numeric scalar.}
 
 \item{w}{A numeric vector tuning the algorithm which gives the typical slice
 width in each dimension. This is a main tuning parameter of the algorithm.
-If \code{NULL}, the sampler begins shrinking from the supplied boundaries (should,
+If \code{NULL}, the sampler begins shrinking from the supplied boundaries \code{L} and \code{R} (should,
 correspond with the support).}
 
-\item{L}{Numeric vector giving the lower boundary of support in each dimension.}
+\item{L}{Optional numeric vector giving the lower boundary of support in each dimension.}
 
-\item{R}{Numeric vector giving the upper boundary of support in each dimension.
+\item{R}{Optional numeric vector giving the upper boundary of support in each dimension.
 Will be used if \code{w} is null. If all of \code{L}, \code{R}, and \code{w}
 are null, then the boundaries default to those of the unit hypercube.}
 }

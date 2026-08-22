@@ -23,20 +23,19 @@ A list containing three elements:
 
 \code{x} is the new state.
 
-\code{u} is the value of the CDF of the psuedo-target associated with the
+\code{u} is the value of the CDF of the pseudo-target associated with the
 returned value (also referred to as psi).
 
 \code{nEvaluations} is the number of evaluations of the
 target function used to obtain the new state.
 }
 \description{
-Single update using a quantile slice sampler of Heiner et al. (2024+).
+Single update using a quantile slice sampler of Heiner et al. (2026+).
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-pseu <- list(ld = function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE),
-             q = function(u) qbeta(u, shape1 = 1, shape2 = 1))
-draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+pseu <- pseudo_list(family = "beta", params = list(shape1 = 2.0, shape2 = 2.0))
+draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 nEvaluations <- 0L
 for (i in seq.int(2, length(draws))) {
   out <- slice_quantile(draws[i - 1], log_target = lf, pseudo = pseu)
@@ -49,5 +48,5 @@ curve(exp(lf(x)), 0, 1, col = "blue", add = TRUE)
 
 }
 \references{
-Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}.
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:2407.12608} \doi{https://doi.org/10.48550/arXiv.2407.12608}
 }

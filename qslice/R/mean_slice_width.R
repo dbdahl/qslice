@@ -12,7 +12,7 @@
 # #' @importFrom stats integrate
 # #' @keywords internal
 # #'
-meanSliceWidth_int <- function(h, tol = 0.005) {
+.meanSliceWidth_int <- function(h, tol = 0.005) {
   interval <- c(0.0, 1.0)
 
   h_vec <- function(x) sapply(x, FUN = h) # vectorized version of h

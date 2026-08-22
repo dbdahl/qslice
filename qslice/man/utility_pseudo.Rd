@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility_shrinkslice.R
 \name{utility_pseudo}
 \alias{utility_pseudo}
-\title{Utility for a given target and pseudo-target}
+\title{Utility for a given univariate target and pseudo-target}
 \usage{
 utility_pseudo(
   pseudo,
@@ -13,11 +13,11 @@ utility_pseudo(
   nbins = 30,
   plot = TRUE,
   utility_type = "AUC",
-  tol_int = 0.001
+  options = list(tol_int = 0.001, n_opt = 10, interval_opt = c(1e-06, 0.999999))
 )
 }
 \arguments{
-\item{pseudo}{List containing the following functions with scalar input:
+\item{pseudo}{List containing the following functions relating to the univariate pseudo-target, each with scalar input:
 
 \code{ld}: function to evaluate the log density
 
@@ -25,23 +25,23 @@ utility_pseudo(
 
 \code{p}: function to evaluate the distribution function}
 
-\item{log_target}{Function to evaluate the log density of the unnormalized target.}
+\item{log_target}{Function to evaluate the log density of the unnormalized univariate target.}
 
 \item{samples}{Numeric vector of samples from the target distribution.}
 
 \item{type}{String specifying the input type. One of "function", "samples", or "grid".
 Default is to use "samples".
 
-Use of "function" requires specification of \code{log_target}.
+Use of "function" requires specification of \code{log_target}. Utility is calculated using numerical integration (\link[stats]{integrate}) and, additionally for AUC, optimization (\link[stats]{optim}).
 
 Use of "samples" requires specification of \code{samples}.
 
-Use of "grid" requires specification of \code{x}.}
+Use of "grid" requires specification of \code{log_target} and optionally \code{x}. Grid method is useful if numerical optimization or integration fail employed with \code{type = "function"}.}
 
-\item{x}{Numeric vector specifying grid (on (0,1)) over which to evaluate
+\item{x}{Optional numeric vector specifying grid (on (0,1)) over which to evaluate
 the transformed target. Defaults to \code{NULL}.}
 
-\item{nbins}{Number of histogram bins to use (defaults to 30). Must match the length
+\item{nbins}{Number of histogram bins to use (defaults to 30). Overridden by the length
 of \code{x} if \code{x} is supplied.}
 
 \item{plot}{Logical for whether to generate two plots:
@@ -54,8 +54,9 @@ Defaults to \code{TRUE}.}
 
 \item{utility_type}{String identifying utility type, either AUC (default) or MSW.}
 
-\item{tol_int}{Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate}.
-Defaults to \code{1.0e-3}.}
+\item{options}{List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
+\code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+\code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".}
 }
 \value{
 Scalar value of the utility function evaluation.
@@ -63,24 +64,32 @@ Scalar value of the utility function evaluation.
 \description{
 Takes a pseudo-target and target (or samples from the target) and
 evaluates the utility function for the transformed target, which can be one of
-Area Under the Curve (AUC) and Mean Slice Width (MSW). See Heiner et al. (2024+).
+Area Under the Curve (AUC) and Mean Slice Width (MSW). See Heiner et al. (2026+).
 }
 \details{
 Optionally plot the target and pseudo-target densities as well as the
-transformed tartet.
+transformed target.
 }
 \examples{
-pseu <- pseudo_list(family = "logistic", params = list(loc = 0.0, sc = 0.66))
-ltarg <- list(ld = function(x) dnorm(x, log = TRUE))
+pseu <- pseudo_list(family = "t", params = list(loc = 0.25, sc = 1.0, df = 1))
+ltargdens <- function(x) dnorm(x, log = TRUE)
 oldpar <- par(mfrow = c(1,2))
-utility_pseudo(pseudo = pseu, log_target = ltarg$ld, type = "function",
-               nbins = 100, utility_type = "MSW")
+utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "MSW")
+utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "AUC")
 samp <- rnorm(10e3)
-utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "AUC")
-utility_pseudo(pseudo = pseu, samples = samp, type = "samples", utility_type = "MSW")
+utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "MSW")
+utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "AUC")
 par(oldpar)
-
+pseu <- pseudo_list(family = "beta", params = list(shape1 = 1.5, shape2 = 1.5))
+ltargdens <- function(x) dbeta(x, shape1 = 2.0, shape2 = 3.0, log = TRUE)
+oldpar <- par(mfrow = c(1,2))
+utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "MSW")
+utility_pseudo(pseudo = pseu, log_target = ltargdens, type = "function", utility_type = "AUC")
+samp <- rbeta(10e3, shape1 = 2.0, shape2 = 3.0)
+utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "MSW")
+utility_pseudo(pseudo = pseu, samples = samp, nbins = 30, type = "samples", utility_type = "AUC")
+par(oldpar)
 }
 \references{
-Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}.
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:2407.12608} \doi{https://doi.org/10.48550/arXiv.2407.12608}
 }

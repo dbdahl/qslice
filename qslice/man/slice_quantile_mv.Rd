@@ -18,12 +18,12 @@ the pseudo-target for the corresponding dimension with functions \code{ld} that 
 }
 \value{
 A list containing three elements: "x" is the new state, "u" is the
-value of the CDF of the psuedo-target associated with the returned value,
+value of the CDF of the pseudo-target associated with the returned value,
 inverse CDF method, and "nEvaluations is the number of evaluations of the
 target function used to obtain the new state.
 }
 \description{
-Quantile slice sampler for a random vector (Heiner et al., 2024+). The pseudo-target is specified
+Quantile slice sampler for a random vector (Heiner et al., 2026+). The pseudo-target is specified
 through independent univariate distributions.
 }
 \examples{
@@ -54,11 +54,11 @@ plot(draws[,1], draws[,2], xlim = c(0, 1))
 hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 plot(draws_u[,1], draws_u[,2], xlim = c(0, 1))
-hist(draws_u[,1], freq = FALSE)
-hist(draws_u[,2], freq = FALSE)
-auc(u = draws_u[,1])
-auc(u = draws_u[,2])
+utility_shrinkslice(u = draws_u[,1], nbins = 30, type = "samples",
+plot = TRUE, utility_type = "AUC")
+utility_shrinkslice(u = draws_u[,2], nbins = 30, type = "samples",
+plot = TRUE, utility_type = "AUC")
 }
 \references{
-Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:2407.12608} \doi{https://doi.org/10.48550/arXiv.2407.12608}
 }

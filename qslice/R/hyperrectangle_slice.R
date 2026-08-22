@@ -43,6 +43,7 @@
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #'
 slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
+  stopifnot(all(!is.na(x)), is.function(log_target))
   K <- length(x)
 
   nEvaluations <- 0L
@@ -66,19 +67,36 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 
   # Step 2 (Initialize hyperrectangle)
   if (!all(is.null(w))) {
-    stopifnot(all(w > 0.0))
+    stopifnot(
+      all(w > 0.0),
+      all(is.finite(w)),
+      all(!is.na(w)),
+      length(w) %in% c(1, K)
+    )
     L <- x - runif(K, min = 0.0, max = w)
     R <- L + w
   } else if (all(is.null(c(L, R)))) {
     L <- rep(0.0, K)
     R <- rep(1.0, K)
-  } else {
-    stopifnot(
-      all(is.finite(L)),
-      all(is.finite(R)),
-      all(L < R),
-      length(L) == K,
-      length(R) == K
+  }
+  stopifnot(
+    all(is.finite(L)),
+    all(is.finite(R)),
+    length(L) == K,
+    length(R) == K,
+    all(L < R)
+  )
+  if (any(x < L) || any(x > R)) {
+    stop(
+      "The supplied x vector does not lie within the initial hyperrectangle.\n",
+      "L = ",
+      paste(L, collapse = " "),
+      "\n",
+      "x = ",
+      paste(x, collapse = " "),
+      "\n",
+      "R = ",
+      paste(R, collapse = " ")
     )
   }
 
@@ -106,7 +124,7 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 
 #' Multivariate Quantile Slice Sampler
 #'
-#' Quantile slice sampler for a random vector (Heiner et al., 2024+). The pseudo-target is specified
+#' Quantile slice sampler for a random vector (Heiner et al., 2026+). The pseudo-target is specified
 #' through independent univariate distributions.
 #'
 #' @inherit slice_hyperrect
@@ -152,8 +170,10 @@ slice_hyperrect <- function(x, log_target, w = NULL, L = NULL, R = NULL) {
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
 #' plot(draws_u[,1], draws_u[,2], xlim = c(0, 1))
-#' utility_shrinkslice(u = draws_u[,1], nbins = 30, type = "samples", plot = TRUE, utility_type = "AUC")
-#' utility_shrinkslice(u = draws_u[,2], nbins = 30, type = "samples", plot = TRUE, utility_type = "AUC")
+#' utility_shrinkslice(u = draws_u[,1], nbins = 30, type = "samples",
+#' plot = TRUE, utility_type = "AUC")
+#' utility_shrinkslice(u = draws_u[,2], nbins = 30, type = "samples",
+#' plot = TRUE, utility_type = "AUC")
 slice_quantile_mv <- function(x, log_target, pseudo) {
   K <- length(x)
 
@@ -235,7 +255,7 @@ slice_quantile_mv <- function(x, log_target, pseudo) {
 #' Sequence of conditional pseudo-targets from a realization
 #'
 #' Given a realization of a random vector, generate a the corresponding
-#' sequence of conditional pseudo-target inverse CDFs (Heiner et al., 2024+).
+#' sequence of conditional pseudo-target inverse CDFs (Heiner et al., 2026+).
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
@@ -267,6 +287,12 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
   # lb and ub must have length K (even though first elements will be ignored)
 
   K <- length(x)
+  if (K < 2) {
+    stop(
+      "Conditoinal sequence pseudo-targets apply to multivariate targets. Supplied x had length ",
+      K
+    )
+  }
   out <- list()
   out[[1]] <- pseudo_init
 
@@ -401,7 +427,7 @@ pseudo_condseq_XfromU <- function(
 
 #' Multivariate Quantile Slice Sampler from a sequence of conditional pseudo-targets
 #'
-#' Quantile slice sampler for a random vector (Heiner et al., 2024+). The pseudo-target is specified as
+#' Quantile slice sampler for a random vector (Heiner et al., 2026+). The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
 #' @inherit slice_hyperrect

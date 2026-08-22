@@ -2,7 +2,7 @@
 ## Implemented and modified by Matt Heiner
 
 .format_state <- function(x, max_chars = 300L) {
-  txt <- paste(capture.output(dput(x)), collapse = "")
+  txt <- paste(utils::capture.output(dput(x)), collapse = "")
   if (nchar(txt) > max_chars) {
     paste0(substr(txt, 1L, max_chars), "...")
   } else {
@@ -744,6 +744,167 @@
       ),
       value = value,
       warnings = p_warnings
+    )
+  }
+
+  value
+}
+
+
+.eval_pseudo_randgen <- function(
+  r,
+  sampler,
+  stage,
+  attempt,
+  expected_length
+) {
+  fail <- function(
+    reason,
+    hint,
+    value = NULL,
+    parent = NULL,
+    warnings = character()
+  ) {
+    message <- paste0(
+      sampler,
+      ": pseudo-target random generation failed.\n",
+      "  Stage: ",
+      stage,
+      "\n",
+      "  Proposal attempt: ",
+      attempt,
+      "\n",
+      "  pseudo$r(): ",
+      if (is.null(value)) "<not available>" else .format_state(value),
+      "\n",
+      "  Reason: ",
+      reason,
+      "\n",
+      "  Likely explanation: ",
+      hint
+    )
+
+    if (length(warnings)) {
+      message <- paste0(
+        message,
+        "\n  Warnings from pseudo$q(): ",
+        paste(unique(warnings), collapse = "; ")
+      )
+    }
+
+    if (!is.null(parent)) {
+      message <- paste0(
+        message,
+        "\n  Original pseudo$q() error: ",
+        conditionMessage(parent)
+      )
+    }
+
+    stop(errorCondition(
+      message = message,
+      class = c("qslice_pseudo_randgen_error", "qslice_error"),
+      sampler = sampler,
+      stage = stage,
+      attempt = attempt,
+      cdf_value = value,
+      reason = reason,
+      warnings = warnings,
+      parent = parent
+    ))
+  }
+
+  if (!is.function(r)) {
+    fail(
+      reason = "`pseudo$r` is not a function.",
+      hint = paste0(
+        "The pseudo-target must contain a function named `r` that generates proposals."
+      )
+    )
+  }
+
+  r_warnings <- character()
+
+  value <- tryCatch(
+    withCallingHandlers(
+      r(),
+      warning = function(w) {
+        r_warnings <<- c(r_warnings, conditionMessage(w))
+      }
+    ),
+    error = function(e) {
+      if (inherits(e, "qslice_error")) {
+        stop(e)
+      }
+      fail(
+        reason = "`pseudo$r()` threw an R error.",
+        hint = paste0(
+          "The function `pseudo$r()` may contain an implementation error."
+        ),
+        parent = e,
+        warnings = r_warnings
+      )
+    }
+  )
+
+  if (!is.numeric(value) || is.complex(value)) {
+    fail(
+      reason = sprintf(
+        "`pseudo$r()` returned an object of type `%s`.",
+        typeof(value)
+      ),
+      hint = "The function must generate a random vector from the joint pseudo-target distribution.",
+      value = value,
+      warnings = r_warnings
+    )
+  }
+
+  if (length(value) != expected_length) {
+    fail(
+      reason = sprintf(
+        "`pseudo$r()` returned length %d; expected length %d.",
+        length(value),
+        expected_length
+      ),
+      hint = paste0(
+        "Check whether the function generates from the full joint pseudo-target."
+      ),
+      value = value,
+      warnings = r_warnings
+    )
+  }
+
+  # Check NaN before NA because is.na(NaN) is also TRUE.
+  if (any(is.nan(value))) {
+    fail(
+      reason = "`pseudo$r()` returned NaN.",
+      hint = paste0(
+        "This usually indicates invalid distribution parameters, an ",
+        "undefined calculation, or numerical failure in an extreme tail."
+      ),
+      value = value,
+      warnings = r_warnings
+    )
+  }
+
+  if (any(is.na(value))) {
+    fail(
+      reason = "`pseudo$r()` returned NA.",
+      hint = paste0(
+        "The distribution may have invalid parameters."
+      ),
+      value = value,
+      warnings = r_warnings
+    )
+  }
+
+  if (any(!is.finite(value))) {
+    fail(
+      reason = "`pseudo$r()` returned an infinite value.",
+      hint = paste0(
+        "Check the pseudo-target parameters and its implementation of random generation."
+      ),
+      value = value,
+      warnings = r_warnings
     )
   }
 

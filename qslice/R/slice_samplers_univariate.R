@@ -107,7 +107,7 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 
 #' Quantile Slice Sampler
 #'
-#' Single update using a quantile slice sampler of Heiner et al. (2024+).
+#' Single update using a quantile slice sampler of Heiner et al. (2026+).
 #'
 #' @inherit slice_stepping_out
 #' @param pseudo List containing two functions specifying the pseudo-target distribution:
@@ -134,8 +134,7 @@ slice_stepping_out <- function(x, log_target, w, max = Inf) {
 #' @export
 #' @examples
 #' lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-#' pseu <- list(ld = function(x) dbeta(x, shape1 = 1, shape2 = 1, log = TRUE),
-#'              q = function(u) qbeta(u, shape1 = 1, shape2 = 1))
+#' pseu <- pseudo_list(family = "beta", params = list(shape1 = 2.0, shape2 = 2.0))
 #' draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 #' nEvaluations <- 0L
 #' for (i in seq.int(2, length(draws))) {
@@ -366,7 +365,7 @@ slice_latent <- function(x, s, log_target, rate) {
 #' }
 #' nEvaluations / (length(draws) - 1)
 #' plot(density(draws), xlim = c(-0.2, 1.2))
-#' curve(exp(lf(x))*4.5, -0.2, 1.2, col = "blue", add = TRUE) # 4.5 approximates the normalizing constant
+#' curve(exp(lf(x)) * 4.5, -0.2, 1.2, col = "blue", add = TRUE) # 4.5 to match curve height
 #'
 slice_elliptical <- function(x, log_lik, mu, sigma) {
   stopifnot(

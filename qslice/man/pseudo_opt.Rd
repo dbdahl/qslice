@@ -9,19 +9,20 @@ pseudo_opt(
   samples = NULL,
   type = "samples",
   family = "t",
-  degf = c(1, 5, 20),
+  df = NULL,
   lb = -Inf,
   ub = Inf,
   utility_type = "AUC",
   nbins = 100,
   tol_opt = 1e-06,
-  tol_int = 0.001,
+  utility_options = list(tol_int = 0.001, n_opt = 10, interval_opt = c(1e-06, 0.999999)),
   plot = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  degf = NULL
 )
 }
 \arguments{
-\item{log_target}{Function to evaluate the log density of the unnormalized target.}
+\item{log_target}{Function to evaluate the log density of the unnormalized univariate target.}
 
 \item{samples}{Optional numeric vector providing samples from the target distribution
 (for use as alternative to \code{log_target}).}
@@ -36,7 +37,7 @@ Use of "samples" requires specification of \code{samples}.}
 \item{family}{String specifying the family of distributions for the pseudo-target.
 Can be any of the families accepted by \link[qslice]{pseudo_list}.}
 
-\item{degf}{Numeric vector of degrees of freedom values to try (only if \code{family = "t"}.
+\item{df}{Numeric vector of degrees of freedom values to try (only if \code{family = "t"}).
 Defaults to \code{c(1, 5, 20)}.}
 
 \item{lb}{Numeric scalar giving the value of left truncation. Defaults to \code{-Inf}.}
@@ -51,8 +52,9 @@ Defaults to 100.}
 \item{tol_opt}{Positive numeric scalar that passes to \code{reltol} in the call
 to \link[stats]{optim}. Defaults to \code{1.0e-6}.}
 
-\item{tol_int}{Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate}.
-Defaults to \code{1.0e-3}.}
+\item{utility_options}{List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
+\code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+\code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".}
 
 \item{plot}{Logical for whether to generate two plots:
 \enumerate{
@@ -64,6 +66,8 @@ Defaults to \code{TRUE}.}
 
 \item{verbose}{Logical for whether to print intermediate steps of optimization.
 Defaults to \code{FALSE}.}
+
+\item{degf}{(deprecated) Numeric vector of degrees of freedom values to try (only if \code{family = "t"}). Use \code{df} instead.}
 }
 \value{
 A list with named components:
@@ -82,21 +86,21 @@ Other outputs repeating inputs.
 }
 \description{
 Find an optimal pseudo-target in a specified family to approximate
-the given (unnormalized) target (Heiner et al., 2024+). Optimize over the selected utility function.
+the given (unnormalized) target (Heiner et al., 2026+). Optimize over the selected utility function.
 }
 \details{
 Optionally supply samples from the target distribution.
 }
 \examples{
+oldpar <- par(mfrow = c(1,2))
 (pseu <- pseudo_opt(samples = rnorm(1e3), type = "samples",
                family = "t", utility_type = "AUC",
                nbins = 10, plot = TRUE,
                verbose = FALSE))
-oldpar <- par(mfrow = c(1,2))
 (pseu <- pseudo_opt(log_target = function(x) dnorm(x, log = TRUE),
-                type = "function",
-                family = "logistic", utility_type = "AUC",
-                nbins = 100, plot = TRUE,
+                type = "grid",
+                family = "logistic", utility_type = "MSW",
+                nbins = 30, plot = TRUE,
                 verbose = FALSE))
 (pseu <- pseudo_opt(log_target = function(x) dbeta(x, 4, 2, log = TRUE),
                 lb = 0, ub = 1,
@@ -108,5 +112,5 @@ par(oldpar)
 
 }
 \references{
-Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2024+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:###}
+Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," \emph{arXiv preprint arXiv:2407.12608} \doi{https://doi.org/10.48550/arXiv.2407.12608}
 }

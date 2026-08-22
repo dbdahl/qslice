@@ -31,7 +31,7 @@ Single update using the latent slice sampler of Li and Walker (2023).
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 nEvaluations <- 0L
 s <- 0.5
 for (i in seq.int(2, length(draws))) {

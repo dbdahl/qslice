@@ -12,9 +12,9 @@ slice_genelliptical(x, log_target, mu, sigma, df)
 \item{log_target}{A function taking numeric scalar that evaluates the
 (potentially unnormalized) log-target density, returning a numeric scalar.}
 
-\item{mu}{A numeric scalar with the mean of the supporting normal distribution.}
+\item{mu}{A numeric scalar with the location parameter of the Student t pseudo-target.}
 
-\item{sigma}{A numeric scalar with the standard deviation of the supporting normal distribution.}
+\item{sigma}{A positive numeric scalar with the scale parameter of the Student t pseudo-target.}
 
 \item{df}{Degrees of freedom of Student t pseudo-target.}
 }
@@ -31,7 +31,7 @@ Single update using the generalized elliptical slice sampler of Nishihara et al.
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)
-draws <- numeric(10) # set to numeric(1e3) for more complete illustration
+draws <- numeric(10) + 0.5 # set to numeric(1e3) + 0.5 for more complete illustration
 nEvaluations <- 0L
 for (i in seq.int(2, length(draws))) {
   out <- slice_genelliptical(draws[i - 1], log_target = lf,

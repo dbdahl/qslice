@@ -50,10 +50,21 @@ lapprox <- function(
     method = 'BFGS',
     ...
   )
-  loc <- fit$par
-  hessian <- second_derivative(x = loc, h = 1e-5, f = log_target, ...)
 
-  if (hessian > 0.0) {
+  if (fit$convergence != 0) {
+    stop(
+      "Optimization for lapprox() failed to converge. Mode estimated at x =",
+      fit$par
+    )
+  }
+
+  loc <- fit$par
+  hessian <- .second_derivative(x = loc, h = 1e-5, f = log_target, ...)
+
+  if (is.na(hessian) || is.infinite(hessian)) {
+    stop("Hessian calculation is invalid.")
+  }
+  if (hessian >= 0.0) {
     warning(paste0("Hessian =", hessian, "; optim iters: ", fit$counts))
   }
 
@@ -75,7 +86,7 @@ lapprox <- function(
   out
 }
 
-second_derivative <- function(x, h = 1e-5, f, ...) {
+.second_derivative <- function(x, h = 1e-5, f, ...) {
   num <- f(x + h, ...) - 2 * f(x, ...) + f(x - h, ...)
   denom <- h^2
 

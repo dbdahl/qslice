@@ -1,3 +1,11 @@
+0.4.0 (2026-08-21)
+  * Error handling for all samplers.
+  * Improved numerical stability of tail-probability calculations in pseudo-target functions.
+  * Corrected errors with ESS (specify likelihood instead of target) and GESS (pass Cholesky flag to ESS).
+  * Corrected AUC/MSW histogram calculations with unequal bin widths; implemented AUC by numerical integration.
+  * Streamlined pseudo-target utility functions.
+  * Deprecated function auc() and use of degf for pseudo-target degrees of freedom.
+
 0.3.1 (2024-05-29)
   * A few cosmetic improvements based on CRAN feedback.
 

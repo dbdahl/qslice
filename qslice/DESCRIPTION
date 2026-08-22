@@ -1,20 +1,20 @@
 Package: qslice
 Title: Implementations of Various Slice Samplers
-Version: 0.3.1
+Version: 0.4.0
 Authors@R: c(
 	person(given="Matthew",family="Heiner",role=c("aut"),email="heiner@stat.byu.edu",comment=c(ORCID="0000-0002-7944-5517")),
     person(given="David B.",family="Dahl",role=c("aut","cre"),email="dahl@stat.byu.edu",comment=c(ORCID="0000-0002-8173-1547")),
     person(given="Sam",family="Johnson",role=c("aut"),email="smbjohnson98@gmail.com")
 	)
-Description: Implementations of the quantile slice sampler of Heiner et al. (2024+, in preparation) as well as other popular slice samplers are provided. 
+Description: Implementations of the quantile slice sampler of Heiner et al. (2026+, in preparation, *arXiv preprint arXiv:2407.12608* <https://doi.org/10.48550/arXiv.2407.12608>) as well as other popular slice samplers are provided. 
     Helper functions for specifying pseudo-target distributions are included, both for diagnostics and for tuning the quantile slice sampler. 
-    Other implemented methods include the generalized elliptical slice sampler of Nishihara et al. (2014)<https://jmlr.org/papers/v15/nishihara14a.html},
+    Other implemented methods include the generalized elliptical slice sampler of Nishihara et al. (2014)<https://jmlr.org/papers/v15/nishihara14a.html>,
     latent slice sampler of Li and Walker (2023)<doi:10.1016/j.csda.2022.107652>, and stepping-out slice sampler of Neal (2003)<doi:10.1214/aos/1056562461>,
     and independence Metropolis-Hastings sampler.
 License: MIT + file LICENSE | Apache License 2.0
 Depends: R (>= 4.1.0)
 Encoding: UTF-8
-Suggests: knitr, rmarkdown
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+Config/roxygen2/version: 8.1.0
