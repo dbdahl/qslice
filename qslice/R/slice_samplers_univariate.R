@@ -1,4 +1,4 @@
-.slice_stepping_out <- function(x, log_target, w, max, diagnostics) {
+.slice_stepping_out <- function(x, log_target, w, max) {
   stopifnot(
     length(x) == 1L,
     is.finite(x),
@@ -14,24 +14,17 @@
   )
   nEvaluations <- 0L
 
-  if (isTRUE(diagnostics)) {
-    lf <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
 
-      .eval_log_target(
-        log_target = log_target,
-        x = z,
-        sampler = "slice_stepping_out",
-        stage = stage,
-        evaluation = nEvaluations,
-        allow_minus_inf = allow_minus_inf
-      )
-    }
-  } else {
-    lf <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
-      log_target(z)
-    }
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_stepping_out",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
 
   # Step 1
@@ -63,6 +56,61 @@
   repeat {
     x1 <- runif(1, min = L, max = R)
     if (y < lf(x1, stage = "shrinkage proposal")) {
+      return(list(x = x1, nEvaluations = nEvaluations))
+    }
+    if (x1 < x) L <- x1 else R <- x1
+  }
+}
+.slice_stepping_out_fast <- function(x, log_target, w, max) {
+  stopifnot(
+    length(x) == 1L,
+    is.finite(x),
+    is.function(log_target),
+    length(w) == 1L,
+    is.finite(w),
+    w > 0.0,
+    is.numeric(max),
+    length(max) == 1L,
+    !is.na(max),
+    (is.infinite(max) && max > 0) ||
+      (is.finite(max) && max >= 0 && max == floor(max))
+  )
+  nEvaluations <- 0L
+
+  lf <- function(z) {
+    nEvaluations <<- nEvaluations + 1L
+    log_target(z)
+  }
+
+  # Step 1
+  lfx <- lf(x)
+  y <- log(runif(1, min = 0.0, max = 1.0)) + lfx
+  # Step 2 ("Stepping out" procedure)
+  L <- x - runif(1, min = 0.0, max = w)
+  R <- L + w
+  if (!is.finite(max)) {
+    while (y < lf(L)) {
+      L <- L - w
+    }
+    while (y < lf(R)) {
+      R <- R + w
+    }
+  } else if (max > 0) {
+    J <- floor(runif(1, min = 0.0, max = max))
+    K <- max - 1 - J
+    while (J > 0 && y < lf(L)) {
+      L <- L - w
+      J <- J - 1
+    }
+    while (K > 0 && y < lf(R)) {
+      R <- R + w
+      K <- K - 1
+    }
+  }
+  # Step 3 ("Shrinkage" procedure)
+  repeat {
+    x1 <- runif(1, min = L, max = R)
+    if (y < lf(x1)) {
       return(list(x = x1, nEvaluations = nEvaluations))
     }
     if (x1 < x) L <- x1 else R <- x1
@@ -128,17 +176,15 @@ slice_stepping_out <- function(
       x = x,
       log_target = log_target,
       w = w,
-      max = max,
-      diagnostics = diagnostics
+      max = max
     )
   } else {
     tryCatch(
-      .slice_stepping_out(
+      .slice_stepping_out_fast(
         x = x,
         log_target = log_target,
         w = w,
-        max = max,
-        diagnostics = diagnostics
+        max = max
       ),
       error = function(e) {
         message(
