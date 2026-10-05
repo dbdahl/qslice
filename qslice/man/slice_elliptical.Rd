@@ -4,7 +4,7 @@
 \alias{slice_elliptical}
 \title{Univariate Elliptical Slice Sampler}
 \usage{
-slice_elliptical(x, log_lik, mu, sigma)
+slice_elliptical(x, log_lik, mu, sigma, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
@@ -15,6 +15,11 @@ slice_elliptical(x, log_lik, mu, sigma)
 \item{mu}{A numeric scalar with the mean of the supporting normal "prior" distribution.}
 
 \item{sigma}{A numeric scalar with the standard deviation of the supporting normal "prior" distribution.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \description{
 Algorithm 1 of Nishihara et al. (2014) of the

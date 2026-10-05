@@ -213,6 +213,27 @@ utility_shrinkslice(u = psi_sample, utility_type = "AUC") # estimate AUC from tr
 ks.test(x_sample[seq(1, n_iter, by = 10)], pgamma, shape = alpha)
 ```
 
+## Diagnostic mode
+
+Samplers in `qslice` and pseudo-target utility functions have an optional diagnostic mode that returns detailed error messages tracking proposals, target evaluations, and steps. 
+Diagnostic mode can be set directly in the call to each sampler, for example,
+```{r diagnostics_arg, eval = FALSE}
+slice_quantile(..., diagnostics = TRUE)
+```
+
+or through global options
+```{r diagnostics_options, eval = FALSE}
+options(qslice.diagnostics = TRUE)
+```
+
+The status of the global option can be checked by running
+```{r diagnostics_getOption, eval = FALSE}
+getOption("qslice.diagnostics")
+```
+
+Because diagnostic mode validates all calls to target densities, pseudo-target densities, and pseudo-target quantile functions, as well as inputs and outputs at each step, diagnostic mode can significantly slow sampling. 
+We recommend its use only for testing, validation, and debugging.
+
 # References
 
 - Heiner, M. J., Johnson, S. B., Christensen, J. R., and Dahl, D. B. (2026+), "Quantile Slice Sampling," *arXiv preprint arXiv:2407.12608*. <https://doi.org/10.48550/arXiv.2407.12608>

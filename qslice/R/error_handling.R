@@ -1,6 +1,16 @@
 ## Error-handling framework suggested by ChatGPT Codex
 ## Implemented and modified by Matt Heiner
 
+.resolve_diagnostics <- function(diagnostics) {
+  if (is.null(diagnostics)) {
+    diagnostics <- isTRUE(
+      getOption("qslice.diagnostics", FALSE)
+    )
+  }
+  stopifnot(is.logical(diagnostics))
+  diagnostics
+}
+
 .format_state <- function(x, max_chars = 300L) {
   txt <- paste(utils::capture.output(dput(x)), collapse = "")
   if (nchar(txt) > max_chars) {
@@ -9,7 +19,6 @@
     txt
   }
 }
-
 
 .eval_log_target <- function(
   log_target,

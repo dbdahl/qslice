@@ -10,6 +10,10 @@
 #' and \code{q} that evaluates the quantile (inverse-CDF) function for that dimension.
 #' If the dimension of \code{x} is one, then supply only the inner list
 #' specifying the single pseudo-target.
+#' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
+#' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' If \code{x} is a vector but a single pseudo-target is supplied, the list must
 #' contain a log-density function \code{ld} that accepts a vector, and a
@@ -38,80 +42,140 @@
 #' plot(draws[,1], draws[,2], xlim = c(0, 1))
 #' hist(draws[,1], freq = FALSE); curve(dbeta(x, 3, 4), col = "blue", add = TRUE)
 #' hist(draws[,2], freq = FALSE); curve(dbeta(x, 5, 3), col = "blue", add = TRUE)
-imh_pseudo <- function(x, log_target, pseudo) {
+imh_pseudo <- function(x, log_target, pseudo, diagnostics = NULL) {
+  diagnostics <- .resolve_diagnostics(diagnostics)
+
   stopifnot(
     all(is.finite(x)),
-    is.function(log_target),
-    is.list(pseudo)
+    is.function(log_target)
   )
 
   K <- length(x)
   if (K == 1) {
-    out <- .imh_pseudo_univ(
-      x = x,
-      log_target = log_target,
-      pseudo = pseudo
-    )
+    if (isTRUE(diagnostics)) {
+      out <- .imh_pseudo_univ(
+        x = x,
+        log_target = log_target,
+        pseudo = pseudo,
+        diagnostics = diagnostics
+      )
+    } else {
+      out <- tryCatch(
+        .imh_pseudo_univ(
+          x = x,
+          log_target = log_target,
+          pseudo = pseudo,
+          diagnostics = diagnostics
+        ),
+        error = function(e) {
+          message(
+            "\nFor detailed diagnostics, rerun after setting:\n",
+            "  options(qslice.diagnostics = TRUE)\n",
+            "or call the sampler with argument diagnostics = TRUE."
+          )
+
+          stop(e)
+        }
+      )
+    }
   } else {
-    out <- .imh_pseudo_mv(
-      x = x,
-      log_target = log_target,
-      pseudo = pseudo,
-      K = K
-    )
+    if (isTRUE(diagnostics)) {
+      out <- .imh_pseudo_mv(
+        x = x,
+        log_target = log_target,
+        pseudo = pseudo,
+        K = K,
+        diagnostics = diagnostics
+      )
+    } else {
+      out <- tryCatch(
+        .imh_pseudo_mv(
+          x = x,
+          log_target = log_target,
+          pseudo = pseudo,
+          K = K,
+          diagnostics = diagnostics
+        ),
+        error = function(e) {
+          message(
+            "\nFor detailed diagnostics, rerun after setting:\n",
+            "  options(qslice.diagnostics = TRUE)\n",
+            "or call the sampler with argument diagnostics = TRUE."
+          )
+
+          stop(e)
+        }
+      )
+    }
   }
   out
 }
 
-.imh_pseudo_univ <- function(x, log_target, pseudo) {
-  stopifnot(
-    is.function(pseudo$ld),
-    is.function(pseudo$q)
-  )
+.imh_pseudo_univ <- function(x, log_target, pseudo, diagnostics) {
+  if (!inherits(pseudo, "qslice_pseudo")) {
+    stopifnot(is.list(pseudo), is.function(pseudo$ld), is.function(pseudo$q))
+  }
 
   nEvaluations <- 0L
 
-  lf <- function(z, stage, allow_minus_inf = TRUE) {
-    nEvaluations <<- nEvaluations + 1L
+  if (isTRUE(diagnostics)) {
+    lf <- function(z, stage, allow_minus_inf = TRUE) {
+      nEvaluations <<- nEvaluations + 1L
 
-    .eval_log_target(
-      log_target = log_target,
-      x = z,
-      sampler = "imh_pseudo",
-      stage = stage,
-      evaluation = nEvaluations,
-      allow_minus_inf = allow_minus_inf
-    )
-  }
+      .eval_log_target(
+        log_target = log_target,
+        x = z,
+        sampler = "imh_pseudo",
+        stage = stage,
+        evaluation = nEvaluations,
+        allow_minus_inf = allow_minus_inf
+      )
+    }
 
-  ld_pseudo <- function(z, stage) {
-    .eval_pseudo_logdens(
-      logdens = pseudo$ld,
-      x = z,
-      sampler = "imh_pseudo",
-      stage = stage,
-      evaluation = nEvaluations,
-      allow_minus_inf = FALSE
-    )
-  }
+    ld_pseudo <- function(z, stage) {
+      .eval_pseudo_logdens(
+        logdens = pseudo$ld,
+        x = z,
+        sampler = "imh_pseudo",
+        stage = stage,
+        evaluation = nEvaluations,
+        allow_minus_inf = FALSE
+      )
+    }
 
-  lh <- function(x, stage, allow_minus_inf = TRUE) {
-    lf(x, stage = stage, allow_minus_inf = allow_minus_inf) -
-      ld_pseudo(x, stage = stage)
+    lh <- function(x, stage, allow_minus_inf = TRUE) {
+      lf(x, stage = stage, allow_minus_inf = allow_minus_inf) -
+        ld_pseudo(x, stage = stage)
+    }
+  } else {
+    lf <- function(z, stage, allow_minus_inf = TRUE) {
+      nEvaluations <<- nEvaluations + 1L
+      log_target(z)
+    }
+    ld_pseudo <- function(z, stage) {
+      pseudo$ld(z)
+    }
+    lh <- function(x, stage, allow_minus_inf = TRUE) {
+      lf(x) - ld_pseudo(x)
+    }
   }
 
   lhx0 <- lh(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
 
   u1 <- runif(1, min = 0.0, max = 1.0)
 
-  x1 <- .eval_pseudo_quantile(
-    q = pseudo$q,
-    u = u1,
-    sampler = "imh_pseudo",
-    stage = "generate proposal",
-    attempt = 1L,
-    expected_length = 1L
-  )
+  if (isTRUE(diagnostics)) {
+    x1 <- .eval_pseudo_quantile(
+      q = pseudo$q,
+      u = u1,
+      sampler = "imh_pseudo",
+      stage = "generate proposal",
+      attempt = 1L,
+      expected_length = 1L
+    )
+  } else {
+    x1 <- pseudo$q(u1)
+  }
 
   lhx1 <- lh(x1, stage = "evaluate at proposal")
 
@@ -126,8 +190,9 @@ imh_pseudo <- function(x, log_target, pseudo) {
   out
 }
 
-.imh_pseudo_mv <- function(x, log_target, pseudo, K) {
+.imh_pseudo_mv <- function(x, log_target, pseudo, K, diagnostics) {
   is_joint_pseudo <- is.function(pseudo$ld) && is.function(pseudo$r)
+
   is_component_pseudo <-
     length(pseudo) == K &&
     all(vapply(
@@ -138,31 +203,54 @@ imh_pseudo <- function(x, log_target, pseudo) {
       logical(1)
     ))
 
-  nEvaluations <- 0L
-
-  lf <- function(z, stage, allow_minus_inf = TRUE) {
-    nEvaluations <<- nEvaluations + 1L
-
-    .eval_log_target(
-      log_target = log_target,
-      x = z,
-      sampler = "imh_pseudo",
-      stage = stage,
-      evaluation = nEvaluations,
-      allow_minus_inf = allow_minus_inf
-    )
+  if (isTRUE(is_component_pseudo)) {
+    if (!all(sapply(pseudo, function(ps) inherits(ps, "qslice_pseudo")))) {
+      stopifnot(
+        is.list(pseudo),
+        all(sapply(pseudo, function(ps) is.function(ps$ld))),
+        all(sapply(pseudo, function(ps) is.function(ps$q)))
+      )
+    }
   }
 
-  if (isTRUE(is_component_pseudo)) {
-    ld_pseudo_k <- function(z, k, stage) {
-      .eval_pseudo_logdens(
-        logdens = pseudo[[k]]$ld,
+  nEvaluations <- 0L
+
+  if (isTRUE(diagnostics)) {
+    lf <- function(z, stage, allow_minus_inf = TRUE) {
+      nEvaluations <<- nEvaluations + 1L
+
+      .eval_log_target(
+        log_target = log_target,
         x = z,
         sampler = "imh_pseudo",
         stage = stage,
         evaluation = nEvaluations,
-        allow_minus_inf = FALSE
+        allow_minus_inf = allow_minus_inf
       )
+    }
+  } else {
+    lf <- function(z, stage, allow_minus_inf = TRUE) {
+      nEvaluations <<- nEvaluations + 1L
+      log_target(z)
+    }
+  }
+
+  if (isTRUE(is_component_pseudo)) {
+    if (isTRUE(diagnostics)) {
+      ld_pseudo_k <- function(z, k, stage) {
+        .eval_pseudo_logdens(
+          logdens = pseudo[[k]]$ld,
+          x = z,
+          sampler = "imh_pseudo",
+          stage = stage,
+          evaluation = nEvaluations,
+          allow_minus_inf = FALSE
+        )
+      }
+    } else {
+      ld_pseudo_k <- function(z, k, stage) {
+        pseudo[[k]]$ld(z)
+      }
     }
 
     lhx0 <- lf(
@@ -177,15 +265,21 @@ imh_pseudo <- function(x, log_target, pseudo) {
     u1 <- runif(K, min = 0.0, max = 1.0)
 
     x1 <- numeric(K)
-    for (k in 1:K) {
-      x1[k] <- .eval_pseudo_quantile(
-        q = pseudo[[k]]$q,
-        u = u1[k],
-        sampler = "imh_pseudo",
-        stage = sprintf("component %d proposal", k),
-        attempt = 1L,
-        expected_length = 1L
-      )
+    if (isTRUE(diagnostics)) {
+      for (k in 1:K) {
+        x1[k] <- .eval_pseudo_quantile(
+          q = pseudo[[k]]$q,
+          u = u1[k],
+          sampler = "imh_pseudo",
+          stage = sprintf("component %d proposal", k),
+          attempt = 1L,
+          expected_length = 1L
+        )
+      }
+    } else {
+      for (k in 1:K) {
+        x1[k] <- pseudo[[k]]$q(u1[k])
+      }
     }
 
     lhx1 <- lf(
@@ -197,15 +291,21 @@ imh_pseudo <- function(x, log_target, pseudo) {
         ld_pseudo_k(x1[k], k = k, stage = "evaluate at proposal")
       }))
   } else if (isTRUE(is_joint_pseudo)) {
-    ld_pseudo <- function(z, stage) {
-      .eval_pseudo_logdens(
-        logdens = pseudo$ld,
-        x = z,
-        sampler = "imh_pseudo",
-        stage = stage,
-        evaluation = nEvaluations,
-        allow_minus_inf = FALSE
-      )
+    if (isTRUE(diagnostics)) {
+      ld_pseudo <- function(z, stage) {
+        .eval_pseudo_logdens(
+          logdens = pseudo$ld,
+          x = z,
+          sampler = "imh_pseudo",
+          stage = stage,
+          evaluation = nEvaluations,
+          allow_minus_inf = FALSE
+        )
+      }
+    } else {
+      ld_pseudo <- function(z, stage) {
+        pseudo$ld(z)
+      }
     }
 
     lhx0 <- lf(
@@ -215,13 +315,17 @@ imh_pseudo <- function(x, log_target, pseudo) {
     ) -
       ld_pseudo(x, stage = "evaluate at the current state")
 
-    x1 <- .eval_pseudo_randgen(
-      r = pseudo$r,
-      sampler = "imh_pseudo",
-      stage = "generate proposal",
-      attempt = 1L,
-      expected_length = K
-    )
+    if (isTRUE(diagnostics)) {
+      x1 <- .eval_pseudo_randgen(
+        r = pseudo$r,
+        sampler = "imh_pseudo",
+        stage = "generate proposal",
+        attempt = 1L,
+        expected_length = K
+      )
+    } else {
+      x1 <- pseudo$r()
+    }
 
     if (length(x1) != K) {
       stop(

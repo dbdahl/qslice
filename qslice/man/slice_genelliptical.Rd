@@ -4,7 +4,7 @@
 \alias{slice_genelliptical}
 \title{Generalized Elliptical Slice Sampler (univariate)}
 \usage{
-slice_genelliptical(x, log_target, mu, sigma, df)
+slice_genelliptical(x, log_target, mu, sigma, df, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
@@ -17,6 +17,11 @@ slice_genelliptical(x, log_target, mu, sigma, df)
 \item{sigma}{A positive numeric scalar with the scale parameter of the Student t pseudo-target.}
 
 \item{df}{Degrees of freedom of Student t pseudo-target.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list contains two elements:

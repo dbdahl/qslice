@@ -4,7 +4,7 @@
 \alias{slice_quantile}
 \title{Quantile Slice Sampler}
 \usage{
-slice_quantile(x, log_target, pseudo)
+slice_quantile(x, log_target, pseudo, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
@@ -17,6 +17,11 @@ slice_quantile(x, log_target, pseudo)
 \code{ld} evaluates the log density for a scalar input, and
 
 \code{q} evaluates the quantile (inverse-CDF) function for an input in (0,1).}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list containing three elements:

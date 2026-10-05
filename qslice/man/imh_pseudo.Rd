@@ -4,7 +4,7 @@
 \alias{imh_pseudo}
 \title{Independence Metropolis-Hastings}
 \usage{
-imh_pseudo(x, log_target, pseudo)
+imh_pseudo(x, log_target, pseudo, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (scalar or numeric vector).}
@@ -18,7 +18,12 @@ the pseudo-target independently for each corresponding dimension with functions 
 that evaluates the log density for that dimension,
 and \code{q} that evaluates the quantile (inverse-CDF) function for that dimension.
 If the dimension of \code{x} is one, then supply only the inner list
-specifying the single pseudo-target.
+specifying the single pseudo-target.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.
 
 If \code{x} is a vector but a single pseudo-target is supplied, the list must
 contain a log-density function \code{ld} that accepts a vector, and a

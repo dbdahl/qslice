@@ -39,10 +39,26 @@
     })
   }
 
-  integrate(
-    inner_int,
-    lower = interval[1],
-    upper = interval[2],
-    abs.tol = tol
-  )$value
+  outer_int <- tryCatch(
+    {
+      integrate(
+        inner_int,
+        lower = interval[1],
+        upper = interval[2],
+        abs.tol = tol
+      )
+    },
+    error = function(e) {
+      message(
+        "\nUnable to calculate MSW with numerical integration.\n
+        If optimizing the pseudo-target, try different initial parameter values.\n
+        Consider calculating MSW on a grid (use type = 'grid') instead.\n
+        Error message from integrate():\n"
+      )
+
+      stop(e)
+    }
+  )
+
+  outer_int$value
 }

@@ -4,7 +4,7 @@
 \alias{slice_stepping_out}
 \title{Slice sampler using the Stepping Out and Shrinkage Procedures}
 \usage{
-slice_stepping_out(x, log_target, w, max = Inf)
+slice_stepping_out(x, log_target, w, max = Inf, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
@@ -20,6 +20,11 @@ zero avoids some evaluations of \code{log_target}, but may lead to relatively
 high autocorrelation if \code{w} is too small.  If \code{w} is too small,
 setting \code{max} to a large value (even \code{Inf}) should lead to low
 autocorrelation at the cost of more evaluations for \code{log_target}.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list with two elements:

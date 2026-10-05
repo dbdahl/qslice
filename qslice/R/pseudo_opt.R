@@ -63,9 +63,17 @@
 #' Defaults to 100.
 #' @param tol_opt Positive numeric scalar that passes to \code{reltol} in the call
 #' to \link[stats]{optim}. Defaults to \code{1.0e-6}.
+#' @param init_fn Function with no arguments that returns a vector of parameter values for the initial pseudo-target, usually consisting
+#' of a real-valued location parameter and a positive-valued scale parameter. If \code{init_fn} is \code{NULL} and \code{samples} are supplied, the sample mean and
+#' standard deviation are used; if \code{init_fn} is \code{NULL} and \code{samples} are not supplied,
+#' the vector \code{c(0.5, 3.0)} is used. Default is \code{NULL}.
 #' @param utility_options List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
 #' \code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
 #' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+#' \code{diagnostics}: Logical, indicating whether the target log-density and pseudo-target functions should be run in diagnostic mode for
+#' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' @param verbose Logical for whether to print intermediate steps of optimization.
 #' Defaults to \code{FALSE}.
@@ -105,6 +113,7 @@
 #'                 lb = 0, ub = 1,
 #'                 type = "function",
 #'                 family = "cauchy", utility_type = "AUC",
+#'                 init_fn = function() {c(rbeta(1, 3.0, 3.0), rgamma(1, 3.0))},
 #'                 nbins = 30, plot = TRUE,
 #'                 verbose = FALSE))
 #' par(oldpar)
@@ -120,10 +129,12 @@ pseudo_opt <- function(
   utility_type = "AUC",
   nbins = 100,
   tol_opt = 1.0e-6,
+  init_fn = NULL,
   utility_options = list(
     tol_int = 1.0e-3, # integration accuracy
     n_opt = 10, # number of inits for numerical optimization in AUC with type = "integration"
-    interval_opt = c(0.000001, 0.999999) # interval for numerical optimization in AUC with type = "integration"
+    interval_opt = c(0.000001, 0.999999), # interval for numerical optimization in AUC with type = "integration"
+    diagnostics = NULL
   ),
   plot = TRUE,
   verbose = FALSE,
@@ -149,10 +160,14 @@ pseudo_opt <- function(
     stop("Optimazation for beta pseudo-targets not implemented.")
   }
 
-  if (is.null(samples)) {
-    inits <- c(loc = 0.5, sc = 2.0)
+  if (is.null(init_fn)) {
+    if (is.null(samples)) {
+      init_vals <- c(loc = 0.5, sc = 3.0)
+    } else {
+      init_vals <- c(loc = mean(samples), sc = sd(samples))
+    }
   } else {
-    inits <- c(loc = mean(samples), sc = sd(samples))
+    init_vals <- init_fn()
   }
 
   get_util <- function(
@@ -219,7 +234,7 @@ pseudo_opt <- function(
 
   for (i in 1:length(df)) {
     opt[[i]] <- optim(
-      inits,
+      init_vals,
       get_util,
       control = list(fnscale = -1, reltol = tol_opt),
       type = type,
@@ -240,7 +255,7 @@ pseudo_opt <- function(
     if (any(!opt_converged)) {
       warning(
         "Pseudo-target utility optimization failed for df = ",
-        paste(which(isFALSE(opt_converged)), collapse = " ")
+        paste(df[which(!opt_converged)], collapse = ", ")
       )
     }
     indx_converged <- which(opt_converged)

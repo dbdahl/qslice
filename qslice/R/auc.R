@@ -59,8 +59,10 @@
 
   if (all(convergence != 0)) {
     stop(
-      "AUC optimiation for unnormalized target density failed to converge.\n 
-      Consider calculating AUC on a grid (use type = 'grid') instead of via numerical optimization/integration.\n
+      "Optimization to find maximum of h function in AUC calculation failed to converge.\n 
+      Unable to calculate AUC with numerical integration.\n
+      If optimizing the pseudo-target, try different initial parameter values.\n
+      Consider calculating AUC on a grid (use type = 'grid') instead.\n
       Error messages from optimization step:\n",
       paste(sapply(opt, function(x) x$message), sep = "\n")
     )
@@ -72,11 +74,25 @@
 
   h_vec <- function(x) sapply(x, FUN = h) # vectorized version of h
 
-  int <- integrate(
-    h_vec,
-    lower = 0.0,
-    upper = 1.0,
-    abs.tol = tol_int
+  int <- tryCatch(
+    {
+      integrate(
+        h_vec,
+        lower = 0.0,
+        upper = 1.0,
+        abs.tol = tol_int
+      )
+    },
+    error = function(e) {
+      message(
+        "\nUnable to calculate AUC with numerical integration.\n
+        If optimizing the pseudo-target, try different initial parameter values.\n
+        Consider calculating AUC on a grid (use type = 'grid') instead.\n
+        Error message from integrate():\n"
+      )
+
+      stop(e)
+    }
   )
 
   auc_val <- int$value / max_val

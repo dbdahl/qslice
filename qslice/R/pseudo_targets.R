@@ -596,6 +596,8 @@ pseudo_list <- function(
   }
 
   out$family <- family
+  class(out) <- c("qslice_pseudo", "list")
+
   out
 }
 

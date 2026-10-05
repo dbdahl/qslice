@@ -42,6 +42,10 @@
 #' @param options List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
 #' \code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
 #' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+#' \code{diagnostics}: Logical, indicating whether the target log-density and pseudo-target functions should be run in diagnostic mode for
+#' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' @returns Scalar value of the utility function evaluation.
 #'
@@ -83,13 +87,13 @@ utility_pseudo <- function(
   options = list(
     tol_int = 1.0e-3, # integration accuracy
     n_opt = 10, # number of inits for numerical optimization in AUC with type = "integration"
-    interval_opt = c(0.000001, 0.999999) # interval for numerical optimization in AUC with type = "integration"
+    interval_opt = c(0.000001, 0.999999), # interval for numerical optimization in AUC with type = "integration"
+    diagnostics = NULL
   )
 ) {
   stopifnot(
     utility_type %in% c("AUC", "MSW"),
     type %in% c("samples", "function", "grid"),
-    is.list(pseudo),
     length(nbins) == 1L,
     is.numeric(nbins),
     is.finite(nbins),
@@ -97,6 +101,12 @@ utility_pseudo <- function(
     is.logical(plot),
     is.list(options)
   )
+  if (!inherits(pseudo, "qslice_pseudo")) {
+    stopifnot(is.list(pseudo), is.function(pseudo$ld), is.function(pseudo$q))
+  }
+
+  options$diagnostics <- .resolve_diagnostics(options$diagnostics)
+
   if (type == "samples") {
     if (is.null(samples) || any(is.na(samples))) {
       stop(
@@ -104,21 +114,30 @@ utility_pseudo <- function(
       )
     }
     stopifnot(is.numeric(samples), all(is.finite(samples)))
-    u <- vapply(
-      seq_along(samples),
-      function(i) {
-        .eval_pseudo_cdf(
-          p = pseudo$p,
-          x = samples[i],
-          sampler = "utility_pseudo",
-          stage = "transforming target samples",
-          attempt = i,
-          expected_length = 1L,
-          require_interior = FALSE
-        )
-      },
-      numeric(1)
-    )
+
+    if (isTRUE(options$diagnostics)) {
+      u <- vapply(
+        seq_along(samples),
+        function(i) {
+          .eval_pseudo_cdf(
+            p = pseudo$p,
+            x = samples[i],
+            sampler = "utility_pseudo",
+            stage = "transforming target samples",
+            attempt = i,
+            expected_length = 1L,
+            require_interior = FALSE
+          )
+        },
+        numeric(1)
+      )
+    } else {
+      u <- vapply(
+        seq_along(samples),
+        function(i) pseudo$p(samples[i]),
+        numeric(1)
+      )
+    }
 
     if (any(u <= 0.0) || any(u >= 1.0)) {
       warning(paste(
@@ -128,46 +147,51 @@ utility_pseudo <- function(
       ))
     }
   } else {
-    if (
-      !is.function(pseudo$q) ||
-        !is.function(pseudo$ld) ||
-        !is.function(log_target)
-    ) {
+    if (!is.function(log_target)) {
       stop(
         "Must supply pseudo-target (log density and quantile) and target (log density) functions for type = 'function' or type = 'grid'."
       )
     }
 
-    h <- function(psi) {
-      z <- .eval_pseudo_quantile(
-        q = pseudo$q,
-        u = psi,
-        sampler = "utility_pseudo",
-        stage = "constructing transformed target",
-        attempt = 1L,
-        expected_length = 1L,
-        require_interior = TRUE
-      )
+    if (isTRUE(options$diagnostics)) {
+      h <- function(psi) {
+        z <- .eval_pseudo_quantile(
+          q = pseudo$q,
+          u = psi,
+          sampler = "utility_pseudo",
+          stage = "constructing transformed target",
+          attempt = 1L,
+          expected_length = 1L,
+          require_interior = TRUE
+        )
 
-      lt <- .eval_log_target(
-        log_target = log_target,
-        x = z,
-        sampler = "utility_pseudo",
-        stage = "evaluating transformed target",
-        evaluation = 1L,
-        allow_minus_inf = TRUE
-      )
+        lt <- .eval_log_target(
+          log_target = log_target,
+          x = z,
+          sampler = "utility_pseudo",
+          stage = "evaluating transformed target",
+          evaluation = 1L,
+          allow_minus_inf = TRUE
+        )
 
-      lp <- .eval_pseudo_logdens(
-        logdens = pseudo$ld,
-        x = z,
-        sampler = "utility_pseudo",
-        stage = "evaluating transformed pseudo-target density",
-        evaluation = 1L,
-        allow_minus_inf = FALSE
-      )
+        lp <- .eval_pseudo_logdens(
+          logdens = pseudo$ld,
+          x = z,
+          sampler = "utility_pseudo",
+          stage = "evaluating transformed pseudo-target density",
+          evaluation = 1L,
+          allow_minus_inf = FALSE
+        )
 
-      exp(lt - lp)
+        exp(lt - lp)
+      }
+    } else {
+      h <- function(psi) {
+        z <- pseudo$q(psi)
+        lt <- log_target(z)
+        lp <- pseudo$ld(z)
+        exp(lt - lp)
+      }
     }
   }
 
@@ -415,11 +439,17 @@ utility_shrinkslice <- function(
 
       counts <- tabulate(binid, nbins = nbins)
       y <- counts / widths # histogram height
-      stopifnot(sum(y) > 0)
+      if (sum(y) <= 0.0) {
+        stop("The sum of width-adjusted histogram heights is less than 0.")
+      }
     } else if (type == "grid") {
-      stopifnot(is.function(h))
+      if (!is.function(h)) {
+        stop("h must be a function.")
+      }
       y <- sapply(x, FUN = h)
-      stopifnot(all(y >= 0.0), any(y > 0.0))
+      if (any(y < 0.0) || all(y <= 0.0)) {
+        stop("h must be nonnegative.")
+      }
     }
 
     if (utility_type == "AUC") {

@@ -13,7 +13,8 @@ utility_pseudo(
   nbins = 30,
   plot = TRUE,
   utility_type = "AUC",
-  options = list(tol_int = 0.001, n_opt = 10, interval_opt = c(1e-06, 0.999999))
+  options = list(tol_int = 0.001, n_opt = 10, interval_opt = c(1e-06, 0.999999),
+    diagnostics = NULL)
 )
 }
 \arguments{
@@ -56,7 +57,11 @@ Defaults to \code{TRUE}.}
 
 \item{options}{List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
 \code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
-\code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".}
+\code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+\code{diagnostics}: Logical, indicating whether the target log-density and pseudo-target functions should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 Scalar value of the utility function evaluation.

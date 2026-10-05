@@ -4,7 +4,7 @@
 \alias{slice_latent}
 \title{Latent Slice Sampler}
 \usage{
-slice_latent(x, s, log_target, rate)
+slice_latent(x, s, log_target, rate, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric scalar).}
@@ -15,6 +15,11 @@ slice_latent(x, s, log_target, rate)
 (potentially unnormalized) log-target density, returning a numeric scalar.}
 
 \item{rate}{The rate parameter for the distribution of \code{s}.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list containing three elements:

@@ -15,7 +15,9 @@ pseudo_opt(
   utility_type = "AUC",
   nbins = 100,
   tol_opt = 1e-06,
-  utility_options = list(tol_int = 0.001, n_opt = 10, interval_opt = c(1e-06, 0.999999)),
+  init_fn = NULL,
+  utility_options = list(tol_int = 0.001, n_opt = 10, interval_opt = c(1e-06, 0.999999),
+    diagnostics = NULL),
   plot = TRUE,
   verbose = FALSE,
   degf = NULL
@@ -52,9 +54,18 @@ Defaults to 100.}
 \item{tol_opt}{Positive numeric scalar that passes to \code{reltol} in the call
 to \link[stats]{optim}. Defaults to \code{1.0e-6}.}
 
+\item{init_fn}{Function with no arguments that returns a vector of parameter values for the initial pseudo-target, usually consisting
+of a real-valued location parameter and a positive-valued scale parameter. If \code{init_fn} is \code{NULL} and \code{samples} are supplied, the sample mean and
+standard deviation are used; if \code{init_fn} is \code{NULL} and \code{samples} are not supplied,
+the vector \code{c(0.5, 3.0)} is used. Default is \code{NULL}.}
+
 \item{utility_options}{List containing the following. \code{tol_int}: Positive numeric scalar that passes to \code{abs.tol} in the call to \link[stats]{integrate} used for type = "function".
 \code{n_opt}: Positive integer giving the number of equally spaced initialization points for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
-\code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".}
+\code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
+\code{diagnostics}: Logical, indicating whether the target log-density and pseudo-target functions should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 
 \item{plot}{Logical for whether to generate two plots:
 \enumerate{
@@ -106,6 +117,7 @@ oldpar <- par(mfrow = c(1,2))
                 lb = 0, ub = 1,
                 type = "function",
                 family = "cauchy", utility_type = "AUC",
+                init_fn = function() {c(rbeta(1, 3.0, 3.0), rgamma(1, 3.0))},
                 nbins = 30, plot = TRUE,
                 verbose = FALSE))
 par(oldpar)
