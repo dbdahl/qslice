@@ -62,19 +62,6 @@
   }
 }
 .slice_stepping_out_fast <- function(x, log_target, w, max) {
-  stopifnot(
-    length(x) == 1L,
-    is.finite(x),
-    is.function(log_target),
-    length(w) == 1L,
-    is.finite(w),
-    w > 0.0,
-    is.numeric(max),
-    length(max) == 1L,
-    !is.na(max),
-    (is.infinite(max) && max > 0) ||
-      (is.finite(max) && max >= 0 && max == floor(max))
-  )
   nEvaluations <- 0L
 
   lf <- function(z) {
