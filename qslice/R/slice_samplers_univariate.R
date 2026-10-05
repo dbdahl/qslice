@@ -186,7 +186,7 @@ slice_stepping_out <- function(
   }
 }
 
-.slice_quantile <- function(x, log_target, pseudo, diagnostics) {
+.slice_quantile <- function(x, log_target, pseudo) {
   stopifnot(
     length(x) == 1L,
     is.finite(x),
@@ -199,46 +199,33 @@ slice_stepping_out <- function(
 
   nEvaluations <- 0L
 
-  if (isTRUE(diagnostics)) {
-    lf <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
 
-      .eval_log_target(
-        log_target = log_target,
-        x = z,
-        sampler = "slice_quantile",
-        stage = stage,
-        evaluation = nEvaluations,
-        allow_minus_inf = allow_minus_inf
-      )
-    }
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_quantile",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
+  }
 
-    ld_pseudo <- function(z, stage) {
-      .eval_pseudo_logdens(
-        logdens = pseudo$ld,
-        x = z,
-        sampler = "slice_quantile",
-        stage = stage,
-        evaluation = nEvaluations,
-        allow_minus_inf = FALSE
-      )
-    }
+  ld_pseudo <- function(z, stage) {
+    .eval_pseudo_logdens(
+      logdens = pseudo$ld,
+      x = z,
+      sampler = "slice_quantile",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = FALSE
+    )
+  }
 
-    lh <- function(x, stage, allow_minus_inf = TRUE) {
-      lf(x, stage = stage, allow_minus_inf = allow_minus_inf) -
-        ld_pseudo(x, stage = stage)
-    }
-  } else {
-    lf <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
-      log_target(z)
-    }
-    ld_pseudo <- function(z, stage) {
-      pseudo$ld(z)
-    }
-    lh <- function(x, stage, allow_minus_inf = TRUE) {
-      lf(x) - ld_pseudo(x)
-    }
+  lh <- function(x, stage, allow_minus_inf = TRUE) {
+    lf(x, stage = stage, allow_minus_inf = allow_minus_inf) -
+      ld_pseudo(x, stage = stage)
   }
 
   # Step 1
@@ -266,6 +253,33 @@ slice_stepping_out <- function(
     }
 
     if (y < lh(x1, stage = "shrinkage")) {
+      return(list(x = x1, u = u1, nEvaluations = nEvaluations))
+    }
+    if (x1 < x) L <- u1 else R <- u1
+  }
+}
+.slice_quantile_fast <- function(x, log_target, pseudo) {
+  nEvaluations <- 0L
+
+  lf <- function(z) {
+    nEvaluations <<- nEvaluations + 1L
+    log_target(z)
+  }
+  lh <- function(x) {
+    lf(x) - pseudo$ld(x)
+  }
+
+  # Step 1
+  y <- log(runif(1, min = 0.0, max = 1.0)) +
+    lh(x)
+  # Step 2 ("Shrinkage" procedure)
+  L <- 0.0
+  R <- 1.0
+  repeat {
+    u1 <- runif(1, min = L, max = R)
+    x1 <- pseudo$q(u1)
+
+    if (y < lh(x1)) {
       return(list(x = x1, u = u1, nEvaluations = nEvaluations))
     }
     if (x1 < x) L <- u1 else R <- u1
@@ -319,16 +333,14 @@ slice_quantile <- function(x, log_target, pseudo, diagnostics = NULL) {
     .slice_quantile(
       x = x,
       log_target = log_target,
-      pseudo = pseudo,
-      diagnostics = diagnostics
+      pseudo = pseudo
     )
   } else {
     tryCatch(
-      .slice_quantile(
+      .slice_quantile_fast(
         x = x,
         log_target = log_target,
-        pseudo = pseudo,
-        diagnostics = diagnostics
+        pseudo = pseudo
       ),
       error = function(e) {
         message(
@@ -343,7 +355,7 @@ slice_quantile <- function(x, log_target, pseudo, diagnostics = NULL) {
   }
 }
 
-.slice_latent <- function(x, s, log_target, rate, diagnostics) {
+.slice_latent <- function(x, s, log_target, rate) {
   stopifnot(
     length(x) == 1L,
     length(s) == 1L,
@@ -358,30 +370,23 @@ slice_quantile <- function(x, log_target, pseudo, diagnostics = NULL) {
 
   nEvaluations <- 0L
 
-  if (isTRUE(diagnostics)) {
-    lf <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
+  lf <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
 
-      .eval_log_target(
-        log_target = log_target,
-        x = z,
-        sampler = "slice_latent",
-        stage = stage,
-        evaluation = nEvaluations,
-        allow_minus_inf = allow_minus_inf
-      )
-    }
-  } else {
-    lf <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
-      log_target(z)
-    }
+    .eval_log_target(
+      log_target = log_target,
+      x = z,
+      sampler = "slice_latent",
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
 
   # Step 1
   y <- log(runif(1, min = 0.0, max = 1.0)) +
     lf(x, stage = "evaluate at current state", allow_minus_inf = FALSE)
-  half_s <- s / 2
+  half_s <- s / 2.0
   l <- runif(1, min = x - half_s, max = x + half_s)
   # Eq. 7... a truncated exponential using the inverse CDF method.
   s <- -log(runif(1, min = 0.0, max = 1.0)) / rate + 2.0 * abs(l - x)
@@ -392,6 +397,33 @@ slice_quantile <- function(x, log_target, pseudo, diagnostics = NULL) {
   repeat {
     x1 <- runif(1, min = L, max = R)
     if (y < lf(x1, stage = "shrinkage step")) {
+      return(list(x = x1, s = s, nEvaluations = nEvaluations))
+    }
+    if (x1 < x) L <- x1 else R <- x1
+  }
+}
+.slice_latent_fast <- function(x, s, log_target, rate) {
+  nEvaluations <- 0L
+
+  lf <- function(z) {
+    nEvaluations <<- nEvaluations + 1L
+    log_target(z)
+  }
+
+  # Step 1
+  y <- log(runif(1, min = 0.0, max = 1.0)) +
+    lf(x)
+  half_s <- s / 2.0
+  l <- runif(1, min = x - half_s, max = x + half_s)
+  # Eq. 7... a truncated exponential using the inverse CDF method.
+  s <- -log(runif(1, min = 0.0, max = 1.0)) / rate + 2.0 * abs(l - x)
+  half_s <- s / 2.0
+  L <- l - half_s
+  R <- l + half_s
+  # Step 2 ("Shrinkage" procedure)
+  repeat {
+    x1 <- runif(1, min = L, max = R)
+    if (y < lf(x1)) {
       return(list(x = x1, s = s, nEvaluations = nEvaluations))
     }
     if (x1 < x) L <- x1 else R <- x1
@@ -443,17 +475,15 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
       x = x,
       s = s,
       log_target = log_target,
-      rate = rate,
-      diagnostics = diagnostics
+      rate = rate
     )
   } else {
     tryCatch(
-      .slice_latent(
+      .slice_latent_fast(
         x = x,
         s = s,
         log_target = log_target,
-        rate = rate,
-        diagnostics = diagnostics
+        rate = rate
       ),
       error = function(e) {
         message(
@@ -473,29 +503,21 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
   log_lik,
   mu,
   sigma,
-  sampler,
-  diagnostics
+  sampler
 ) {
   nEvaluations <- 0L
 
-  if (isTRUE(diagnostics)) {
-    llik <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
+  llik <- function(z, stage, allow_minus_inf = TRUE) {
+    nEvaluations <<- nEvaluations + 1L
 
-      .eval_log_target(
-        log_target = log_lik,
-        x = z,
-        sampler = sampler,
-        stage = stage,
-        evaluation = nEvaluations,
-        allow_minus_inf = allow_minus_inf
-      )
-    }
-  } else {
-    llik <- function(z, stage, allow_minus_inf = TRUE) {
-      nEvaluations <<- nEvaluations + 1L
-      log_lik(z)
-    }
+    .eval_log_target(
+      log_target = log_lik,
+      x = z,
+      sampler = sampler,
+      stage = stage,
+      evaluation = nEvaluations,
+      allow_minus_inf = allow_minus_inf
+    )
   }
 
   # Step 1
@@ -518,7 +540,39 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
     theta <- runif(1, min = theta_min, max = theta_max)
   }
 }
+.slice_elliptical_impl_fast <- function(
+  x,
+  log_lik,
+  mu,
+  sigma,
+  sampler
+) {
+  nEvaluations <- 0L
 
+  llik <- function(z) {
+    nEvaluations <<- nEvaluations + 1L
+    log_lik(z)
+  }
+
+  # Step 1
+  y <- log(runif(1, min = 0.0, max = 1.0)) + llik(x)
+  nu <- rnorm(1, mean = mu, sd = sigma)
+  theta <- runif(1, min = 0.0, max = 2.0 * pi)
+  theta_min <- theta - 2.0 * pi
+  theta_max <- theta
+  repeat {
+    x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
+    if (y < llik(x1)) {
+      return(list(x = x1, nEvaluations = nEvaluations))
+    }
+    if (theta < 0.0) {
+      theta_min <- theta
+    } else {
+      theta_max <- theta
+    }
+    theta <- runif(1, min = theta_min, max = theta_max)
+  }
+}
 #' Univariate Elliptical Slice Sampler
 #'
 #' Algorithm 1 of Nishihara et al. (2014) of the
@@ -560,35 +614,34 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
 #'
 slice_elliptical <- function(x, log_lik, mu, sigma, diagnostics = NULL) {
   diagnostics <- .resolve_diagnostics(diagnostics)
-  stopifnot(
-    length(x) == 1L,
-    length(mu) == 1L,
-    length(sigma) == 1L,
-    is.finite(x),
-    is.function(log_lik),
-    is.finite(mu),
-    is.finite(sigma),
-    sigma > 0.0
-  )
 
   if (isTRUE(diagnostics)) {
+    stopifnot(
+      length(x) == 1L,
+      length(mu) == 1L,
+      length(sigma) == 1L,
+      is.finite(x),
+      is.function(log_lik),
+      is.finite(mu),
+      is.finite(sigma),
+      sigma > 0.0
+    )
+
     .slice_elliptical_impl(
       x = x,
       log_lik = log_lik,
       mu = mu,
       sigma = sigma,
-      sampler = "slice_elliptical",
-      diagnostics = diagnostics
+      sampler = "slice_elliptical"
     )
   } else {
     tryCatch(
-      .slice_elliptical_impl(
+      .slice_elliptical_impl_fast(
         x = x,
         log_lik = log_lik,
         mu = mu,
         sigma = sigma,
-        sampler = "slice_elliptical",
-        diagnostics = diagnostics
+        sampler = "slice_elliptical"
       ),
       error = function(e) {
         message(
@@ -649,20 +702,6 @@ slice_genelliptical <- function(
 ) {
   diagnostics <- .resolve_diagnostics(diagnostics)
 
-  stopifnot(
-    length(x) == 1L,
-    length(mu) == 1L,
-    length(sigma) == 1L,
-    length(df) == 1L,
-    is.finite(x),
-    is.function(log_target),
-    is.finite(mu),
-    is.finite(sigma),
-    is.finite(df),
-    sigma > 0.0,
-    df > 0.0
-  )
-
   a <- (df + 1.0) / 2.0
   b <- 0.5 * (df + ((x - mu) / sigma)^2)
   s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
@@ -671,13 +710,26 @@ slice_genelliptical <- function(
   }
 
   if (isTRUE(diagnostics)) {
+    stopifnot(
+      length(x) == 1L,
+      length(mu) == 1L,
+      length(sigma) == 1L,
+      length(df) == 1L,
+      is.finite(x),
+      is.function(log_target),
+      is.finite(mu),
+      is.finite(sigma),
+      is.finite(df),
+      sigma > 0.0,
+      df > 0.0
+    )
+
     .slice_elliptical_impl(
       x = x,
       log_lik = lff,
       mu = mu,
       sigma = sqrt(s) * sigma,
-      sampler = "slice_genelliptical",
-      diagnostics = diagnostics
+      sampler = "slice_genelliptical"
     )
   } else {
     tryCatch(
@@ -686,8 +738,7 @@ slice_genelliptical <- function(
         log_lik = lff,
         mu = mu,
         sigma = sqrt(s) * sigma,
-        sampler = "slice_genelliptical",
-        diagnostics = diagnostics
+        sampler = "slice_genelliptical"
       ),
       error = function(e) {
         message(
