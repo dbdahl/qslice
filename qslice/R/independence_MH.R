@@ -180,7 +180,7 @@ imh_pseudo <- function(x, log_target, pseudo, diagnostics = NULL) {
     log_target(z)
   }
   lh <- function(x) {
-    lf(x) - pseudo$ld(z)
+    lf(x) - pseudo$ld(x)
   }
 
   lhx0 <- lh(x)
