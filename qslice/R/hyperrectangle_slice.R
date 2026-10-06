@@ -800,6 +800,7 @@ pseudo_condseq_XfromU <- function(
     ub = pseudo_control$ub
   )
 
+  nEvaluations <- 0L
   lhx <- function(x, pseudo) {
     nEvaluations <<- nEvaluations + 1L
     log_target(x) -
@@ -894,7 +895,12 @@ pseudo_condseq_XfromU <- function(
 #' @export
 #' @example man/examples/pseudo_sequential.R
 #'
-slice_quantile_mv_seq <- function(x, log_target, pseudo_control, diagnostics) {
+slice_quantile_mv_seq <- function(
+  x,
+  log_target,
+  pseudo_control,
+  diagnostics = NULL
+) {
   # target is log target only without pseudo
 
   diagnostics <- .resolve_diagnostics(diagnostics)
