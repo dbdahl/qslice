@@ -1,4 +1,4 @@
-.slice_hyperrect_eval <- function(
+.slice_hyperrect_impl <- function(
   x,
   K,
   log_target,
@@ -83,7 +83,7 @@
     }
   }
 }
-.slice_hyperrect_eval_fast <- function(
+.slice_hyperrect_impl_fast <- function(
   x,
   K,
   log_target,
@@ -193,7 +193,7 @@ slice_hyperrect <- function(
   K <- length(x)
 
   if (isTRUE(diagnostics)) {
-    .slice_hyperrect_eval(
+    .slice_hyperrect_impl(
       x = x,
       K = K,
       log_target = log_target,
@@ -203,7 +203,7 @@ slice_hyperrect <- function(
     )
   } else {
     tryCatch(
-      .slice_hyperrect_eval_fast(
+      .slice_hyperrect_impl_fast(
         x = x,
         K = K,
         log_target = log_target,

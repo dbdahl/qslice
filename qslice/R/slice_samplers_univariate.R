@@ -238,19 +238,15 @@ slice_stepping_out <- function(
   repeat {
     u1 <- runif(1, min = L, max = R)
 
-    if (isTRUE(diagnostics)) {
-      proposal_attempts <- proposal_attempts + 1L
-      x1 <- .eval_pseudo_quantile(
-        q = pseudo$q,
-        u = u1,
-        sampler = "slice_quantile",
-        stage = "shrinkage proposal",
-        attempt = proposal_attempts,
-        expected_length = 1L
-      )
-    } else {
-      x1 <- pseudo$q(u1)
-    }
+    proposal_attempts <- proposal_attempts + 1L
+    x1 <- .eval_pseudo_quantile(
+      q = pseudo$q,
+      u = u1,
+      sampler = "slice_quantile",
+      stage = "shrinkage proposal",
+      attempt = proposal_attempts,
+      expected_length = 1L
+    )
 
     if (y < lh(x1, stage = "shrinkage")) {
       return(list(x = x1, u = u1, nEvaluations = nEvaluations))

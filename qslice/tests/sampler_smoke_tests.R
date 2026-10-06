@@ -4,6 +4,15 @@
 
 library("qslice")
 
+## test both settings
+options(qslice.diagnostics = FALSE)
+n_iter <- 15e3
+
+options(qslice.diagnostics = TRUE)
+n_iter <- 5e3
+
+getOption("qslice.diagnostics")
+
 qslice_ns <- asNamespace("qslice")
 
 qfun <- function(name) get(name, envir = qslice_ns, inherits = FALSE)
@@ -19,9 +28,9 @@ slice_quantile_mv_seq <- qfun("slice_quantile_mv_seq")
 slice_elliptical_mv <- qfun("slice_elliptical_mv")
 slice_genelliptical_mv <- qfun("slice_genelliptical_mv")
 imh_pseudo <- qfun("imh_pseudo")
+rwm_norm <- qfun("rwm_norm")
 pseudo_list <- qfun("pseudo_list")
 
-n_iter <- 5e3
 burn <- 1e3
 keep <- seq.int(burn + 1L, n_iter, by = 10)
 
@@ -145,12 +154,22 @@ record(
   run_univariate(0.5, function(x) imh_pseudo(x, beta_log_target, beta_pseudo))
 )
 
+set.seed(6)
+record(
+  "RWM: Beta(3,4)",
+  beta_expected,
+  beta_cdf,
+  run_univariate(0.5, function(x) {
+    rwm_norm(x, beta_log_target, cand_sd = 0.35, support = c(0.0, 1.0))
+  })
+)
+
 # Univariate Gaussian ESS: N(0,1) prior times flat likelihood.
 ess_expected_mean <- 0.0
 ess_log_lik <- function(x) 1
 ess_cdf <- list(function(x) pnorm(x))
 
-set.seed(6)
+set.seed(7)
 record(
   "ESS: Gaussian posterior",
   ess_expected_mean,
@@ -171,7 +190,7 @@ mv_beta_pseudo <- list(
   pseudo_list("beta", list(shape1 = 1.5, shape2 = 1.5))
 )
 
-set.seed(7)
+set.seed(8)
 record(
   "hyperrectangle: independent betas",
   mv_beta_expected,
@@ -181,7 +200,7 @@ record(
   })
 )
 
-set.seed(8)
+set.seed(9)
 record(
   "multivariate QSlice: independent betas",
   mv_beta_expected,
@@ -191,7 +210,7 @@ record(
   })
 )
 
-set.seed(9)
+set.seed(10)
 record(
   "multivariate GESS: independent betas",
   mv_beta_expected,
@@ -207,7 +226,7 @@ record(
   })
 )
 
-set.seed(10)
+set.seed(11)
 record(
   "multivariate IMH: independent betas",
   mv_beta_expected,
@@ -221,7 +240,7 @@ record(
 mv_ess_expected <- c(0, 0)
 mv_ess_log_lik <- function(x) 1
 
-set.seed(11)
+set.seed(12)
 record(
   "multivariate ESS: Gaussian posterior",
   mv_ess_expected,
@@ -247,7 +266,7 @@ seq_control <- list(
   ub = c(Inf, Inf)
 )
 
-set.seed(12)
+set.seed(13)
 record(
   "sequential QSlice: exact Gaussian pseudo-target",
   c(0, 0),
