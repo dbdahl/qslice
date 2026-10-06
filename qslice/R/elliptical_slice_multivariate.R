@@ -1,27 +1,12 @@
 .slice_elliptical_mv_impl <- function(
   x,
+  K,
   log_lik,
   mu,
   Sig,
   is_chol = FALSE,
   sampler
 ) {
-  K <- length(x)
-  stopifnot(
-    length(mu) == K,
-    is.matrix(Sig),
-    is.numeric(Sig),
-    dim(Sig) == c(K, K),
-    all(diag(Sig) > 0.0),
-    all(is.finite(x)),
-    is.function(log_lik),
-    all(is.finite(mu)),
-    all(is.finite(Sig)),
-    length(is_chol) == 1L,
-    !is.na(is_chol),
-    is.logical(is_chol)
-  )
-
   if (isTRUE(is_chol)) {
     SigL <- Sig
   } else {
@@ -60,6 +45,50 @@
   repeat {
     x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
     if (y < llik(x1, stage = "shrinkage step")) {
+      return(list(x = x1, nEvaluations = nEvaluations))
+    }
+    if (theta < 0) {
+      theta_min <- theta
+    } else {
+      theta_max <- theta
+    }
+    theta <- runif(1, min = theta_min, max = theta_max)
+  }
+}
+.slice_elliptical_mv_impl_fast <- function(
+  x,
+  K,
+  log_lik,
+  mu,
+  Sig,
+  is_chol = FALSE
+) {
+  if (isTRUE(is_chol)) {
+    SigL <- Sig
+  } else {
+    SigL <- t(chol(Sig))
+  }
+
+  nEvaluations <- 0L
+
+  llik <- function(z) {
+    nEvaluations <<- nEvaluations + 1L
+    log_lik(z)
+  }
+
+  # Step 1
+  llik_x0 <- llik(x)
+  y <- log(runif(1, min = 0.0, max = 1.0)) + llik_x0
+
+  nu <- drop(SigL %*% rnorm(K, mean = 0.0, sd = 1.0) + mu)
+
+  twopi <- 2.0 * pi
+  theta <- runif(1, min = 0, max = twopi)
+  theta_min <- theta - twopi
+  theta_max <- theta
+  repeat {
+    x1 <- (x - mu) * cos(theta) + (nu - mu) * sin(theta) + mu
+    if (y < llik(x1)) {
       return(list(x = x1, nEvaluations = nEvaluations))
     }
     if (theta < 0) {
@@ -118,16 +147,59 @@ slice_elliptical_mv <- function(
   log_lik,
   mu,
   Sig,
-  is_chol = FALSE
+  is_chol = FALSE,
+  diagnostics = NULL
 ) {
-  .slice_elliptical_mv_impl(
-    x = x,
-    log_lik = log_lik,
-    mu = mu,
-    Sig = Sig,
-    is_chol = is_chol,
-    sampler = "slice_elliptical_mv"
-  )
+  diagnostics <- .resolve_diagnostics(diagnostics)
+
+  K <- length(x)
+
+  if (isTRUE(diagnostics)) {
+    stopifnot(
+      length(mu) == K,
+      is.matrix(Sig),
+      is.numeric(Sig),
+      dim(Sig) == c(K, K),
+      all(diag(Sig) > 0.0),
+      all(is.finite(x)),
+      is.function(log_lik),
+      all(is.finite(mu)),
+      all(is.finite(Sig)),
+      length(is_chol) == 1L,
+      !is.na(is_chol),
+      is.logical(is_chol)
+    )
+
+    .slice_elliptical_mv_impl(
+      x = x,
+      K = K,
+      log_lik = log_lik,
+      mu = mu,
+      Sig = Sig,
+      is_chol = is_chol,
+      sampler = "slice_elliptical_mv"
+    )
+  } else {
+    tryCatch(
+      .slice_elliptical_mv_impl_fast(
+        x = x,
+        K = K,
+        log_lik = log_lik,
+        mu = mu,
+        Sig = Sig,
+        is_chol = is_chol
+      ),
+      error = function(e) {
+        message(
+          "\nFor detailed diagnostics, rerun after setting:\n",
+          "  options(qslice.diagnostics = TRUE)\n",
+          "or call the sampler with argument diagnostics = TRUE."
+        )
+
+        stop(e)
+      }
+    )
+  }
 }
 
 #' Generalized Elliptical Slice Sampler (Multivariate)
@@ -177,27 +249,33 @@ slice_genelliptical_mv <- function(
   mu,
   Sig,
   df,
-  is_chol = FALSE
+  is_chol = FALSE,
+  diagnostics = NULL
 ) {
+  diagnostics <- .resolve_diagnostics(diagnostics)
+
   K <- length(x)
-  stopifnot(
-    length(mu) == K,
-    is.matrix(Sig),
-    is.numeric(Sig),
-    dim(Sig) == c(K, K),
-    all(diag(Sig) > 0.0),
-    all(is.finite(Sig)),
-    length(df) == 1L,
-    all(is.finite(x)),
-    is.function(log_target),
-    all(is.finite(mu)),
-    all(is.finite(Sig)),
-    is.finite(df),
-    df > 0.0,
-    length(is_chol) == 1L,
-    !is.na(is_chol),
-    is.logical(is_chol)
-  )
+
+  if (isTRUE(diagnostics)) {
+    stopifnot(
+      length(mu) == K,
+      is.matrix(Sig),
+      is.numeric(Sig),
+      dim(Sig) == c(K, K),
+      all(diag(Sig) > 0.0),
+      all(is.finite(Sig)),
+      length(df) == 1L,
+      all(is.finite(x)),
+      is.function(log_target),
+      all(is.finite(mu)),
+      all(is.finite(Sig)),
+      is.finite(df),
+      df > 0.0,
+      length(is_chol) == 1L,
+      !is.na(is_chol),
+      is.logical(is_chol)
+    )
+  }
 
   if (isTRUE(is_chol)) {
     SigL <- Sig
@@ -215,12 +293,35 @@ slice_genelliptical_mv <- function(
       a * log1p(drop(crossprod(forwardsolve(SigL, (xx - mu)))) / df)
   }
 
-  .slice_elliptical_mv_impl(
-    x = x,
-    log_lik = lff,
-    mu = mu,
-    Sig = sqrt(s) * SigL,
-    is_chol = is_chol,
-    sampler = "slice_genelliptical_mv"
-  )
+  if (isTRUE(diagnostics)) {
+    .slice_elliptical_mv_impl(
+      x = x,
+      K = K,
+      log_lik = lff,
+      mu = mu,
+      Sig = sqrt(s) * SigL,
+      is_chol = is_chol,
+      sampler = "slice_genelliptical_mv"
+    )
+  } else {
+    tryCatch(
+      .slice_elliptical_mv_impl_fast(
+        x = x,
+        K = K,
+        log_lik = lff,
+        mu = mu,
+        Sig = sqrt(s) * SigL,
+        is_chol = is_chol
+      ),
+      error = function(e) {
+        message(
+          "\nFor detailed diagnostics, rerun after setting:\n",
+          "  options(qslice.diagnostics = TRUE)\n",
+          "or call the sampler with argument diagnostics = TRUE."
+        )
+
+        stop(e)
+      }
+    )
+  }
 }

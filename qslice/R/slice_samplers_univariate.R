@@ -697,13 +697,6 @@ slice_genelliptical <- function(
 ) {
   diagnostics <- .resolve_diagnostics(diagnostics)
 
-  a <- (df + 1.0) / 2.0
-  b <- 0.5 * (df + ((x - mu) / sigma)^2)
-  s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
-  lff <- function(xx) {
-    log_target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE)) #  - log(sigma) is const. and not necessary
-  }
-
   if (isTRUE(diagnostics)) {
     stopifnot(
       length(x) == 1L,
@@ -718,7 +711,16 @@ slice_genelliptical <- function(
       sigma > 0.0,
       df > 0.0
     )
+  }
 
+  a <- (df + 1.0) / 2.0
+  b <- 0.5 * (df + ((x - mu) / sigma)^2)
+  s <- 1.0 / rgamma(1, shape = a, rate = b) # rate of gamma <=> shape of inv-gamma
+  lff <- function(xx) {
+    log_target(xx) - (dt((xx - mu) / sigma, df = df, log = TRUE)) #  - log(sigma) is const. and not necessary
+  }
+
+  if (isTRUE(diagnostics)) {
     .slice_elliptical_impl(
       x = x,
       log_lik = lff,
