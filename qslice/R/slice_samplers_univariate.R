@@ -261,12 +261,9 @@ slice_stepping_out <- function(
 .slice_quantile_fast <- function(x, log_target, pseudo) {
   nEvaluations <- 0L
 
-  lf <- function(z) {
-    nEvaluations <<- nEvaluations + 1L
-    log_target(z)
-  }
   lh <- function(x) {
-    lf(x) - pseudo$ld(x)
+    nEvaluations <<- nEvaluations + 1L
+    log_target(x) - pseudo$ld(x)
   }
 
   # Step 1
@@ -544,8 +541,7 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
   x,
   log_lik,
   mu,
-  sigma,
-  sampler
+  sigma
 ) {
   nEvaluations <- 0L
 
@@ -640,8 +636,7 @@ slice_elliptical <- function(x, log_lik, mu, sigma, diagnostics = NULL) {
         x = x,
         log_lik = log_lik,
         mu = mu,
-        sigma = sigma,
-        sampler = "slice_elliptical"
+        sigma = sigma
       ),
       error = function(e) {
         message(
@@ -733,12 +728,11 @@ slice_genelliptical <- function(
     )
   } else {
     tryCatch(
-      .slice_elliptical_impl(
+      .slice_elliptical_impl_fast(
         x = x,
         log_lik = lff,
         mu = mu,
-        sigma = sqrt(s) * sigma,
-        sampler = "slice_genelliptical"
+        sigma = sqrt(s) * sigma
       ),
       error = function(e) {
         message(
