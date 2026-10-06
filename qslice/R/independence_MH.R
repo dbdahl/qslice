@@ -175,12 +175,9 @@ imh_pseudo <- function(x, log_target, pseudo, diagnostics = NULL) {
 .imh_pseudo_univ_fast <- function(x, log_target, pseudo) {
   nEvaluations <- 0L
 
-  lf <- function(z) {
+  lh <- function(z) {
     nEvaluations <<- nEvaluations + 1L
-    log_target(z)
-  }
-  lh <- function(x) {
-    lf(x) - pseudo$ld(x)
+    log_target(z) - pseudo$ld(z)
   }
 
   lhx0 <- lh(x)

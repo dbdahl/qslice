@@ -48,11 +48,15 @@
 }
 .rwm_norm_univ_eval_fast <- function(x, log_target, cand_sd, support) {
   nEvaluations <- 0L
+  lf <- function(z) {
+    nEvaluations <<- nEvaluations + 1L
+    log_target(z)
+  }
 
   x_cand <- rnorm(1, mean = x, sd = cand_sd)
 
   if (x_cand >= support[1] && x_cand <= support[2]) {
-    lprob_accpt <- log_target(x_cand) - log_target(x)
+    lprob_accpt <- lf(x_cand) - lf(x)
     lu <- log(runif(1, min = 0.0, max = 1.0))
     accept <- isTRUE(lu < lprob_accpt)
   } else {
