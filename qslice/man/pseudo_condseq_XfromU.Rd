@@ -4,7 +4,15 @@
 \alias{pseudo_condseq_XfromU}
 \title{Inverse transform from sequence of conditional pseudo-targets}
 \usage{
-pseudo_condseq_XfromU(u, pseudo_init, loc_fn, sc_fn, lb, ub)
+pseudo_condseq_XfromU(
+  u,
+  pseudo_init,
+  loc_fn,
+  sc_fn,
+  lb,
+  ub,
+  diagnostics = NULL
+)
 }
 \arguments{
 \item{u}{A numeric vector of values between 0 and 1.}
@@ -23,6 +31,11 @@ bound of support for each conditional pseudo-target.}
 
 \item{ub}{A numeric vector (same length as \code{x}) specifying the upper
 bound of support for each conditional pseudo-target.}
+
+\item{diagnostics}{Logical, indicating whether the function should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list containing \code{x} obtained from the sequence of inverse

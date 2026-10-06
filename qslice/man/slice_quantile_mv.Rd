@@ -4,7 +4,7 @@
 \alias{slice_quantile_mv}
 \title{Multivariate Quantile Slice Sampler}
 \usage{
-slice_quantile_mv(x, log_target, pseudo)
+slice_quantile_mv(x, log_target, pseudo, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric vector).}
@@ -15,6 +15,11 @@ density, returning a numeric scalar.}
 \item{pseudo}{List of length equal to the number of dimensions in \code{x}. Each element is itself a list that specifies
 the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density,
 \code{p} that evaluates the CDF, and \code{q} that evaluates the quantile (inverse-CDF) function.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list containing three elements: "x" is the new state, "u" is the

@@ -4,7 +4,14 @@
 \alias{slice_hyperrect}
 \title{Multivariate Slice Sampler with Shrinking Hyperrectangle}
 \usage{
-slice_hyperrect(x, log_target, w = NULL, L = NULL, R = NULL)
+slice_hyperrect(
+  x,
+  log_target,
+  w = NULL,
+  L = NULL,
+  R = NULL,
+  diagnostics = NULL
+)
 }
 \arguments{
 \item{x}{The current state (as a numeric vector).}
@@ -22,6 +29,11 @@ correspond with the support).}
 \item{R}{Optional numeric vector giving the upper boundary of support in each dimension.
 Will be used if \code{w} is null. If all of \code{L}, \code{R}, and \code{w}
 are null, then the boundaries default to those of the unit hypercube.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list contains two elements: "x" is the new state and "nEvaluations"

@@ -4,7 +4,7 @@
 \alias{slice_elliptical_mv}
 \title{Multivariate Elliptical Slice Sampler}
 \usage{
-slice_elliptical_mv(x, log_lik, mu, Sig, is_chol = FALSE)
+slice_elliptical_mv(x, log_lik, mu, Sig, is_chol = FALSE, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric vector).}
@@ -19,6 +19,11 @@ lower-triangular matrix with the Cholesky factor of the covariance matrix
 (for faster computation).}
 
 \item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \description{
 Algorithm 1 of Nishihara et al. (2014) of the

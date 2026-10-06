@@ -4,7 +4,7 @@
 \alias{slice_quantile_mv_seq}
 \title{Multivariate Quantile Slice Sampler from a sequence of conditional pseudo-targets}
 \usage{
-slice_quantile_mv_seq(x, log_target, pseudo_control)
+slice_quantile_mv_seq(x, log_target, pseudo_control, diagnostics = NULL)
 }
 \arguments{
 \item{x}{The current state (as a numeric vector).}
@@ -30,6 +30,11 @@ bound of support for each conditional pseudo-target.
 
 \code{ub}, a numeric vector (same length as \code{x}) specifying the upper
 bound of support for each conditional pseudo-target.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list containing three elements: "x" is the new state, "u" is a vector

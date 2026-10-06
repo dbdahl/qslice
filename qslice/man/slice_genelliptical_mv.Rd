@@ -4,7 +4,15 @@
 \alias{slice_genelliptical_mv}
 \title{Generalized Elliptical Slice Sampler (Multivariate)}
 \usage{
-slice_genelliptical_mv(x, log_target, mu, Sig, df, is_chol = FALSE)
+slice_genelliptical_mv(
+  x,
+  log_target,
+  mu,
+  Sig,
+  df,
+  is_chol = FALSE,
+  diagnostics = NULL
+)
 }
 \arguments{
 \item{x}{The current state (as a numeric vector).}
@@ -21,6 +29,11 @@ lower-triangular matrix with the Cholesky factor of the scale matrix
 \item{df}{Degrees of freedom of Student t pseudo-target.}
 
 \item{is_chol}{Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list contains two elements: \code{x} is the new state and \code{nEvaluations}
