@@ -128,7 +128,7 @@ rwm_norm <- function(
       support = support
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .rwm_norm_univ_eval_fast(
         x = x,
         log_target = log_target,
@@ -141,8 +141,6 @@ rwm_norm <- function(
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }

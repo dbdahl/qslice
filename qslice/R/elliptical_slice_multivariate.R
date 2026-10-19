@@ -184,7 +184,7 @@ slice_elliptical_mv <- function(
       sampler = "slice_elliptical_mv"
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_elliptical_mv_impl_fast(
         x = x,
         K = K,
@@ -199,8 +199,6 @@ slice_elliptical_mv <- function(
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }
@@ -312,7 +310,7 @@ slice_genelliptical_mv <- function(
       sampler = "slice_genelliptical_mv"
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_elliptical_mv_impl_fast(
         x = x,
         K = K,
@@ -327,8 +325,6 @@ slice_genelliptical_mv <- function(
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }

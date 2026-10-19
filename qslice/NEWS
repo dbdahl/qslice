@@ -6,6 +6,7 @@
   * Streamlined pseudo-target utility functions.
   * Deprecated function auc() and use of degf for pseudo-target degrees of freedom.
   * Added random-walk Metropolis.
+  * Reduced per-call overhead of samplers and pseudo-target functions without changing results.
 
 0.3.1 (2024-05-29)
   * A few cosmetic improvements based on CRAN feedback.

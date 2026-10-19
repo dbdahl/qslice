@@ -59,7 +59,7 @@ imh_pseudo <- function(x, log_target, pseudo, diagnostics = NULL) {
         pseudo = pseudo
       )
     } else {
-      out <- tryCatch(
+      out <- withCallingHandlers(
         .imh_pseudo_univ_fast(
           x = x,
           log_target = log_target,
@@ -71,8 +71,6 @@ imh_pseudo <- function(x, log_target, pseudo, diagnostics = NULL) {
             "  options(qslice.diagnostics = TRUE)\n",
             "or call the sampler with argument diagnostics = TRUE."
           )
-
-          stop(e)
         }
       )
     }
@@ -89,7 +87,7 @@ imh_pseudo <- function(x, log_target, pseudo, diagnostics = NULL) {
         K = K
       )
     } else {
-      out <- tryCatch(
+      out <- withCallingHandlers(
         .imh_pseudo_mv_fast(
           x = x,
           log_target = log_target,
@@ -102,8 +100,6 @@ imh_pseudo <- function(x, log_target, pseudo, diagnostics = NULL) {
             "  options(qslice.diagnostics = TRUE)\n",
             "or call the sampler with argument diagnostics = TRUE."
           )
-
-          stop(e)
         }
       )
     }

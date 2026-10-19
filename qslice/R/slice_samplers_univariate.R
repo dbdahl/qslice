@@ -166,7 +166,7 @@ slice_stepping_out <- function(
       max = max
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_stepping_out_fast(
         x = x,
         log_target = log_target,
@@ -179,8 +179,6 @@ slice_stepping_out <- function(
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }
@@ -329,7 +327,7 @@ slice_quantile <- function(x, log_target, pseudo, diagnostics = NULL) {
       pseudo = pseudo
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_quantile_fast(
         x = x,
         log_target = log_target,
@@ -341,8 +339,6 @@ slice_quantile <- function(x, log_target, pseudo, diagnostics = NULL) {
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }
@@ -471,7 +467,7 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
       rate = rate
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_latent_fast(
         x = x,
         s = s,
@@ -484,8 +480,6 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }
@@ -627,7 +621,7 @@ slice_elliptical <- function(x, log_lik, mu, sigma, diagnostics = NULL) {
       sampler = "slice_elliptical"
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_elliptical_impl_fast(
         x = x,
         log_lik = log_lik,
@@ -640,8 +634,6 @@ slice_elliptical <- function(x, log_lik, mu, sigma, diagnostics = NULL) {
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }
@@ -725,7 +717,7 @@ slice_genelliptical <- function(
       sampler = "slice_genelliptical"
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_elliptical_impl_fast(
         x = x,
         log_lik = lff,
@@ -738,8 +730,6 @@ slice_genelliptical <- function(
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }

@@ -202,7 +202,7 @@ slice_hyperrect <- function(
       R = R
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_hyperrect_impl_fast(
         x = x,
         K = K,
@@ -217,8 +217,6 @@ slice_hyperrect <- function(
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }
@@ -413,7 +411,7 @@ slice_quantile_mv <- function(x, log_target, pseudo, diagnostics = NULL) {
       pseudo = pseudo
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_quantile_mv_impl_fast(
         x = x,
         K = K,
@@ -426,8 +424,6 @@ slice_quantile_mv <- function(x, log_target, pseudo, diagnostics = NULL) {
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }
@@ -915,7 +911,7 @@ slice_quantile_mv_seq <- function(
       pseudo_control = pseudo_control
     )
   } else {
-    tryCatch(
+    withCallingHandlers(
       .slice_quantile_mv_seq_impl_fast(
         x = x,
         K = K,
@@ -928,8 +924,6 @@ slice_quantile_mv_seq <- function(
           "  options(qslice.diagnostics = TRUE)\n",
           "or call the sampler with argument diagnostics = TRUE."
         )
-
-        stop(e)
       }
     )
   }

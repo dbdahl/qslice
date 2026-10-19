@@ -41,6 +41,14 @@
 .log_addexp <- function(lx, ly) {
   ## Calculates log(exp(lx) + exp(ly)).
   ## From R stats src/nmath/pgamma.c
+  if (length(lx) == 1L && length(ly) == 1L) {
+    ## Scalar fast path
+    m <- max(lx, ly)
+    if (is.infinite(m) && m < 0.0) {
+      return(-Inf)
+    }
+    return(m + log1p(exp(-abs(lx - ly))))
+  }
   m <- pmax(lx, ly)
   out <- m + log1p(exp(-abs(lx - ly)))
   out[is.infinite(m) & m < 0.0] <- -Inf
@@ -156,6 +164,9 @@
   }
 
   fn_ldens <- function(x) {
+    if (length(x) == 1L) {
+      return(fn_ldens_one(x))
+    }
     vapply(x, fn_ldens_one, numeric(1))
   }
 
@@ -224,6 +235,9 @@
   fn_invcdf <- function(u) {
     if (!is.numeric(u)) {
       stop("`u` must be numeric.", call. = FALSE)
+    }
+    if (length(u) == 1L) {
+      return(fn_invcdf_one(u))
     }
     vapply(u, fn_invcdf_one, numeric(1))
   }
@@ -333,6 +347,9 @@
   }
 
   fn_ldens <- function(x) {
+    if (length(x) == 1L) {
+      return(fn_ldens_one(x))
+    }
     vapply(x, fn_ldens_one, numeric(1))
   }
 
@@ -417,6 +434,9 @@
         "`u` must be numeric and `log.p` must be TRUE or FALSE.",
         call. = FALSE
       )
+    }
+    if (length(u) == 1L) {
+      return(fn_invcdf_one(u, log.p = log.p))
     }
     vapply(u, fn_invcdf_one, numeric(1), log.p = log.p)
   }

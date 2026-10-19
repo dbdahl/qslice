@@ -3,9 +3,7 @@
 
 .resolve_diagnostics <- function(diagnostics) {
   if (is.null(diagnostics)) {
-    diagnostics <- isTRUE(
-      getOption("qslice.diagnostics", FALSE)
-    )
+    return(isTRUE(getOption("qslice.diagnostics", FALSE)))
   }
   stopifnot(is.logical(diagnostics))
   diagnostics
