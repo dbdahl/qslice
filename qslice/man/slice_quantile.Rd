@@ -41,7 +41,7 @@ Single update using a quantile slice sampler of Heiner et al. (2026+).
 The sampler works with \eqn{\psi}, the pseudo-target CDF of the state, in
 double precision. Because floating-point numbers are dense near zero but not
 near one, states whose pseudo-target upper-tail probability is below about
-\code{1e-16} cannot be represented; the left tail is not affected. Use a
+\code{1e-16} cannot be represented. Use a
 pseudo-target whose right tail is at least as heavy as that of the target
 (e.g., Student t).
 }

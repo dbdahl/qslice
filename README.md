@@ -2,9 +2,9 @@
 
 Functions to facilitate implementing the quantile slice sampler and other popular slice samplers. Package includes utility functions for specifying pseudo-targets, for diagnostics, and for tuning.
 
-The **qslice** directory contains the R package, which implements the quantile slice sampler and related samplers samplers.
+The **qslice** directory contains the R package, which implements the quantile slice sampler and related samplers.
 
-The other directories hold earlier development code can largely be ignored.  Code to reproduce the simulation studies in the paper is in the [qslice_examples](https://github.com/mheiner/qslice_examples) repository.
+The other directories contain earlier development code.  Code to reproduce the simulation studies in the paper is in the [qslice_examples](https://github.com/mheiner/qslice_examples) repository.
 
 The following code gives a demonstration of the typical workflow. Note that `slice_quantile()` can be embedded within any Gibbs sampler.
 
