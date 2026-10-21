@@ -134,6 +134,8 @@
 #' for a given value of \code{u} supported on (0,1). (Not used if \code{u} is supplied).
 #' @param nbins Number of histogram bins to use (defaults to 30).
 #'
+#' @returns Scalar value of the AUC (see \link[qslice]{utility_shrinkslice}).
+#'
 #' @export
 auc <- function(u = NULL, x = NULL, y = NULL, nbins = 30) {
   warning(
@@ -141,7 +143,7 @@ auc <- function(u = NULL, x = NULL, y = NULL, nbins = 30) {
   )
   if (is.null(u)) {
     if (is.function(y)) {
-      utility_shrinkslice(
+      out <- utility_shrinkslice(
         h = y,
         x = x,
         u = NULL,
@@ -158,6 +160,7 @@ auc <- function(u = NULL, x = NULL, y = NULL, nbins = 30) {
       x = x,
       u = u,
       type = "samples",
+      nbins = nbins,
       plot = FALSE,
       utility_type = "AUC"
     )

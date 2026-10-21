@@ -53,6 +53,8 @@
 #' Use of "function" requires specification of \code{log_target}.
 #'
 #' Use of "samples" requires specification of \code{samples}.
+#'
+#' Use of "grid" requires specification of \code{log_target}.
 #' @param family String specifying the family of distributions for the pseudo-target.
 #' Can be any of the families accepted by \link[qslice]{pseudo_list}.
 #' @param df Numeric vector of degrees of freedom values to try (only if \code{family = "t"}).
@@ -72,7 +74,7 @@
 #' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
 #' \code{diagnostics}: Logical, indicating whether the target log-density and pseudo-target functions should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' @param verbose Logical for whether to print intermediate steps of optimization.
@@ -157,7 +159,7 @@ pseudo_opt <- function(
     caller = "pseudo_opt"
   )
   if (family == "beta") {
-    stop("Optimazation for beta pseudo-targets not implemented.")
+    stop("Optimization for beta pseudo-targets not implemented.")
   }
 
   if (is.null(init_fn)) {

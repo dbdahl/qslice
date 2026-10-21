@@ -21,8 +21,8 @@ density, returning a numeric scalar.}
 
 \item{w}{A numeric vector tuning the algorithm which gives the typical slice
 width in each dimension. This is a main tuning parameter of the algorithm.
-If \code{NULL}, the sampler begins shrinking from the supplied boundaries \code{L} and \code{R} (should,
-correspond with the support).}
+If \code{NULL}, the sampler begins shrinking from the supplied boundaries \code{L} and \code{R}
+(which should correspond with the support).}
 
 \item{L}{Optional numeric vector giving the lower boundary of support in each dimension.}
 
@@ -32,11 +32,11 @@ are null, then the boundaries default to those of the unit hypercube.}
 
 \item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
-A list contains two elements: "x" is the new state and "nEvaluations"
+A list containing two elements: "x" is the new state and "nEvaluations"
 is the number of evaluations of the target function used to obtain the new
 state.
 }

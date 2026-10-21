@@ -34,7 +34,9 @@ Default is to use "samples".
 
 Use of "function" requires specification of \code{log_target}.
 
-Use of "samples" requires specification of \code{samples}.}
+Use of "samples" requires specification of \code{samples}.
+
+Use of "grid" requires specification of \code{log_target}.}
 
 \item{family}{String specifying the family of distributions for the pseudo-target.
 Can be any of the families accepted by \link[qslice]{pseudo_list}.}
@@ -64,7 +66,7 @@ the vector \code{c(0.5, 3.0)} is used. Default is \code{NULL}.}
 \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
 \code{diagnostics}: Logical, indicating whether the target log-density and pseudo-target functions should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
 
 \item{plot}{Logical for whether to generate two plots:

@@ -18,23 +18,25 @@ the pseudo-target independently for each corresponding dimension with functions 
 that evaluates the log density for that dimension,
 and \code{q} that evaluates the quantile (inverse-CDF) function for that dimension.
 If the dimension of \code{x} is one, then supply only the inner list
-specifying the single pseudo-target.}
-
-\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
-informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
-set. Default for \code{diagnostics} is \code{NULL}.
+specifying the single pseudo-target.
 
 If \code{x} is a vector but a single pseudo-target is supplied, the list must
 contain a log-density function \code{ld} that accepts a vector, and a
 function \code{r} that takes no arguments and generates a single multivariate draw from the
 proposal distribution.}
+
+\item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
+informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
+set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
-A list containing the new state, \code{x}, and whether the proposed value was accepted, logical \code{accpt}.
+A list containing the new state, \code{x}, whether the proposed value was accepted, logical \code{accpt},
+and the number of evaluations of the target function, \code{nEvaluations}.
 }
 \description{
-Independence Metropolis-Hastings
+Single update using an independence Metropolis-Hastings sampler with
+a pseudo-target as the proposal distribution.
 }
 \examples{
 lf <- function(x) dbeta(x[1], 3, 4, log = TRUE) + dbeta(x[2], 5, 3, log = TRUE)

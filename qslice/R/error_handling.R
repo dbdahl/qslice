@@ -794,7 +794,7 @@
     if (length(warnings)) {
       message <- paste0(
         message,
-        "\n  Warnings from pseudo$q(): ",
+        "\n  Warnings from pseudo$r(): ",
         paste(unique(warnings), collapse = "; ")
       )
     }
@@ -802,7 +802,7 @@
     if (!is.null(parent)) {
       message <- paste0(
         message,
-        "\n  Original pseudo$q() error: ",
+        "\n  Original pseudo$r() error: ",
         conditionMessage(parent)
       )
     }

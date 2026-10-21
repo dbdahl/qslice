@@ -18,13 +18,13 @@ the pseudo-target for the corresponding dimension with functions \code{ld} that 
 
 \item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
 A list containing three elements: "x" is the new state, "u" is the
-value of the CDF of the pseudo-target associated with the returned value,
-inverse CDF method, and "nEvaluations is the number of evaluations of the
+vector of values of the pseudo-target CDFs associated with the returned value,
+and "nEvaluations" is the number of evaluations of the
 target function used to obtain the new state.
 }
 \description{

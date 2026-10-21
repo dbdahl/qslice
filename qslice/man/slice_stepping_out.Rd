@@ -15,7 +15,9 @@ slice_stepping_out(x, log_target, w, max = Inf, diagnostics = NULL)
 \item{w}{A numeric scalar tuning the algorithm which gives the typical slice
 width. This is a main tuning parameter of the algorithm.}
 
-\item{max}{The maximum number of times to step out. Setting \code{max} to
+\item{max}{The limit \eqn{m} of Neal (2003) on the size of the initial interval,
+in units of \code{w}; at most \code{max - 1} steps out are taken in total
+(\code{max} of zero or one gives no stepping out). Setting \code{max} to
 zero avoids some evaluations of \code{log_target}, but may lead to relatively
 high autocorrelation if \code{w} is too small.  If \code{w} is too small,
 setting \code{max} to a large value (even \code{Inf}) should lead to low
@@ -23,7 +25,7 @@ autocorrelation at the cost of more evaluations for \code{log_target}.}
 
 \item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{

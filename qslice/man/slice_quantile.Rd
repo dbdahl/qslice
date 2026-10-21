@@ -20,7 +20,7 @@ slice_quantile(x, log_target, pseudo, diagnostics = NULL)
 
 \item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
@@ -36,6 +36,14 @@ target function used to obtain the new state.
 }
 \description{
 Single update using a quantile slice sampler of Heiner et al. (2026+).
+}
+\details{
+The sampler works with \eqn{\psi}, the pseudo-target CDF of the state, in
+double precision. Because floating-point numbers are dense near zero but not
+near one, states whose pseudo-target upper-tail probability is below about
+\code{1e-16} cannot be represented; the left tail is not affected. Use a
+pseudo-target whose right tail is at least as heavy as that of the target
+(e.g., Student t).
 }
 \examples{
 lf <- function(x) dbeta(x, 3, 4, log = TRUE)

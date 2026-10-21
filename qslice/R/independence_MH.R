@@ -1,5 +1,8 @@
 #' Independence Metropolis-Hastings
 #'
+#' Single update using an independence Metropolis-Hastings sampler with
+#' a pseudo-target as the proposal distribution.
+#'
 #' @param x The current state (scalar or numeric vector).
 #' @param log_target A function taking a scalar or numeric vector that evaluates the log-target
 #'   density, returning a numeric scalar.
@@ -10,16 +13,18 @@
 #' and \code{q} that evaluates the quantile (inverse-CDF) function for that dimension.
 #' If the dimension of \code{x} is one, then supply only the inner list
 #' specifying the single pseudo-target.
-#' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
-#' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
-#' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' If \code{x} is a vector but a single pseudo-target is supplied, the list must
 #' contain a log-density function \code{ld} that accepts a vector, and a
 #' function \code{r} that takes no arguments and generates a single multivariate draw from the
 #' proposal distribution.
-#' @return A list containing the new state, \code{x}, and whether the proposed value was accepted, logical \code{accpt}.
+#' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
+#' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
+#' set. Default for \code{diagnostics} is \code{NULL}.
+#'
+#' @return A list containing the new state, \code{x}, whether the proposed value was accepted, logical \code{accpt},
+#' and the number of evaluations of the target function, \code{nEvaluations}.
 #' @importFrom stats runif
 #' @export
 #' @examples

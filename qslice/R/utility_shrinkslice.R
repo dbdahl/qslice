@@ -25,7 +25,7 @@
 #'
 #' Use of "samples" requires specification of \code{samples}.
 #'
-#' Use of "grid" requires specification of \code{log_target} and optionally \code{x}. Grid method is useful if numerical optimization or integration fail employed with \code{type = "function"}.
+#' Use of "grid" requires specification of \code{log_target} and optionally \code{x}. Grid method is useful if numerical optimization or integration fails when employed with \code{type = "function"}.
 #'
 #' @param x Optional numeric vector specifying grid (on (0,1)) over which to evaluate
 #' the transformed target. Defaults to \code{NULL}.
@@ -44,7 +44,7 @@
 #' \code{interval_opt}: Numerical vector of length two giving the interval for numerical optimization (\link[stats]{optim}) in AUC with type = "function".
 #' \code{diagnostics}: Logical, indicating whether the target log-density and pseudo-target functions should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' @returns Scalar value of the utility function evaluation.
@@ -371,7 +371,7 @@ utility_shrinkslice <- function(
     stopifnot(is.function(h))
     if (isFALSE(is.null(x))) {
       warning(
-        "Used type = 'integration' with utiliy_shrinkslice(). Performing numerical integration and discarding supplied x values."
+        "Used type = 'integration' with utility_shrinkslice(). Performing numerical integration and discarding supplied x values."
       )
     }
 

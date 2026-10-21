@@ -7,7 +7,8 @@
 pseudo_condseq(x, pseudo_init, loc_fn, sc_fn, lb, ub)
 }
 \arguments{
-\item{x}{A numeric vector of values between 0 and 1.}
+\item{x}{A numeric vector (length at least two) giving the realization
+of the random vector on its original scale.}
 
 \item{pseudo_init}{A list output from \link[qslice]{pseudo_list} describing the
 marginal pseudo-target for \code{x[1]}. All subsequent pseudo-targets will
@@ -29,8 +30,8 @@ bound of support for each conditional pseudo-target.}
 A list containing a sequence of pseudo-targets, each from \link[qslice]{pseudo_list}.
 }
 \description{
-Given a realization of a random vector, generate a the corresponding
-sequence of conditional pseudo-target inverse CDFs (Heiner et al., 2026+).
+Given a realization of a random vector, generate the corresponding
+sequence of conditional pseudo-targets (Heiner et al., 2026+).
 The pseudo-target is specified as
 a sequence of growing conditional distributions.
 }

@@ -20,11 +20,11 @@ slice_genelliptical(x, log_target, mu, sigma, df, diagnostics = NULL)
 
 \item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
-A list contains two elements:
+A list containing two elements:
 
 \code{x} is the new state.
 

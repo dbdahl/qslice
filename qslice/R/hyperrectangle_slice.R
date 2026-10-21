@@ -142,18 +142,18 @@
 #'   density, returning a numeric scalar.
 #' @param w A numeric vector tuning the algorithm which gives the typical slice
 #'   width in each dimension. This is a main tuning parameter of the algorithm.
-#'   If \code{NULL}, the sampler begins shrinking from the supplied boundaries \code{L} and \code{R} (should,
-#'   correspond with the support).
+#'   If \code{NULL}, the sampler begins shrinking from the supplied boundaries \code{L} and \code{R}
+#'   (which should correspond with the support).
 #' @param L Optional numeric vector giving the lower boundary of support in each dimension.
 #' @param R Optional numeric vector giving the upper boundary of support in each dimension.
 #' Will be used if \code{w} is null. If all of \code{L}, \code{R}, and \code{w}
 #' are null, then the boundaries default to those of the unit hypercube.
 #' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
 #'
-#' @return A list contains two elements: "x" is the new state and "nEvaluations"
+#' @return A list containing two elements: "x" is the new state and "nEvaluations"
 #'   is the number of evaluations of the target function used to obtain the new
 #'   state.
 #'
@@ -356,8 +356,8 @@ slice_hyperrect <- function(
 #' the pseudo-target for the corresponding dimension with functions \code{ld} that evaluates the log density,
 #' \code{p} that evaluates the CDF, and \code{q} that evaluates the quantile (inverse-CDF) function.
 #' @return A list containing three elements: "x" is the new state, "u" is the
-#'   value of the CDF of the pseudo-target associated with the returned value,
-#'   inverse CDF method, and "nEvaluations is the number of evaluations of the
+#'   vector of values of the pseudo-target CDFs associated with the returned value,
+#'   and "nEvaluations" is the number of evaluations of the
 #'   target function used to obtain the new state.
 #'
 #' @references
@@ -432,14 +432,15 @@ slice_quantile_mv <- function(x, log_target, pseudo, diagnostics = NULL) {
 
 #' Sequence of conditional pseudo-targets from a realization
 #'
-#' Given a realization of a random vector, generate a the corresponding
-#' sequence of conditional pseudo-target inverse CDFs (Heiner et al., 2026+).
+#' Given a realization of a random vector, generate the corresponding
+#' sequence of conditional pseudo-targets (Heiner et al., 2026+).
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
 #' See the documentation for \link[qslice]{slice_quantile_mv_seq} for examples.
 #'
-#' @param x A numeric vector of values between 0 and 1.
+#' @param x A numeric vector (length at least two) giving the realization
+#'   of the random vector on its original scale.
 #' @param pseudo_init A list output from \link[qslice]{pseudo_list} describing the
 #' marginal pseudo-target for \code{x[1]}. All subsequent pseudo-targets will
 #' resemble \code{pseudo_init} with exception of different location and scale parameters.
@@ -467,7 +468,7 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
   K <- length(x)
   if (K < 2) {
     stop(
-      "Conditoinal sequence pseudo-targets apply to multivariate targets. Supplied x had length ",
+      "Conditional sequence pseudo-targets apply to multivariate targets. Supplied x had length ",
       K
     )
   }
@@ -595,27 +596,27 @@ pseudo_condseq <- function(x, pseudo_init, loc_fn, sc_fn, lb, ub) {
 
 #' Inverse transform from sequence of conditional pseudo-targets
 #'
-#' Given a vector of from a unit hypercube, map to the original (back-transformed)
+#' Given a vector from the unit hypercube, map to the original (back-transformed)
 #' vector using a sequence of conditional pseudo-target inverse CDFs.
 #' The pseudo-target is specified as
 #' a sequence of growing conditional distributions.
 #'
 #' See the documentation for \link[qslice]{slice_quantile_mv_seq} for examples.
 #'
-#' @param u A numeric vector of values between 0 and 1.
+#' @param u A numeric vector (length at least two) of values strictly between 0 and 1.
 #' @param pseudo_init A list output from \link[qslice]{pseudo_list} describing the
 #' marginal pseudo-target for \code{x[1]}.
 #' @param loc_fn A function that specifies the location of a conditional
 #'  pseudo-target given the elements in \code{x} that precede it.
 #' @param sc_fn A function that specifies the scale of a conditional
 #'  pseudo-target given the elements in \code{x} that precede it
-#' @param lb A numeric vector (same length as \code{x}) specifying the lower
+#' @param lb A numeric vector (same length as \code{u}) specifying the lower
 #'  bound of support for each conditional pseudo-target.
-#' @param ub A numeric vector (same length as \code{x}) specifying the upper
+#' @param ub A numeric vector (same length as \code{u}) specifying the upper
 #'  bound of support for each conditional pseudo-target.
 #' @param diagnostics Logical, indicating whether the function should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' @return A list containing \code{x} obtained from the sequence of inverse
@@ -880,7 +881,7 @@ pseudo_condseq_XfromU <- function(
 #'
 #' @return A list containing three elements: "x" is the new state, "u" is a vector
 #'   of values of the sequence of conditional CDFs of the pseudo-targets associated
-#'   with the returned value, and "nEvaluations is the number of evaluations of the
+#'   with the returned value, and "nEvaluations" is the number of evaluations of the
 #'   target function used to obtain the new state.
 #'
 #' @references

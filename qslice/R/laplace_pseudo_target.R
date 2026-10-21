@@ -53,7 +53,7 @@ lapprox <- function(
 
   if (fit$convergence != 0) {
     stop(
-      "Optimization for lapprox() failed to converge. Mode estimated at x =",
+      "Optimization for lapprox() failed to converge. Mode estimated at x = ",
       fit$par
     )
   }

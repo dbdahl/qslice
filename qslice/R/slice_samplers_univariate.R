@@ -113,14 +113,16 @@
 #' (potentially unnormalized) log-target density, returning a numeric scalar.
 #' @param w A numeric scalar tuning the algorithm which gives the typical slice
 #'   width. This is a main tuning parameter of the algorithm.
-#' @param max The maximum number of times to step out. Setting \code{max} to
+#' @param max The limit \eqn{m} of Neal (2003) on the size of the initial interval,
+#'   in units of \code{w}; at most \code{max - 1} steps out are taken in total
+#'   (\code{max} of zero or one gives no stepping out). Setting \code{max} to
 #'   zero avoids some evaluations of \code{log_target}, but may lead to relatively
 #'   high autocorrelation if \code{w} is too small.  If \code{w} is too small,
 #'   setting \code{max} to a large value (even \code{Inf}) should lead to low
 #'   autocorrelation at the cost of more evaluations for \code{log_target}.
 #' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
 #'
 #' @return A list with two elements:
@@ -279,6 +281,13 @@ slice_stepping_out <- function(
 #' Quantile Slice Sampler
 #'
 #' Single update using a quantile slice sampler of Heiner et al. (2026+).
+#'
+#' The sampler works with \eqn{\psi}, the pseudo-target CDF of the state, in
+#' double precision. Because floating-point numbers are dense near zero but not
+#' near one, states whose pseudo-target upper-tail probability is below about
+#' \code{1e-16} cannot be represented; the left tail is not affected. Use a
+#' pseudo-target whose right tail is at least as heavy as that of the target
+#' (e.g., Student t).
 #'
 #' @inherit slice_stepping_out
 #' @param pseudo List containing two functions specifying the pseudo-target distribution:
@@ -571,9 +580,16 @@ slice_latent <- function(x, s, log_target, rate, diagnostics = NULL) {
 #' @param sigma A numeric scalar with the standard deviation of the supporting normal "prior" distribution.
 #' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
-
+#'
+#' @return A list with two elements:
+#'
+#' \code{x} is the new state.
+#'
+#' \code{nEvaluations} is the number of evaluations of the log-likelihood
+#'   function used to obtain the new state.
+#'
 #' @references
 #' Murray, I., Adams, R., and MacKay, D., (2010), "Elliptical Slice Sampling," in *Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics*, JMLR Workshop and Conference Proceedings. \url{https://proceedings.mlr.press/v9/murray10a}
 #'
@@ -648,7 +664,7 @@ slice_elliptical <- function(x, log_lik, mu, sigma, diagnostics = NULL) {
 #' @param sigma A positive numeric scalar with the scale parameter of the Student t pseudo-target.
 #' @param df Degrees of freedom of Student t pseudo-target.
 #'
-#' @return A list contains two elements:
+#' @return A list containing two elements:
 #'
 #' \code{x} is the new state.
 #'

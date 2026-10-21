@@ -1,4 +1,4 @@
-0.4.0 (2026-10-07)
+0.4.0 (2026-10-21)
   * Error handling for all samplers with optional diagnostic mode.
   * Improved numerical stability of tail-probability calculations in pseudo-target functions.
   * Corrected errors with ESS (specify likelihood instead of target) and GESS (pass Cholesky flag to ESS).
@@ -7,6 +7,8 @@
   * Deprecated function auc() and use of degf for pseudo-target degrees of freedom.
   * Added random-walk Metropolis.
   * Reduced per-call overhead of samplers and pseudo-target functions without changing results.
+  * Fixed deprecated auc() failing when y is a function and ignoring nbins.
+  * Documentation corrections, including the name of the qslice.diagnostics option.
 
 0.3.1 (2024-05-29)
   * A few cosmetic improvements based on CRAN feedback.

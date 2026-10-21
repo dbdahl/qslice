@@ -16,7 +16,7 @@ pseudo_list(family, params, lb = -Inf, ub = Inf, name = NULL)
 
 \code{cauchy}: location \code{loc} and scale \code{sc}
 
-\code{norm}: location \code{loc} and scale \code{sc}
+\code{normal}: location \code{loc} and scale \code{sc}
 
 \code{logistic}: location \code{loc} and scale \code{sc}
 

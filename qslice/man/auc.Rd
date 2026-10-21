@@ -17,6 +17,9 @@ for a given value of \code{u} supported on (0,1). (Not used if \code{u} is suppl
 
 \item{nbins}{Number of histogram bins to use (defaults to 30).}
 }
+\value{
+Scalar value of the AUC (see \link[qslice]{utility_shrinkslice}).
+}
 \description{
 Function auc() is deprecated. Use utility_shrinkslice(..., utility_type = "AUC").
 }

@@ -15,7 +15,7 @@ pseudo_condseq_XfromU(
 )
 }
 \arguments{
-\item{u}{A numeric vector of values between 0 and 1.}
+\item{u}{A numeric vector (length at least two) of values strictly between 0 and 1.}
 
 \item{pseudo_init}{A list output from \link[qslice]{pseudo_list} describing the
 marginal pseudo-target for \code{x[1]}.}
@@ -26,15 +26,15 @@ pseudo-target given the elements in \code{x} that precede it.}
 \item{sc_fn}{A function that specifies the scale of a conditional
 pseudo-target given the elements in \code{x} that precede it}
 
-\item{lb}{A numeric vector (same length as \code{x}) specifying the lower
+\item{lb}{A numeric vector (same length as \code{u}) specifying the lower
 bound of support for each conditional pseudo-target.}
 
-\item{ub}{A numeric vector (same length as \code{x}) specifying the upper
+\item{ub}{A numeric vector (same length as \code{u}) specifying the upper
 bound of support for each conditional pseudo-target.}
 
 \item{diagnostics}{Logical, indicating whether the function should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
 }
 \value{
@@ -43,7 +43,7 @@ CDFs, and \code{pseudo_seq}, a list of the corresponding sequential
 pseudo-targets output from \link[qslice]{pseudo_list}.
 }
 \description{
-Given a vector of from a unit hypercube, map to the original (back-transformed)
+Given a vector from the unit hypercube, map to the original (back-transformed)
 vector using a sequence of conditional pseudo-target inverse CDFs.
 The pseudo-target is specified as
 a sequence of growing conditional distributions.

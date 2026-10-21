@@ -18,8 +18,16 @@ slice_elliptical(x, log_lik, mu, sigma, diagnostics = NULL)
 
 \item{diagnostics}{Logical, indicating whether the sampler should be run in diagnostic mode for
 informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 set. Default for \code{diagnostics} is \code{NULL}.}
+}
+\value{
+A list with two elements:
+
+\code{x} is the new state.
+
+\code{nEvaluations} is the number of evaluations of the log-likelihood
+function used to obtain the new state.
 }
 \description{
 Algorithm 1 of Nishihara et al. (2014) of the

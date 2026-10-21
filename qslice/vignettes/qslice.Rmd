@@ -18,10 +18,10 @@ knitr::opts_chunk$set(
 library("qslice")
 ```
 
-The `qslice` R package implements the quantile slice sampler of Heiner et al., (2026+) along with other popular slice samplers.
+The `qslice` R package implements the quantile slice sampler of Heiner et al. (2026+) along with other popular slice samplers.
 Several utility functions for specifying pseudo-target distributions, for diagnostics, and for tuning, are also included.
 
-Other implemented methods include the generalized elliptical (Nishihara et al., 2014), latent (Li and Walker, 2023), and stepping-out (Neal, 2003) slice samplers, and independence Metropolis-Hastings sampler.
+Other implemented methods include the generalized elliptical (Nishihara et al., 2014), latent (Li and Walker, 2023), and stepping-out (Neal, 2003) slice samplers, as well as independence Metropolis-Hastings and random-walk Metropolis samplers.
 
 All sampling functions in the `qslice` package perform a single scan that can be iteratively called as part of an MCMC routine.
 
@@ -30,7 +30,7 @@ All sampling functions in the `qslice` package perform a single scan that can be
 Let $g(x)$ represent an unnormalized target density. Augment the target with a latent random variable $V \mid X = x \sim \text{Uniform}(0, g(x))$. 
 This results in a joint density for $X$ and $V$ that is proportional to a constant and yields a marginal density of $X$ that is proportional to $g$. 
 
-*Uniform* slice samplers first draw from the conditional distribution of $V$ given above, and then from the conditional of $X \mid V = v$, which is uniform on the set $A = \{ x : v < g(x) \}$, known as the slice region. If $A$ is available analytically, a custom *ideal* slice sampler can be implemented. The samplers available in the `qslice` package include general-purpuse *hybrid* steps that repeatedly sample until a draw on the slice region is found. Each uses some variant of the bracket shrinkage precedure of Neal (2003).
+*Uniform* slice samplers first draw from the conditional distribution of $V$ given above, and then from the conditional of $X \mid V = v$, which is uniform on the set $A = \{ x : v < g(x) \}$, known as the slice region. If $A$ is available analytically, a custom *ideal* slice sampler can be implemented. The samplers available in the `qslice` package include general-purpose *hybrid* steps that repeatedly sample until a draw on the slice region is found. Each uses some variant of the bracket shrinkage procedure of Neal (2003).
 
 ## Example
 

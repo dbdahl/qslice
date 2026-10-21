@@ -115,8 +115,12 @@
 #' @param is_chol Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.
 #' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
+#'
+#' @return A list containing two elements: \code{x} is the new state and \code{nEvaluations}
+#'   is the number of evaluations of the log-likelihood function used to obtain the new
+#'   state.
 #'
 #' @references
 #' Murray, I., Adams, R., and MacKay, D., (2010), "Elliptical Slice Sampling," in *Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics*, JMLR Workshop and Conference Proceedings. \url{https://proceedings.mlr.press/v9/murray10a}
@@ -219,10 +223,10 @@ slice_elliptical_mv <- function(
 #' @param is_chol Logical, is the supplied \code{Sig} in Cholesky (lower triangular) format? Default is false.
 #' @param diagnostics Logical, indicating whether the sampler should be run in diagnostic mode for
 #' informative error handling. When \code{diagnostics} is \code{NULL}, it is reset to match the
-#' value of \code{getOption("qslice.diagnostic")} which defaults to \code{FALSE} if the option is not
+#' value of \code{getOption("qslice.diagnostics")} which defaults to \code{FALSE} if the option is not
 #' set. Default for \code{diagnostics} is \code{NULL}.
 #'
-#' @return A list contains two elements: \code{x} is the new state and \code{nEvaluations}
+#' @return A list containing two elements: \code{x} is the new state and \code{nEvaluations}
 #'   is the number of evaluations of the target function used to obtain the new
 #'   state.
 #'
